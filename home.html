@@ -7,6 +7,9 @@
     <title>PowerForecast — Home</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js & FontAwesome CDN for AI Spec Sheets -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -805,8 +808,259 @@
                 </div>
             </section>
 
-            <!-- PANEL 3: APPLIANCES VIEW (BLANK) -->
-            <section id="view-appliances" class="view-panel hidden flex-col gap-6 min-h-[400px]">
+            <!-- PANEL 3: APPLIANCES VIEW (IMAGE RECOGNITION AI & APPLIANCE MANAGER) -->
+            <section id="view-appliances" class="view-panel hidden flex-col gap-6">
+
+                <!-- Top Module Header & AI Controls -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold t-primary flex items-center gap-2">
+                            <span>📷</span>
+                            <span>AI Vision Appliance Recognition</span>
+                        </h2>
+                        <p class="text-sm t-muted">Snap or upload photos of appliances to automatically identify models, specs, estimated wattage, and Meralco monthly cost.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Model Select -->
+                        <select id="aiModelSelect" onchange="aiState.currentModel=this.value" class="pf-input rounded-xl px-3 py-2 text-xs font-semibold">
+                            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fastest)</option>
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                            <option value="gemini-3-pro-preview">Gemini 3.0 Pro</option>
+                            <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                        </select>
+
+                        <!-- API Key Status Pill -->
+                        <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-indigo-950/60 border-indigo-700/60 text-indigo-200 hover:border-amber-400 transition-all shadow">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span id="aiKeyStatusText">Server Key Active</span>
+                        </button>
+
+                        <!-- History Drawer Toggle -->
+                        <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
+                            <span>📜</span> History
+                            <span id="aiHistoryBadge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main 2-Column Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                    <!-- LEFT COLUMN: Multi-Angle Upload, Webcam & Presets -->
+                    <div class="lg:col-span-5 flex flex-col gap-6">
+
+                        <!-- Card 1: Multi-Photo Upload & Dropzone -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-5 shadow-xl">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-sm font-bold t-primary flex items-center gap-2">
+                                        <span>📸</span>
+                                        <span>Appliance Photo Slots</span>
+                                    </h3>
+                                    <p class="text-xs t-muted">Upload up to 3 multi-angle photos (Front, Rating Tag, Controls).</p>
+                                </div>
+                                <span id="aiSlotBadge" class="text-xs font-bold px-2.5 py-1 badge rounded-full">0 / 3 Photos</span>
+                            </div>
+
+                            <!-- 3 Photo Thumbnail Slots -->
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="0" onclick="triggerSlotUpload(0)">
+                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                        <span class="text-xl">📷</span>
+                                        <span class="text-[10px] font-semibold t-muted">Slot 1 (Front)</span>
+                                    </div>
+                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 1">
+                                    <button onclick="event.stopPropagation(); removeSlotPhoto(0)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                </div>
+
+                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="1" onclick="triggerSlotUpload(1)">
+                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                        <span class="text-xl">🏷️</span>
+                                        <span class="text-[10px] font-semibold t-muted">Slot 2 (Tag)</span>
+                                    </div>
+                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 2">
+                                    <button onclick="event.stopPropagation(); removeSlotPhoto(1)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                </div>
+
+                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="2" onclick="triggerSlotUpload(2)">
+                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                        <span class="text-xl">🎛️</span>
+                                        <span class="text-[10px] font-semibold t-muted">Slot 3 (Panel)</span>
+                                    </div>
+                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 3">
+                                    <button onclick="event.stopPropagation(); removeSlotPhoto(2)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                </div>
+                            </div>
+
+                            <!-- Hidden File Input -->
+                            <input type="file" id="aiFileInput" accept="image/*" multiple class="hidden" onchange="handleAiFileSelect(this.files)">
+
+                            <!-- Dropzone Drag Area & Camera Action -->
+                            <div id="aiDropzone" class="p-5 rounded-xl border-2 border-dashed border-indigo-500/40 bg-indigo-950/30 text-center flex flex-col items-center justify-center gap-3 transition-all">
+                                <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-xl">
+                                    📥
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold t-primary">Drag & Drop Appliance Photos Here</p>
+                                    <p class="text-[10px] t-muted mt-0.5">Supports JPG, PNG, WEBP, SVG or Paste from Clipboard (Ctrl+V)</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="document.getElementById('aiFileInput').click()" class="px-3 py-1.5 btn-secondary rounded-lg text-xs font-semibold">
+                                        📂 Browse Files
+                                    </button>
+                                    <button onclick="openWebcamModal()" class="px-3 py-1.5 btn-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
+                                        <span>📷</span> Live Camera
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <button onclick="clearAllAiSlots()" id="aiClearAllBtn" class="hidden text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
+                                    <span>🗑️</span> Clear Uploaded Photos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Preset Mode & Analysis Prompt -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                            <h3 class="text-sm font-bold t-primary">Vision Analysis Preset</h3>
+
+                            <div class="grid grid-cols-2 gap-2" id="aiPresetGrid">
+                                <button data-preset="specs" onclick="selectAiPreset('specs')" class="ai-preset-btn active p-3 rounded-xl text-left border border-indigo-500/50 bg-indigo-900/40 text-white font-medium text-xs transition-all">
+                                    <div class="font-bold flex items-center gap-1.5">
+                                        <span>⚡</span> Full Spec Sheet
+                                    </div>
+                                    <div class="text-[10px] t-muted mt-1">Brand, model, wattage & care guide.</div>
+                                </button>
+
+                                <button data-preset="electrical" onclick="selectAiPreset('electrical')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                    <div class="font-bold flex items-center gap-1.5">
+                                        <span>🔌</span> Electrical Specs
+                                    </div>
+                                    <div class="text-[10px] t-muted mt-1">Voltage, Amps, Running vs Surge W.</div>
+                                </button>
+
+                                <button data-preset="serial_ocr" onclick="selectAiPreset('serial_ocr')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                    <div class="font-bold flex items-center gap-1.5">
+                                        <span>🔍</span> Rating Label OCR
+                                    </div>
+                                    <div class="text-[10px] t-muted mt-1">Extract physical tag & model codes.</div>
+                                </button>
+
+                                <button data-preset="maintenance" onclick="selectAiPreset('maintenance')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                    <div class="font-bold flex items-center gap-1.5">
+                                        <span>🛠️</span> Care & Maintenance
+                                    </div>
+                                    <div class="text-[10px] t-muted mt-1">Filter routines & error codes.</div>
+                                </button>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label for="aiCustomPrompt" class="text-xs font-semibold t-muted flex justify-between">
+                                    <span>Custom Technical Question (Optional)</span>
+                                    <button onclick="document.getElementById('aiCustomPrompt').value=''" class="text-[10px] text-slate-400 hover:text-white">Clear</button>
+                                </label>
+                                <textarea id="aiCustomPrompt" rows="2" placeholder="Ask specific technical questions about this appliance..." class="w-full pf-input rounded-xl p-3 text-xs"></textarea>
+                            </div>
+
+                            <button id="runAiAnalysisBtn" onclick="runApplianceVisionAnalysis()" class="w-full py-3.5 btn-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:brightness-110">
+                                <span>⚡</span> Run Vision AI Spec Extraction
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT COLUMN: AI Results, Auto-Detected Specs & Meralco Cost Engine -->
+                    <div class="lg:col-span-7 flex flex-col gap-6">
+
+                        <!-- Card 1: Detected Specs & Meralco Cost Summary -->
+                        <div id="aiDetectedCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-2xl">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Detected Parameters & Meralco Cost Engine</span>
+                                    <h3 id="aiDetectedName" class="text-xl font-extrabold t-primary mt-1">Ready for Appliance Scan</h3>
+                                </div>
+                                <span id="aiModelBadge" class="text-xs font-semibold t-muted px-2.5 py-1 badge rounded-lg">Gemini 3.6 Flash</span>
+                            </div>
+
+                            <!-- Meralco Rate Calculation Quick Stats -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs">
+                                <div>
+                                    <span class="t-muted text-[10px] block font-medium">ESTIMATED WATTAGE</span>
+                                    <span id="aiDetectedWatts" class="font-extrabold text-amber-400 text-base">0 W</span>
+                                </div>
+                                <div>
+                                    <span class="t-muted text-[10px] block font-medium">DAILY USAGE</span>
+                                    <span id="aiDetectedHours" class="font-bold text-white text-base">8 hrs/day</span>
+                                </div>
+                                <div>
+                                    <span class="t-muted text-[10px] block font-medium">MONTHLY kWh</span>
+                                    <span id="aiDetectedKwh" class="font-extrabold t-accent text-base">0.00 kWh</span>
+                                </div>
+                                <div>
+                                    <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
+                                    <span id="aiDetectedCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2.5 pt-1">
+                                <button onclick="applyDetectedToBill()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                    <span>⚡</span> Apply as Calculator Bill kWh
+                                </button>
+                                <button onclick="addDetectedToLoadList()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <span>➕</span> Add to Household Load List
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Full Spec Sheet Output Tabs -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                            <div class="flex flex-wrap justify-between items-center gap-2 pf-divider border-b pb-3">
+                                <!-- Tab Buttons -->
+                                <div class="flex gap-2">
+                                    <button onclick="switchAiTab('formatted')" id="aiTabBtn-formatted" class="ai-tab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow">
+                                        📄 Technical Spec Sheet
+                                    </button>
+                                    <button onclick="switchAiTab('palette')" id="aiTabBtn-palette" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                        🎨 Finish Colors
+                                    </button>
+                                    <button onclick="switchAiTab('raw')" id="aiTabBtn-raw" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                        ⚙️ Raw JSON
+                                    </button>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex items-center gap-2 text-xs">
+                                    <button onclick="toggleSpeechSynthesis()" id="aiTtsBtn" class="px-2.5 py-1 rounded-lg btn-secondary text-xs flex items-center gap-1">
+                                        <span>🔊</span> <span id="aiTtsTxt">Listen</span>
+                                    </button>
+                                    <button onclick="copySpecMarkdown()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">📋 Copy</button>
+                                    <button onclick="downloadSpecReport()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">⬇️ Export</button>
+                                </div>
+                            </div>
+
+                            <!-- Tab Pane 1: Formatted Spec Sheet -->
+                            <div id="aiPane-formatted" class="ai-tab-pane flex flex-col gap-3">
+                                <div id="aiOutputContent" class="prose prose-invert max-w-none text-xs leading-relaxed t-secondary max-h-[480px] overflow-y-auto pr-2">
+                                    <p class="t-muted italic">Upload appliance photo(s) and click <strong>Run Vision AI Spec Extraction</strong> to generate a complete technical specification sheet with Meralco rate cost estimations.</p>
+                                </div>
+                            </div>
+
+                            <!-- Tab Pane 2: Finish Color Palette Swatches -->
+                            <div id="aiPane-palette" class="ai-tab-pane hidden flex-col gap-3">
+                                <p class="text-xs t-muted">Extracted color tones from appliance exterior finish:</p>
+                                <div id="aiColorGrid" class="grid grid-cols-5 gap-3"></div>
+                            </div>
+
+                            <!-- Tab Pane 3: Raw JSON -->
+                            <div id="aiPane-raw" class="ai-tab-pane hidden flex-col gap-3">
+                                <pre id="aiJsonOutput" class="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-[400px]">{}</pre>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </section>
 
             <!-- PANEL 4: CALENDAR VIEW (BLANK) -->
@@ -974,6 +1228,107 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Vision Webcam Modal -->
+    <div id="aiWebcamModal" class="fixed inset-0 z-50 overflow-hidden hidden flex items-center justify-center bg-black/80 backdrop-blur-md">
+        <div class="glass-card p-6 rounded-2xl max-w-lg w-full flex flex-col gap-4 shadow-2xl relative">
+            <div class="flex justify-between items-center pf-divider border-b pb-3">
+                <h3 class="text-base font-bold t-primary flex items-center gap-2">
+                    <span>📷</span> Live Webcam Appliance Snap
+                </h3>
+                <button onclick="closeWebcamModal()" class="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            <div class="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+                <video id="aiWebcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                <canvas id="aiWebcamCanvas" class="hidden"></canvas>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeWebcamModal()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-semibold">Cancel</button>
+                <button onclick="captureWebcamSnap()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold shadow-lg">📸 Snap Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Vision Custom Key Settings Modal -->
+    <div id="aiSettingsModal" class="fixed inset-0 z-50 overflow-hidden hidden flex items-center justify-center bg-black/80 backdrop-blur-md" role="dialog" aria-modal="true">
+        <div class="glass-card p-6 rounded-2xl max-w-md w-full flex flex-col gap-5 shadow-2xl relative border border-indigo-500/30">
+            <div class="flex justify-between items-center pf-divider border-b pb-3">
+                <div>
+                    <h3 class="text-base font-bold t-primary flex items-center gap-2">
+                        <span>🔑</span> Gemini Vision API Key Settings
+                    </h3>
+                    <p class="text-xs t-muted">Configure your Google Gemini API key for Vision AI</p>
+                </div>
+                <button type="button" onclick="closeAiSettingsModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <label for="aiApiKeyInput" class="text-xs font-semibold t-secondary flex justify-between">
+                    <span>Enter Gemini API Key</span>
+                    <span class="text-[10px] text-amber-400 font-medium">Required for Vision AI</span>
+                </label>
+                <div class="relative">
+                    <input type="password" id="aiApiKeyInput" placeholder="Paste your AIzaSy... API key here" class="w-full pf-input rounded-xl pl-3 pr-10 py-3 text-xs font-mono">
+                    <button type="button" onclick="toggleApiKeyVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white text-xs">
+                        <i id="aiKeyVisibilityIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p class="text-[11px] t-muted leading-relaxed">
+                    Get a free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline font-semibold">Google AI Studio</a>. Your key is stored securely in browser local storage.
+                </p>
+            </div>
+
+            <div id="aiKeyStatusBox" class="p-3.5 rounded-xl text-xs font-medium bg-indigo-950/60 border border-indigo-500/30 flex items-center gap-2.5">
+                <span id="aiKeyStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="aiKeyStatusMsg" class="t-secondary">Checking API key status...</span>
+            </div>
+
+            <div class="flex gap-3 pt-1">
+                <button type="button" onclick="clearCustomAiApiKey()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-semibold">Clear Key</button>
+                <button type="button" onclick="saveCustomAiApiKey()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold shadow-lg">Save API Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Vision History Drawer -->
+    <div id="aiHistoryDrawer" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="toggleAiHistoryDrawer()"></div>
+        <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div class="pointer-events-auto w-screen max-w-md">
+                <div class="settings-panel flex h-full flex-col overflow-y-scroll shadow-2xl">
+                    <div class="px-6 py-6 pf-divider border-b flex justify-between items-center" style="background: var(--accent-glow);">
+                        <div>
+                            <h2 class="text-lg font-bold t-primary">Vision Scan History</h2>
+                            <p class="text-xs t-muted">Past appliance scans & technical specs.</p>
+                        </div>
+                        <button onclick="toggleAiHistoryDrawer()" class="rounded-lg p-1.5 btn-secondary">✕</button>
+                    </div>
+                    <div class="p-6 flex flex-col gap-3 flex-1 overflow-y-auto" id="aiHistoryList">
+                        <p class="text-xs t-muted italic">No past scans found.</p>
+                    </div>
+                    <div class="p-4 border-t pf-divider flex justify-end">
+                        <button onclick="clearAiHistory()" class="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 font-semibold">Clear All History</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Processing Loading Overlay -->
+    <div id="aiLoadingOverlay" class="fixed inset-0 z-50 overflow-hidden hidden flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+        <div class="glass-card p-8 rounded-3xl max-w-sm w-full flex flex-col items-center gap-4 text-center shadow-2xl">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-600/30 text-indigo-300 flex items-center justify-center text-3xl animate-bounce">
+                ⚡
+            </div>
+            <div>
+                <h3 id="aiLoaderTitle" class="text-base font-extrabold t-primary">Analyzing Appliance Photos...</h3>
+                <p id="aiLoaderSubtitle" class="text-xs t-muted mt-1">Querying Gemini Vision AI & Meralco rate engine...</p>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden mt-2">
+                <div id="aiProgressFill" class="h-full bg-indigo-500 transition-all duration-300" style="width: 30%"></div>
             </div>
         </div>
     </div>
@@ -1546,6 +1901,609 @@
             if (totalLbl) totalLbl.textContent = totalKwh.toFixed(2) + ' kWh';
             syncKwhInput(Math.round(totalKwh));
         }
+
+        // ===== AI Vision Appliance Recognition Module Logic =====
+        const aiState = {
+            slots: [null, null, null],
+            activeSlotIndex: 0,
+            currentPreset: 'specs',
+            currentModel: 'gemini-3.6-flash',
+            savedApiKey: localStorage.getItem('powerforecast_gemini_key') || '',
+            history: JSON.parse(localStorage.getItem('powerforecast_ai_history') || '[]'),
+            webcamStream: null,
+            isSpeaking: false,
+            detectedAppliance: null
+        };
+
+        async function checkAiHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                const statusTxt = document.getElementById('aiKeyStatusText');
+                const btn = document.getElementById('aiApiKeyBtn');
+
+                if (aiState.savedApiKey || data.serverHasKey) {
+                    if (statusTxt) statusTxt.textContent = aiState.savedApiKey ? 'Custom Key Active' : 'Server Key Active';
+                    if (btn) {
+                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 hover:border-emerald-400 transition-all shadow cursor-pointer";
+                        const dot = btn.querySelector('span:first-child');
+                        if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    }
+                } else {
+                    if (statusTxt) statusTxt.textContent = 'Key Required';
+                    if (btn) {
+                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-amber-950/60 border-amber-700/60 text-amber-200 hover:border-amber-400 transition-all shadow cursor-pointer";
+                        const dot = btn.querySelector('span:first-child');
+                        if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+                    }
+                }
+                updateModalKeyStatus(data.serverHasKey);
+            } catch (err) {
+                console.warn('AI Health Check failed:', err);
+                const statusTxt = document.getElementById('aiKeyStatusText');
+                if (statusTxt) statusTxt.textContent = 'Key Required';
+            }
+        }
+
+        function updateModalKeyStatus(serverHasKey = false) {
+            const msg = document.getElementById('aiKeyStatusMsg');
+            const dot = document.getElementById('aiKeyStatusDot');
+            if (!msg) return;
+
+            if (aiState.savedApiKey) {
+                msg.textContent = 'Custom API Key active in LocalStorage.';
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+            } else if (serverHasKey) {
+                msg.textContent = 'Server environment API Key active.';
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+            } else {
+                msg.textContent = 'No API Key detected. Enter your Gemini API Key above.';
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+            }
+        }
+
+        function triggerSlotUpload(idx) {
+            aiState.activeSlotIndex = idx;
+            const input = document.getElementById('aiFileInput');
+            if (input) input.click();
+        }
+
+        function handleAiFileSelect(filesList) {
+            const validFiles = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+            if (validFiles.length === 0) return;
+
+            validFiles.forEach(file => {
+                const emptyIdx = aiState.slots.findIndex(s => s === null);
+                const targetIdx = emptyIdx !== -1 ? emptyIdx : aiState.activeSlotIndex;
+                if (targetIdx >= 3) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    aiState.slots[targetIdx] = {
+                        base64: e.target.result,
+                        mimeType: file.type,
+                        name: file.name
+                    };
+                    updateAiSlotsUI();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeSlotPhoto(idx) {
+            aiState.slots[idx] = null;
+            updateAiSlotsUI();
+        }
+
+        function clearAllAiSlots() {
+            aiState.slots = [null, null, null];
+            updateAiSlotsUI();
+        }
+
+        function updateAiSlotsUI() {
+            const loadedCount = aiState.slots.filter(s => s !== null).length;
+            const badge = document.getElementById('aiSlotBadge');
+            const clearBtn = document.getElementById('aiClearAllBtn');
+            if (badge) badge.textContent = `${loadedCount} / 3 Photos`;
+            if (clearBtn) clearBtn.classList.toggle('hidden', loadedCount === 0);
+
+            const slotEls = document.querySelectorAll('.ai-slot-card');
+            slotEls.forEach((el, idx) => {
+                const data = aiState.slots[idx];
+                const placeholder = el.querySelector('.slot-placeholder');
+                const img = el.querySelector('.slot-img');
+                const remove = el.querySelector('.slot-remove');
+
+                if (data) {
+                    el.classList.remove('empty');
+                    if (placeholder) placeholder.classList.add('hidden');
+                    if (img) { img.src = data.base64; img.classList.remove('hidden'); }
+                    if (remove) remove.classList.remove('hidden');
+                } else {
+                    el.classList.add('empty');
+                    if (placeholder) placeholder.classList.remove('hidden');
+                    if (img) { img.src = ''; img.classList.add('hidden'); }
+                    if (remove) remove.classList.add('hidden');
+                }
+            });
+        }
+
+        // Dropzone & Paste Handlers
+        const aiDropzone = document.getElementById('aiDropzone');
+        if (aiDropzone) {
+            aiDropzone.addEventListener('dragover', (e) => { e.preventDefault(); aiDropzone.classList.add('border-indigo-400', 'bg-indigo-900/40'); });
+            aiDropzone.addEventListener('dragleave', () => { aiDropzone.classList.remove('border-indigo-400', 'bg-indigo-900/40'); });
+            aiDropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                aiDropzone.classList.remove('border-indigo-400', 'bg-indigo-900/40');
+                if (e.dataTransfer.files) handleAiFileSelect(e.dataTransfer.files);
+            });
+        }
+
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    handleAiFileSelect([item.getAsFile()]);
+                    break;
+                }
+            }
+        });
+
+        function selectAiPreset(presetKey) {
+            aiState.currentPreset = presetKey;
+            document.querySelectorAll('.ai-preset-btn').forEach(btn => {
+                if (btn.getAttribute('data-preset') === presetKey) {
+                    btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-900/40', 'text-white');
+                    btn.classList.remove('border-indigo-500/20', 'bg-indigo-950/20', 'text-slate-300');
+                } else {
+                    btn.classList.remove('active', 'border-indigo-500/50', 'bg-indigo-900/40', 'text-white');
+                    btn.classList.add('border-indigo-500/20', 'bg-indigo-950/20', 'text-slate-300');
+                }
+            });
+        }
+
+        // Live Webcam Functions
+        async function openWebcamModal() {
+            const modal = document.getElementById('aiWebcamModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            try {
+                aiState.webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('aiWebcamVideo');
+                if (video) video.srcObject = aiState.webcamStream;
+            } catch (err) {
+                alert("Unable to access camera: " + err.message);
+                closeWebcamModal();
+            }
+        }
+
+        function closeWebcamModal() {
+            if (aiState.webcamStream) {
+                aiState.webcamStream.getTracks().forEach(t => t.stop());
+                aiState.webcamStream = null;
+            }
+            const modal = document.getElementById('aiWebcamModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function captureWebcamSnap() {
+            const video = document.getElementById('aiWebcamVideo');
+            const canvas = document.getElementById('aiWebcamCanvas');
+            if (!video || !canvas) return;
+
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+            const emptyIdx = aiState.slots.findIndex(s => s === null);
+            const targetIdx = emptyIdx !== -1 ? emptyIdx : 0;
+
+            aiState.slots[targetIdx] = {
+                base64: base64Data,
+                mimeType: 'image/jpeg',
+                name: `Webcam_Snap_${Date.now()}.jpg`
+            };
+            updateAiSlotsUI();
+            closeWebcamModal();
+        }
+
+        // Vision AI Analysis Engine
+        let aiProgressInterval = null;
+
+        async function runApplianceVisionAnalysis() {
+            const activeSlots = aiState.slots.filter(s => s !== null);
+            if (activeSlots.length === 0) {
+                alert("Please upload or snap at least 1 appliance photo first.");
+                return;
+            }
+
+            if (!aiState.savedApiKey) {
+                try {
+                    const healthRes = await fetch('/api/health');
+                    const healthData = await healthRes.json();
+                    if (!healthData.serverHasKey) {
+                        alert("A Gemini API key is required to scan appliances. Please enter your Gemini API key in the settings window.");
+                        toggleAiSettingsModal();
+                        return;
+                    }
+                } catch (e) {}
+            }
+
+            showAiLoader("Extracting Appliance Specifications...", "Querying Gemini Vision AI & Meralco rate engine...");
+
+            const customPrompt = document.getElementById('aiCustomPrompt')?.value.trim();
+
+            const payloadImages = activeSlots.map(slot => ({
+                imageBase64: slot.base64,
+                mimeType: slot.mimeType
+            }));
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        images: payloadImages,
+                        prompt: customPrompt,
+                        preset: aiState.currentPreset,
+                        customApiKey: aiState.savedApiKey,
+                        model: aiState.currentModel
+                    })
+                });
+
+                const data = await response.json();
+                hideAiLoader();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || data.error || 'Failed to analyze appliance photos.');
+                }
+
+                renderAiResults(data);
+                saveAiHistory(data);
+
+            } catch (err) {
+                hideAiLoader();
+                alert("Appliance Vision Error: " + err.message);
+            }
+        }
+
+        function showAiLoader(title, subtitle) {
+            const btn = document.getElementById('runAiAnalysisBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-base mr-1"></i> Scanning Appliance with AI...`;
+            }
+
+            const loader = document.getElementById('aiLoadingOverlay');
+            const tEl = document.getElementById('aiLoaderTitle');
+            const sEl = document.getElementById('aiLoaderSubtitle');
+            const fill = document.getElementById('aiProgressFill');
+
+            if (tEl) tEl.textContent = title;
+            if (sEl) sEl.textContent = subtitle;
+            if (fill) fill.style.width = '30%';
+
+            if (loader) loader.classList.remove('hidden');
+
+            let pct = 30;
+            if (aiProgressInterval) clearInterval(aiProgressInterval);
+            aiProgressInterval = setInterval(() => {
+                if (pct < 90) {
+                    pct += 10;
+                    if (fill) fill.style.width = pct + '%';
+                }
+            }, 350);
+        }
+
+        function hideAiLoader() {
+            if (aiProgressInterval) {
+                clearInterval(aiProgressInterval);
+                aiProgressInterval = null;
+            }
+
+            const fill = document.getElementById('aiProgressFill');
+            if (fill) fill.style.width = '100%';
+
+            const btn = document.getElementById('runAiAnalysisBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
+                btn.innerHTML = `<span>⚡</span> Run Vision AI Spec Extraction`;
+            }
+
+            setTimeout(() => {
+                const loader = document.getElementById('aiLoadingOverlay');
+                if (loader) loader.classList.add('hidden');
+            }, 200);
+        }
+
+        function renderAiResults(data) {
+            const rawMarkdown = data.analysis || '';
+
+            // 1. Render Markdown Spec Sheet
+            const outputEl = document.getElementById('aiOutputContent');
+            if (outputEl) {
+                outputEl.innerHTML = window.marked ? marked.parse(rawMarkdown) : rawMarkdown;
+            }
+
+            // 2. Parse Appliance Name & Wattage from AI Text Output
+            let appName = 'Detected Appliance';
+            const nameMatch = rawMarkdown.match(/(?:Appliance|Category|Name|Model):\s*\*\*?([^\*\n\r]+)\*\*?/i);
+            if (nameMatch && nameMatch[1]) {
+                appName = nameMatch[1].trim();
+            } else {
+                const firstHeading = rawMarkdown.match(/#+\s*([^\n]+)/);
+                if (firstHeading) appName = firstHeading[1].trim();
+            }
+
+            let wattage = 500; // default fallback
+            const wattMatch = rawMarkdown.match(/(\d{2,4})\s*(?:Watts|Watt|W\b)/i);
+            if (wattMatch) {
+                wattage = parseFloat(wattMatch[1]);
+            }
+
+            let dailyHours = 8;
+            const hourMatch = rawMarkdown.match(/(\d{1,2}(?:\.\d)?)\s*(?:Hours|hrs|h\/day)/i);
+            if (hourMatch) {
+                dailyHours = parseFloat(hourMatch[1]);
+            }
+
+            const monthlyKwh = (wattage * dailyHours * 30) / 1000.0;
+
+            // Calculate Meralco Monthly Cost using activeRates & current Base Generation Charge
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            const calcRes = typeof performCalculation === 'function' ? performCalculation(monthlyKwh, genRate, 0) : null;
+            const estCost = calcRes ? calcRes.summary.total_bill : (monthlyKwh * (genRate + 3.5));
+
+            aiState.detectedAppliance = {
+                name: appName,
+                watts: wattage,
+                hours: dailyHours,
+                days: 30,
+                kwh: monthlyKwh,
+                estCost: estCost
+            };
+
+            // Update UI Quick Stats Box
+            const nameEl = document.getElementById('aiDetectedName');
+            const wattsEl = document.getElementById('aiDetectedWatts');
+            const hoursEl = document.getElementById('aiDetectedHours');
+            const kwhEl = document.getElementById('aiDetectedKwh');
+            const costEl = document.getElementById('aiDetectedCost');
+
+            if (nameEl) nameEl.textContent = appName;
+            if (wattsEl) wattsEl.textContent = `${wattage} W`;
+            if (hoursEl) hoursEl.textContent = `${dailyHours} hrs/day`;
+            if (kwhEl) kwhEl.textContent = `${monthlyKwh.toFixed(2)} kWh`;
+            if (costEl) costEl.textContent = `₱${estCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
+
+            // 3. Render Color Tone Palette
+            const hexes = rawMarkdown.match(/#(?:[0-9a-fA-F]{3}){1,2}\b/g) || ['#1e293b', '#64748b', '#94a3b8', '#cbd5e1', '#6c7ae0'];
+            const colorGrid = document.getElementById('aiColorGrid');
+            if (colorGrid) {
+                colorGrid.innerHTML = '';
+                [...new Set(hexes)].slice(0, 5).forEach((hex, i) => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'flex flex-col items-center gap-1 cursor-pointer';
+                    swatch.onclick = () => alert(`Copied color ${hex}`);
+                    swatch.innerHTML = `
+                        <div class="w-full h-10 rounded-lg border border-slate-700 shadow" style="background-color: ${hex}"></div>
+                        <span class="text-[10px] font-mono t-muted">${hex}</span>
+                    `;
+                    colorGrid.appendChild(swatch);
+                });
+            }
+
+            // 4. Raw JSON
+            const jsonEl = document.getElementById('aiJsonOutput');
+            if (jsonEl) jsonEl.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function applyDetectedToBill() {
+            if (!aiState.detectedAppliance) {
+                alert("No appliance has been analyzed yet.");
+                return;
+            }
+            syncKwhInput(Math.round(aiState.detectedAppliance.kwh));
+            switchView('calculator');
+        }
+
+        function addDetectedToLoadList() {
+            if (!aiState.detectedAppliance) {
+                alert("No appliance has been analyzed yet.");
+                return;
+            }
+            const item = {
+                id: Date.now(),
+                name: aiState.detectedAppliance.name,
+                watts: aiState.detectedAppliance.watts,
+                hours: aiState.detectedAppliance.hours,
+                days: 30,
+                kwh: aiState.detectedAppliance.kwh
+            };
+            householdLoadList.push(item);
+            renderHouseholdLoadList();
+            alert(`Added '${item.name}' (${item.watts}W) to your Household Load List!`);
+        }
+
+        function switchAiTab(tabName) {
+            document.querySelectorAll('.ai-tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-600', 'text-white', 'shadow');
+                btn.classList.add('text-slate-400');
+            });
+            document.querySelectorAll('.ai-tab-pane').forEach(pane => pane.classList.add('hidden'));
+
+            const targetBtn = document.getElementById('aiTabBtn-' + tabName);
+            const targetPane = document.getElementById('aiPane-' + tabName);
+            if (targetBtn) targetBtn.classList.add('active', 'bg-indigo-600', 'text-white', 'shadow');
+            if (targetPane) targetPane.classList.remove('hidden');
+        }
+
+        // Modals & Storage
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('aiApiKeyInput');
+            const icon = document.getElementById('aiKeyVisibilityIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                if (icon) icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function openAiSettingsModal() {
+            const modal = document.getElementById('aiSettingsModal');
+            const input = document.getElementById('aiApiKeyInput');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            if (input) input.value = aiState.savedApiKey || '';
+            checkAiHealth();
+        }
+
+        function closeAiSettingsModal() {
+            const modal = document.getElementById('aiSettingsModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function toggleAiSettingsModal() {
+            const modal = document.getElementById('aiSettingsModal');
+            if (!modal) return;
+            if (modal.classList.contains('hidden')) {
+                openAiSettingsModal();
+            } else {
+                closeAiSettingsModal();
+            }
+        }
+
+        function saveCustomAiApiKey() {
+            const input = document.getElementById('aiApiKeyInput');
+            const val = input ? input.value.trim() : '';
+            if (val) {
+                aiState.savedApiKey = val;
+                localStorage.setItem('powerforecast_gemini_key', aiState.savedApiKey);
+                checkAiHealth();
+                closeAiSettingsModal();
+                alert("Custom Gemini API Key saved successfully!");
+            } else {
+                alert("Please enter a valid Gemini API Key.");
+            }
+        }
+
+        function clearCustomAiApiKey() {
+            aiState.savedApiKey = '';
+            localStorage.removeItem('powerforecast_gemini_key');
+            const input = document.getElementById('aiApiKeyInput');
+            if (input) input.value = '';
+            checkAiHealth();
+            alert("Custom API Key cleared.");
+        }
+
+        function toggleAiHistoryDrawer() {
+            const drawer = document.getElementById('aiHistoryDrawer');
+            if (drawer) drawer.classList.toggle('hidden');
+            renderAiHistory();
+        }
+
+        function saveAiHistory(data) {
+            aiState.history.unshift({
+                id: Date.now(),
+                timestamp: new Date().toLocaleTimeString(),
+                name: aiState.detectedAppliance?.name || 'Appliance Scan',
+                preset: data.preset,
+                analysis: data.analysis
+            });
+            aiState.history = aiState.history.slice(0, 10);
+            localStorage.setItem('powerforecast_ai_history', JSON.stringify(aiState.history));
+            const badge = document.getElementById('aiHistoryBadge');
+            if (badge) badge.textContent = aiState.history.length;
+        }
+
+        function renderAiHistory() {
+            const list = document.getElementById('aiHistoryList');
+            if (!list) return;
+
+            if (aiState.history.length === 0) {
+                list.innerHTML = '<p class="text-xs t-muted italic">No past scans found.</p>';
+                return;
+            }
+
+            list.innerHTML = '';
+            aiState.history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs flex flex-col gap-1 cursor-pointer hover:border-indigo-400';
+                div.onclick = () => {
+                    renderAiResults({ analysis: item.analysis, preset: item.preset });
+                    toggleAiHistoryDrawer();
+                };
+                div.innerHTML = `
+                    <div class="flex justify-between font-bold t-primary">
+                        <span>${item.name}</span>
+                        <span class="text-[10px] t-muted">${item.timestamp}</span>
+                    </div>
+                    <span class="text-[10px] t-accent font-semibold uppercase">${item.preset}</span>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function clearAiHistory() {
+            aiState.history = [];
+            localStorage.removeItem('powerforecast_ai_history');
+            renderAiHistory();
+            const badge = document.getElementById('aiHistoryBadge');
+            if (badge) badge.textContent = '0';
+        }
+
+        function toggleSpeechSynthesis() {
+            if (!('speechSynthesis' in window)) return;
+
+            if (aiState.isSpeaking) {
+                window.speechSynthesis.cancel();
+                aiState.isSpeaking = false;
+                document.getElementById('aiTtsTxt').textContent = 'Listen';
+                return;
+            }
+
+            const text = document.getElementById('aiOutputContent')?.innerText;
+            if (!text) return;
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = () => {
+                aiState.isSpeaking = false;
+                document.getElementById('aiTtsTxt').textContent = 'Listen';
+            };
+            window.speechSynthesis.speak(utterance);
+            aiState.isSpeaking = true;
+            document.getElementById('aiTtsTxt').textContent = 'Stop';
+        }
+
+        function copySpecMarkdown() {
+            const text = document.getElementById('aiOutputContent')?.innerText;
+            if (text) {
+                navigator.clipboard.writeText(text);
+                alert("Spec sheet copied to clipboard!");
+            }
+        }
+
+        function downloadSpecReport() {
+            const text = document.getElementById('aiOutputContent')?.innerText;
+            if (!text) return;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Appliance_Spec_Sheet_${Date.now()}.txt`;
+            link.click();
+        }
+
+        // Initialize AI module health check
+        checkAiHealth();
 
         // Initialize on page load
         initRates();

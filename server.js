@@ -1,10 +1,29 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
 const PORT = process.env.PORT || 8000;
 const PROJECT_DIR = __dirname;
+
+// Simple .env parser to load environment variables if present
+const envPath = path.join(PROJECT_DIR, '.env');
+if (fs.existsSync(envPath)) {
+    try {
+        const envContent = fs.readFileSync(envPath, 'utf-8');
+        envContent.split(/\r?\n/).forEach(line => {
+            const parts = line.split('=');
+            if (parts.length >= 2 && parts[0].trim()) {
+                const key = parts[0].trim();
+                const val = parts.slice(1).join('=').trim();
+                if (!process.env[key]) process.env[key] = val;
+            }
+        });
+    } catch (e) {
+        console.warn('Could not parse .env file:', e);
+    }
+}
 
 const DEFAULT_RATES = {
     transmission: 1.4074,
@@ -128,6 +147,19 @@ const server = http.createServer((req, res) => {
     }
 
     // API Routes
+    if (pathname === '/api/health' || pathname === '/api/health.py') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        const serverHasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '');
+        res.end(JSON.stringify({
+            status: 'ok',
+            serverHasKey,
+            maxImagesSupported: 3,
+            defaultModel: 'gemini-3.6-flash',
+            supportedModels: ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-pro-preview', 'gemini-flash-latest']
+        }));
+        return;
+    }
+
     if (pathname === '/api/rates' || pathname === '/api/rates.py') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         const ratesPath = path.join(PROJECT_DIR, 'rates.json');
@@ -172,6 +204,136 @@ const server = http.createServer((req, res) => {
                 res.end(JSON.stringify(result, null, 2));
             });
         }
+        return;
+    }
+
+    if (pathname === '/api/analyze' || pathname === '/api/analyze.py') {
+        if (req.method !== 'POST') {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                let payload = {};
+                try { payload = JSON.parse(body); } catch (e) {}
+                const { images = [], imageBase64, mimeType = 'image/jpeg', prompt, preset = 'specs', customApiKey, model = 'gemini-3.6-flash' } = payload;
+
+                const apiKey = customApiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
+                if (!apiKey) {
+                    res.writeHead(401, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Missing Gemini API Key',
+                        message: 'No API key provided. Please configure GEMINI_API_KEY in server environment or enter custom key in settings.'
+                    }));
+                    return;
+                }
+
+                let imageList = [];
+                if (Array.isArray(images) && images.length > 0) {
+                    imageList = images.slice(0, 3);
+                } else if (imageBase64) {
+                    imageList = [{ imageBase64, mimeType }];
+                }
+
+                if (imageList.length === 0) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Missing Appliance Images',
+                        message: 'No image data received. Please upload at least 1 appliance photo.'
+                    }));
+                    return;
+                }
+
+                const parts = [];
+                imageList.forEach(imgObj => {
+                    const cleanBase64 = (imgObj.imageBase64 || imgObj.data || '').replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+                    const itemMime = imgObj.mimeType || 'image/jpeg';
+                    parts.push({
+                        inline_data: {
+                            mime_type: itemMime,
+                            data: cleanBase64
+                        }
+                    });
+                });
+
+                const multiNotice = imageList.length > 1
+                    ? `\n\nNOTE: The user provided ${imageList.length} multi-angle photos of this appliance. Cross-reference all ${imageList.length} images to identify exact brand, model, estimated wattage, voltage, and electrical specifications.`
+                    : '';
+
+                const systemPromptPrefix = `You are ApplianceSpec AI, an expert mechanical, electrical, and household appliance engineering AI.
+Your objective is to identify household, kitchen, commercial, or HVAC appliances from photo(s) and generate technical specifications.${multiNotice}`;
+
+                const presetInstructions = {
+                    specs: `${systemPromptPrefix}\nFormat your analysis with clear Markdown sections:\n1. **APPLIANCE IDENTIFICATION** (Appliance Name, Category, Brand & Model, Form Factor)\n2. **ESTIMATED POWER & WATTAGE** (Running Wattage, Voltage/Hz, Estimated Daily Hours, Monthly kWh, Energy Class)\n3. **TECHNICAL SPECIFICATIONS** (Capacity, Motor/Compressor tech, Control Panel)\n4. **MAINTENANCE & CARE GUIDE** (Cleaning schedule, filter replacement, error codes)\n5. **ESTIMATED MARKET PRICE**`,
+                    electrical: `${systemPromptPrefix}\nFocus strictly on Electrical & Power specs: Running vs Surge Wattage, Voltage/Amperage, Annual kWh consumption, Safety marks, Breaker requirement.`,
+                    maintenance: `${systemPromptPrefix}\nFocus strictly on Routine Cleaning, Filter replacement codes, Descaling procedures, and Error code troubleshooting.`,
+                    serial_ocr: `${systemPromptPrefix}\nPerform OCR on physical rating label/tag: Brand, Model Number, Serial Number, Electrical rating (V, Hz, W, A), Safety badges (UL, CE, etc.).`,
+                    custom: `${systemPromptPrefix}\n${prompt || 'Provide technical specs for this appliance.'}`
+                };
+
+                const finalPrompt = presetInstructions[preset] || `${systemPromptPrefix}\n${prompt || 'Provide full technical specifications.'}`;
+                parts.push({ text: finalPrompt });
+
+                const targetModel = model || 'gemini-3.6-flash';
+                const postData = JSON.stringify({ contents: [{ parts }] });
+
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+
+                const apiReq = https.request(geminiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, (apiRes) => {
+                    let resBody = '';
+                    apiRes.on('data', chunk => { resBody += chunk; });
+                    apiRes.on('end', () => {
+                        try {
+                            const parsedRes = JSON.parse(resBody);
+                            if (apiRes.statusCode >= 400 || parsedRes.error) {
+                                res.writeHead(apiRes.statusCode || 500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({
+                                    error: 'Appliance Analysis Failed',
+                                    message: parsedRes.error?.message || `Gemini API returned status ${apiRes.statusCode}`
+                                }));
+                                return;
+                            }
+
+                            const textResult = parsedRes.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: true,
+                                modelUsed: targetModel,
+                                imageCount: imageList.length,
+                                preset,
+                                analysis: textResult,
+                                timestamp: new Date().toISOString()
+                            }));
+                        } catch (err) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: 'Parse Error', message: err.message }));
+                        }
+                    });
+                });
+
+                apiReq.on('error', (err) => {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Request Failed', message: err.message }));
+                });
+
+                apiReq.write(postData);
+                apiReq.end();
+
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Server Error', message: err.message }));
+            }
+        });
         return;
     }
 

@@ -6,4 +6,6 @@ __pycache__/
 venv/
 .idea/
 *.pdf
-
+node_modules/
+package.json
+package-lock.json
