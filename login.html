@@ -7,7 +7,8 @@
     <title>PowerForecast — Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="Assets/LOGO.png">
     <script>
         (function() {
             const savedTheme = localStorage.getItem('powerforecast_theme');
@@ -27,70 +28,88 @@
         }
 
         :root {
-            --transition-speed: 0.6s;
-            --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-speed: 0.5s;
+            --transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* ===== DARK THEME (default) ===== */
         [data-theme="dark"] {
-            --bg-top: #1a1072;
-            --bg-mid: #2b2bae;
-            --bg-bottom: #5b8ef5;
-            --card-bg: rgba(20, 18, 80, 0.85);
+            --header-bg: #0b0933;
+            --header-border: rgba(255, 255, 255, 0.08);
+            --logo-power-color: #ffffff;
+            --bg-gradient: linear-gradient(180deg, #0e1258 0%, #1e278b 38%, #3152d8 100%);
+
+            --card-bg: rgba(23, 20, 61, 0.92);
             --card-border: rgba(255, 255, 255, 0.08);
-            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --input-bg: #ffffff;
-            --input-text: #333333;
-            --input-placeholder: #888888;
-            --input-border: transparent;
-            --btn-bg: #0d0d5e;
-            --btn-hover-bg: #16167a;
-            --btn-text: #ffffff;
-            --forgot-color: #ffd54f;
-            --divider-color: rgba(255, 255, 255, 0.25);
-            --or-color: #ffd54f;
-            --link-color: #ffd54f;
-            --toggle-bg: #555555;
-            --toggle-active-bg: #6c7ae0;
-            --toggle-knob: #ffffff;
-            --toggle-label-color: #ffffff;
-            --logo-text-color: #ffffff;
+            --card-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+            --card-title-color: #ffffff;
+            --card-text-primary: #ffffff;
+            --card-text-secondary: rgba(255, 255, 255, 0.85);
+
             --google-btn-bg: #ffffff;
-            --google-btn-border: transparent;
             --google-btn-text: #333333;
+            --google-btn-border: transparent;
+
+            --divider-line: rgba(255, 255, 255, 0.35);
+            --divider-text: #ffffff;
+
+            --input-bg: #ffffff;
+            --input-text: #222222;
+            --input-placeholder: #777777;
+            --input-border: transparent;
+            --input-icon-color: #555555;
+
+            --btn-bg: #04006e;
+            --btn-hover: #09038e;
+            --btn-text: #ffffff;
+
+            --checkbox-bg: #ffffff;
+            --checkbox-border: transparent;
+            --checkbox-mark: #04006e;
+
+            --link-color: #ffffff;
+            --toggle-pill-bg: #4341aa;
+            --toggle-label-color: #ffffff;
         }
 
         /* ===== LIGHT THEME ===== */
         [data-theme="light"] {
-            --bg-top: #ffffff;
-            --bg-mid: #f0f0ff;
-            --bg-bottom: #8a7fd6;
+            --header-bg: rgba(255, 255, 255, 0.92);
+            --header-border: rgba(108, 122, 224, 0.2);
+            --logo-power-color: #100b46;
+            --bg-gradient: linear-gradient(180deg, #ffffff 0%, #e6ecff 40%, #768bf7 100%);
+
             --card-bg: rgba(255, 255, 255, 0.88);
-            --card-border: rgba(108, 122, 224, 0.2);
-            --card-shadow: 0 10px 35px rgba(26, 16, 114, 0.12);
-            --text-primary: #100b46;
-            --text-secondary: #3d3e75;
+            --card-border: rgba(108, 122, 224, 0.25);
+            --card-shadow: 0 16px 40px rgba(26, 16, 114, 0.15);
+            --card-title-color: #100b46;
+            --card-text-primary: #100b46;
+            --card-text-secondary: #3d3e75;
+
+            --google-btn-bg: #ffffff;
+            --google-btn-text: #100b46;
+            --google-btn-border: rgba(108, 122, 224, 0.25);
+
+            --divider-line: rgba(108, 122, 224, 0.3);
+            --divider-text: #100b46;
+
             --input-bg: #ffffff;
-            --input-text: #1a1072;
+            --input-text: #100b46;
             --input-placeholder: #7778a8;
             --input-border: rgba(108, 122, 224, 0.25);
+            --input-icon-color: #5a5cc7;
+
             --btn-bg: #1a1072;
-            --btn-hover-bg: #2b2bae;
+            --btn-hover: #2b2bae;
             --btn-text: #ffffff;
-            --forgot-color: #5a5cc7;
-            --divider-color: rgba(108, 122, 224, 0.2);
-            --or-color: #5a5cc7;
-            --link-color: #4a49a2;
-            --toggle-bg: #ccc;
-            --toggle-active-bg: #6c7ae0;
-            --toggle-knob: #ffffff;
-            --toggle-label-color: #1a1072;
-            --logo-text-color: #1a1072;
-            --google-btn-bg: #ffffff;
-            --google-btn-border: rgba(108, 122, 224, 0.2);
-            --google-btn-text: #333333;
+
+            --checkbox-bg: #ffffff;
+            --checkbox-border: rgba(108, 122, 224, 0.35);
+            --checkbox-mark: #1a1072;
+
+            --link-color: #1a1072;
+            --toggle-pill-bg: #6c7ae0;
+            --toggle-label-color: #100b46;
         }
 
         body {
@@ -98,96 +117,84 @@
             min-height: 100vh;
             min-height: 100dvh;
             overflow-x: hidden;
-            overflow-y: auto;
-            position: relative;
+            background: var(--bg-gradient);
             transition: background var(--transition-speed) var(--transition-ease);
-        }
-
-        /* ===== Background ===== */
-        .bg-layer {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            transition: opacity var(--transition-speed) var(--transition-ease);
-        }
-
-        .bg-dark {
-            background: linear-gradient(180deg, #1a1072 0%, #2b2bae 40%, #5b8ef5 100%);
-            opacity: 1;
-        }
-
-        .bg-light {
-            background: linear-gradient(180deg, #ffffff 0%, #f5f5ff 45%, #d8d4f0 70%, #8a7fd6 100%);
-            opacity: 0;
-        }
-
-        [data-theme="light"] .bg-dark { opacity: 0; }
-        [data-theme="light"] .bg-light { opacity: 1; }
-
-        /* ===== Main Layout ===== */
-        .login-page {
-            position: relative;
-            z-index: 1;
-            min-height: 100vh;
-            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            width: 100%;
-            max-width: 1440px;
-            margin: 0 auto;
         }
 
-        /* ===== Header / Navbar ===== */
+        /* ===== Header Navbar ===== */
         .navbar {
+            width: 100%;
+            height: 70px;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--header-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: clamp(16px, 3vh, 24px) clamp(20px, 4vw, 48px);
+            padding: 0 clamp(20px, 4vw, 50px);
             position: relative;
-            z-index: 10;
-            width: 100%;
+            z-index: 30;
+            transition: background var(--transition-speed) var(--transition-ease), border-color var(--transition-speed) var(--transition-ease);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
 
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            text-decoration: none;
         }
 
         .logo-area img {
-            width: clamp(38px, 4vw, 50px);
-            height: auto;
+            height: 38px;
+            width: auto;
+            object-fit: contain;
             filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
         }
 
-        .logo-area span {
-            font-size: clamp(1.25rem, 2vw, 1.6rem);
-            font-weight: 700;
-            color: var(--logo-text-color);
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 800;
             letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            user-select: none;
+        }
+
+        .logo-text .power {
+            color: var(--logo-power-color);
             transition: color var(--transition-speed) var(--transition-ease);
         }
 
-        /* ===== Theme Toggle ===== */
-        .theme-toggle-area {
+        .logo-text .forecast {
+            color: #f7b02c;
+        }
+
+        /* Header Right: Theme Toggle */
+        .header-right {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
         .theme-label {
-            font-size: 1.05rem;
-            font-weight: 600;
             color: var(--toggle-label-color);
-            transition: color var(--transition-speed) var(--transition-ease);
+            font-weight: 700;
+            font-size: 1.05rem;
             user-select: none;
+            transition: color var(--transition-speed) var(--transition-ease);
         }
 
         .toggle-switch {
             position: relative;
-            width: 58px;
-            height: 32px;
+            width: 56px;
+            height: 28px;
             cursor: pointer;
+            display: inline-block;
         }
 
         .toggle-switch input {
@@ -199,9 +206,9 @@
         .toggle-slider {
             position: absolute;
             inset: 0;
-            background: var(--toggle-bg);
-            border-radius: 14px;
-            transition: background 0.3s ease;
+            background: var(--toggle-pill-bg);
+            border-radius: 20px;
+            transition: background 0.35s var(--transition-ease);
         }
 
         .toggle-slider::before {
@@ -209,104 +216,102 @@
             position: absolute;
             top: 3px;
             left: 3px;
-            width: 26px;
-            height: 26px;
-            background: var(--toggle-knob);
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
             border-radius: 50%;
-            transition: transform 0.3s ease;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        }
-
-        .toggle-switch input:checked + .toggle-slider {
-            background: var(--toggle-active-bg);
+            transition: transform 0.35s var(--transition-ease);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
         .toggle-switch input:checked + .toggle-slider::before {
-            transform: translateX(26px);
+            transform: translateX(28px);
         }
 
-        /* ===== Content Area ===== */
-        .content-area {
+        /* ===== Main Container Layout ===== */
+        .main-container {
             flex: 1;
             display: flex;
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 70px);
             align-items: center;
             justify-content: flex-end;
-            padding: clamp(10px, 2vh, 40px) clamp(20px, 5vw, 100px);
-            position: relative;
-            z-index: 2;
+            padding: 20px clamp(20px, 5vw, 90px);
         }
 
-        /* ===== Bulb Image (Resilient Viewport Sizing) ===== */
-        .bulb-container {
+        /* ===== Left: Bulb Container ===== */
+        .bulb-wrapper {
             position: fixed;
-            top: max(-40px, -4vh);
-            left: clamp(300px, 32vw, 520px);
+            top: 45px;
+            left: clamp(230px, 29vw, 470px);
             transform: translateX(-50%);
-            z-index: 1;
+            z-index: 10;
             pointer-events: none;
-            width: min(500px, 42vw);
-            height: min(720px, 82vh);
+            width: clamp(340px, 38vw, 560px);
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            animation: fadeIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation-delay: 0.05s;
         }
 
         .bulb-img {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            height: 100%;
-            max-height: min(680px, 78vh);
-            width: auto;
+            width: 100%;
+            height: auto;
+            max-height: min(720px, 83vh);
             object-fit: contain;
-            filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.3));
-            transition: opacity 0.5s var(--transition-ease);
+            object-position: top center;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.35));
+            transition: opacity 0.6s var(--transition-ease);
         }
 
         .bulb-off { opacity: 1; }
-        .bulb-on { opacity: 0; }
+        .bulb-on { opacity: 0; position: absolute; top: 0; left: 0; }
 
         [data-theme="light"] .bulb-off { opacity: 0; }
         [data-theme="light"] .bulb-on { opacity: 1; }
 
-        /* Glow effect for light mode */
+        /* Light Mode Glow Effect */
         .bulb-glow {
             position: absolute;
-            top: 20%;
+            top: 15%;
             left: 50%;
             transform: translateX(-50%);
-            width: min(480px, 38vw);
-            height: min(480px, 38vw);
-            max-width: 480px;
-            max-height: 480px;
+            width: 440px;
+            height: 440px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 200, 80, 0.35) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 215, 80, 0.48) 0%, rgba(255,200,50,0.18) 50%, transparent 75%);
             opacity: 0;
             transition: opacity 0.6s var(--transition-ease);
             pointer-events: none;
         }
 
-        [data-theme="light"] .bulb-glow {
-            opacity: 1;
+        [data-theme="light"] .bulb-glow { opacity: 1; }
+
+        /* ===== Right: Bento Login Card ===== */
+        .login-card-container {
+            z-index: 20;
+            width: 100%;
+            max-width: 430px;
         }
 
-        /* ===== Login Card ===== */
         .login-card {
-            width: 100%;
-            max-width: 440px;
-            min-width: 0;
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--card-border);
             border-radius: 20px;
-            padding: clamp(24px, 4vh, 46px) clamp(20px, 4vw, 42px);
-            box-shadow: var(--card-shadow), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            padding: 38px 36px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--card-text-primary);
             transition: background var(--transition-speed) var(--transition-ease),
                         border-color var(--transition-speed) var(--transition-ease),
-                        box-shadow var(--transition-speed) var(--transition-ease);
-            z-index: 5;
+                        box-shadow var(--transition-speed) var(--transition-ease),
+                        color var(--transition-speed) var(--transition-ease);
+            animation: fadeSlideUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation-delay: 0.12s;
         }
 
         /* Google Button */
@@ -314,34 +319,34 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            width: 230px;
-            margin: 0 auto 28px;
-            padding: 12px 24px;
+            gap: 12px;
+            width: 210px;
+            margin: 0 auto 24px;
+            padding: 10px 20px;
             background: var(--google-btn-bg);
             border: 1px solid var(--google-btn-border);
-            border-radius: 24px;
+            border-radius: 25px;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
             font-size: 1.05rem;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--google-btn-text);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background var(--transition-speed) var(--transition-ease), border-color var(--transition-speed) var(--transition-ease);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        background var(--transition-speed) var(--transition-ease),
+                        color var(--transition-speed) var(--transition-ease),
+                        border-color var(--transition-speed) var(--transition-ease);
         }
 
         .google-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
         }
 
-        .google-btn:active {
-            transform: translateY(0);
-        }
-
-        .google-btn img {
-            width: 20px;
-            height: 20px;
+        .google-btn svg {
+            width: 22px;
+            height: 22px;
         }
 
         /* Divider */
@@ -349,252 +354,206 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-bottom: 26px;
+            margin-bottom: 24px;
         }
 
         .divider-line {
             flex: 1;
             height: 1px;
-            background: var(--divider-color);
+            background: var(--divider-line);
+            transition: background var(--transition-speed) var(--transition-ease);
         }
 
         .divider-text {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--or-color);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--divider-text);
+            transition: color var(--transition-speed) var(--transition-ease);
         }
 
-        /* Input Groups */
+        /* Input Group Pill Style */
         .input-group {
             position: relative;
             margin-bottom: 16px;
         }
 
-        .input-group .input-icon {
+        .input-group input {
+            width: 100%;
+            height: 48px;
+            padding: 0 46px 0 48px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 25px;
+            color: var(--input-text);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        background var(--transition-speed) var(--transition-ease),
+                        color var(--transition-speed) var(--transition-ease),
+                        border-color var(--transition-speed) var(--transition-ease);
+        }
+
+        .input-group input::placeholder {
+            color: var(--input-placeholder);
+            font-weight: 400;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 0 3px rgba(108, 122, 224, 0.5), 0 2px 8px rgba(0,0,0,0.12);
+        }
+
+        .input-icon {
             position: absolute;
-            left: 16px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
             width: 20px;
             height: 20px;
-            color: #888;
+            color: var(--input-icon-color);
             pointer-events: none;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 14px 18px 14px 48px;
-            border: 1px solid var(--input-border);
-            border-radius: 10px;
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            outline: none;
-            transition: background var(--transition-speed) var(--transition-ease),
-                        border-color var(--transition-speed) var(--transition-ease),
-                        color var(--transition-speed) var(--transition-ease),
-                        box-shadow 0.2s ease;
-        }
-
-        .input-group.password-group input {
-            padding-right: 48px;
+            transition: color var(--transition-speed) var(--transition-ease);
         }
 
         .password-toggle {
             position: absolute;
-            right: 14px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             cursor: pointer;
-            padding: 4px;
+            color: var(--input-icon-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #888;
+            padding: 2px;
             transition: color 0.2s ease;
         }
 
         .password-toggle:hover {
-            color: #555;
-        }
-
-        .password-toggle svg {
-            width: 20px;
-            height: 20px;
-            border: none;
-            border-radius: 10px;
-            background: var(--input-bg);
             color: var(--input-text);
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            outline: none;
-            transition: box-shadow 0.2s ease;
         }
 
-        .input-group input::placeholder {
-            color: var(--input-placeholder);
-        }
-
-        .input-group input:focus {
-            box-shadow: 0 0 0 2px rgba(108, 122, 224, 0.5);
-        }
-
-        /* Forgot Password */
+        /* Forgot Password Link */
         .forgot-password {
             text-align: right;
-            margin-bottom: 20px;
-            margin-top: 4px;
+            margin-top: -4px;
+            margin-bottom: 16px;
         }
 
         .forgot-password a {
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--forgot-color);
+            color: var(--link-color);
+            font-size: 0.95rem;
+            font-weight: 700;
             text-decoration: none;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.2s ease, color var(--transition-speed) var(--transition-ease);
         }
 
         .forgot-password a:hover {
-            opacity: 0.8;
+            opacity: 0.85;
+            text-decoration: underline;
         }
 
-        /* Remember Me */
+        /* Remember Me Row */
         .remember-me {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 28px;
+            gap: 10px;
+            margin-bottom: 24px;
         }
 
         .remember-me input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
             width: 18px;
             height: 18px;
-            accent-color: #6c7ae0;
+            background: var(--checkbox-bg);
+            border: 1px solid var(--checkbox-border);
+            border-radius: 3px;
             cursor: pointer;
+            position: relative;
+            outline: none;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .remember-me input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid var(--checkbox-mark);
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
         }
 
         .remember-me label {
+            color: var(--card-text-primary);
             font-size: 1rem;
-            font-weight: 500;
-            color: var(--text-primary);
+            font-weight: 700;
             cursor: pointer;
             user-select: none;
+            transition: color var(--transition-speed) var(--transition-ease);
         }
 
-        /* Login Button */
+        /* Login Submit Button */
         .login-btn {
             width: 100%;
-            padding: 16px;
+            height: 48px;
             background: var(--btn-bg);
-            color: #ffffff;
+            color: var(--btn-text);
             border: none;
-            border-radius: 28px;
+            border-radius: 25px;
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .login-btn:hover {
-            background: var(--btn-hover-bg);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+            background: var(--btn-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
         }
 
         .login-btn:active {
             transform: translateY(0);
         }
 
-        /* Sign Up */
+        /* Signup Link Row */
         .signup-text {
             text-align: center;
             margin-top: 18px;
-            font-size: 0.92rem;
-            color: var(--text-secondary);
+            font-size: 0.95rem;
+            color: var(--card-text-secondary);
+            font-weight: 500;
+            transition: color var(--transition-speed) var(--transition-ease);
         }
 
         .signup-text a {
             color: var(--link-color);
+            font-weight: 700;
             text-decoration: underline;
-            font-weight: 600;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.2s ease, color var(--transition-speed) var(--transition-ease);
         }
 
         .signup-text a:hover {
-            opacity: 0.8;
+            opacity: 0.85;
         }
 
-        /* ===== Responsive & Display-Ratio Media Queries ===== */
-        @media (max-height: 750px) {
-            .navbar {
-                padding-top: 12px;
-                padding-bottom: 12px;
-            }
-            .content-area {
-                padding-bottom: 20px;
-            }
-            .google-btn {
-                margin-bottom: 18px;
-            }
-            .divider {
-                margin-bottom: 18px;
-            }
-            .input-group {
-                margin-bottom: 12px;
-            }
-            .remember-me {
-                margin-bottom: 20px;
-            }
-        }
-
-        @media (max-width: 960px) {
-            .content-area {
-                justify-content: center;
-                padding: 20px;
-            }
-
-            .bulb-container {
-                left: 50%;
-                width: min(340px, 70vw);
-                height: min(450px, 50vh);
-                opacity: 0.18;
-            }
-
-            .bulb-img {
-                max-height: 420px;
-            }
-
-            .login-card {
-                width: 100%;
-                max-width: 420px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .navbar {
-                padding: 14px 16px;
-            }
-
-            .login-card {
-                padding: 24px 18px;
-                border-radius: 16px;
-            }
-
-            .logo-area span {
-                font-size: 1.2rem;
-            }
-        }
-
-        /* ===== Entrance Animation ===== */
+        /* Animations */
         @keyframes fadeSlideUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(32px);
             }
             to {
                 opacity: 1;
@@ -607,57 +566,84 @@
             to { opacity: 1; }
         }
 
-        .login-card {
-            animation: fadeSlideUp 0.7s ease-out both;
-            animation-delay: 0.15s;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-8px); }
+            30% { transform: translateX(8px); }
+            45% { transform: translateX(-6px); }
+            60% { transform: translateX(6px); }
+            75% { transform: translateX(-3px); }
+            90% { transform: translateX(3px); }
         }
 
-        .bulb-container {
-            animation: fadeIn 0.8s ease-out both;
-            animation-delay: 0.05s;
+        /* Responsive Breakpoints */
+        @media (max-width: 960px) {
+            .main-container {
+                justify-content: center;
+                padding: 30px 20px;
+            }
+            .bulb-wrapper {
+                left: 50%;
+                opacity: 0.18;
+                max-width: 340px;
+            }
+            .login-card-container {
+                margin-left: 0;
+            }
         }
 
-        .navbar {
-            animation: fadeIn 0.6s ease-out both;
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 0 16px;
+            }
+            .logo-text {
+                font-size: 1.25rem;
+            }
+            .login-card {
+                padding: 30px 22px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Background layers for smooth transition -->
-    <div class="bg-layer bg-dark"></div>
-    <div class="bg-layer bg-light"></div>
-
-    <div class="login-page">
-        <!-- Navbar -->
-        <nav class="navbar" id="navbar">
-            <div class="logo-area">
-                <img src="Assets/LOGO.png" alt="PowerForecast Logo" id="logo-img">
-                <span>powerforecast</span>
+    <!-- Top Header Bar -->
+    <header class="navbar">
+        <a href="index.html" class="logo-area">
+            <img src="Assets/LOGO.png" alt="PowerForecast Logo">
+            <div class="logo-text">
+                <span class="power">power</span>
+                <span class="forecast">forecast</span>
             </div>
-            <div class="theme-toggle-area">
-                <span class="theme-label" id="theme-label">Dark</span>
-                <label class="toggle-switch" id="theme-toggle">
-                    <input type="checkbox" id="theme-checkbox" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-        </nav>
+        </a>
+        <div class="header-right">
+            <span class="theme-label" id="theme-label">Dark</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="theme-checkbox" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </header>
 
-        <!-- Bulb (Fixed wallpaper layer) -->
-        <div class="bulb-container">
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Light Bulb Hanging Graphic -->
+        <div class="bulb-wrapper">
             <div class="bulb-glow"></div>
             <img src="Assets/Off.png" alt="Bulb Off" class="bulb-img bulb-off" id="bulb-off">
             <img src="Assets/On.png" alt="Bulb On" class="bulb-img bulb-on" id="bulb-on">
         </div>
 
-        <!-- Content -->
-        <div class="content-area">
-
-            <!-- Login Card -->
+        <!-- Login Form Bento Card -->
+        <div class="login-card-container">
             <div class="login-card" id="login-card">
                 <!-- Google Sign In -->
                 <button class="google-btn" id="google-signin-btn" type="button">
-                    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                    <svg width="22" height="22" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
+                        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                    </svg>
                     Google
                 </button>
 
@@ -668,7 +654,7 @@
                     <div class="divider-line"></div>
                 </div>
 
-                <!-- Email -->
+                <!-- Email Input -->
                 <div class="input-group">
                     <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -677,21 +663,19 @@
                     <input type="email" id="email-input" placeholder="Email" autocomplete="email">
                 </div>
 
-                <!-- Password -->
-                <div class="input-group password-group">
+                <!-- Password Input -->
+                <div class="input-group">
                     <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                     <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
                     <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle password visibility">
-                        <!-- Eye open (visible when password is hidden) -->
-                        <svg id="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg id="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
                         </svg>
-                        <!-- Eye closed (visible when password is shown) -->
-                        <svg id="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                        <svg id="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
                             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
                             <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
                             <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
@@ -711,22 +695,22 @@
                     <label for="remember-me-checkbox">Remember me</label>
                 </div>
 
-                <!-- Login Button -->
+                <!-- Submit Button -->
                 <button class="login-btn" id="login-btn" type="button">Login</button>
 
-                <!-- Sign Up -->
+                <!-- Footer Sign Up Text -->
                 <p class="signup-text">New to the ball? <a href="signup.html" id="signup-link">Sign up!</a></p>
             </div>
         </div>
-    </div>
+    </main>
 
+    <!-- JavaScript Logic -->
     <script>
-        // Theme Toggle
+        // Theme Toggle Handler
         const themeCheckbox = document.getElementById('theme-checkbox');
         const themeLabel = document.getElementById('theme-label');
         const html = document.documentElement;
 
-        // Default to dark (checkbox checked = dark mode ON)
         function setTheme(isDark) {
             if (isDark) {
                 html.setAttribute('data-theme', 'dark');
@@ -745,49 +729,53 @@
             setTheme(themeCheckbox.checked);
         });
 
-        // Initialize from localStorage or default to dark
+        // Load Saved Theme
         const savedTheme = localStorage.getItem('powerforecast_theme');
         setTheme(savedTheme ? savedTheme === 'dark' : true);
 
-        // Test credentials
+        // Credentials & Authentication Simulation
         const TEST_EMAIL = '123@gmail.com';
         const TEST_PASSWORD = '11111111';
 
-        // Login button action
         document.getElementById('login-btn').addEventListener('click', () => {
             const email = document.getElementById('email-input').value.trim();
             const password = document.getElementById('password-input').value.trim();
             const card = document.getElementById('login-card');
 
             if (!email || !password) {
-                // Shake for empty fields
-                card.style.animation = 'none';
-                card.offsetHeight;
-                card.style.animation = 'shake 0.4s ease';
+                triggerShake(card);
                 return;
             }
 
             if (email === TEST_EMAIL && password === TEST_PASSWORD) {
-                // Success — redirect to main app
+                // Clear any previous error
+                const errEl = document.getElementById('login-error');
+                if (errEl) errEl.remove();
                 window.location.href = 'home.html';
             } else {
-                // Wrong credentials — shake + show error
-                card.style.animation = 'none';
-                card.offsetHeight;
-                card.style.animation = 'shake 0.4s ease';
-
-                let errMsg = document.getElementById('login-error');
-                if (!errMsg) {
-                    errMsg = document.createElement('p');
-                    errMsg.id = 'login-error';
-                    errMsg.style.cssText = 'color:#ff6b6b;font-size:0.85rem;text-align:center;margin-top:10px;font-weight:500;';
-                    document.getElementById('login-btn').insertAdjacentElement('afterend', errMsg);
-                }
-                errMsg.textContent = 'Invalid email or password.';
+                triggerShake(card);
+                showError('Invalid email or password.');
             }
         });
 
-        // Enter key to submit
+        function triggerShake(element) {
+            element.style.animation = 'none';
+            element.offsetHeight;
+            element.style.animation = 'shake 0.4s ease';
+        }
+
+        function showError(message) {
+            let errMsg = document.getElementById('login-error');
+            if (!errMsg) {
+                errMsg = document.createElement('p');
+                errMsg.id = 'login-error';
+                errMsg.style.cssText = 'color:#ff6b6b;font-size:0.85rem;text-align:center;margin-top:12px;font-weight:600;';
+                document.getElementById('login-btn').insertAdjacentElement('afterend', errMsg);
+            }
+            errMsg.textContent = message;
+        }
+
+        // Enter key handling
         document.getElementById('password-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 document.getElementById('login-btn').click();
@@ -800,22 +788,7 @@
             }
         });
 
-        // Add shake keyframes dynamically
-        const styleSheet = document.createElement('style');
-        styleSheet.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                15% { transform: translateX(-8px); }
-                30% { transform: translateX(8px); }
-                45% { transform: translateX(-6px); }
-                60% { transform: translateX(6px); }
-                75% { transform: translateX(-3px); }
-                90% { transform: translateX(3px); }
-            }
-        `;
-        document.head.appendChild(styleSheet);
-
-        // Password show/hide toggle
+        // Password Show/Hide Toggle
         document.getElementById('password-toggle').addEventListener('click', () => {
             const pwInput = document.getElementById('password-input');
             const eyeOpen = document.getElementById('eye-open');

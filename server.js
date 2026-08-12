@@ -121,6 +121,10 @@ const MIME_TYPES = {
     '.jpeg': 'image/jpeg',
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 };
 
@@ -337,8 +341,13 @@ Your objective is to identify household, kitchen, commercial, or HVAC appliances
         return;
     }
 
-    // Static Files
-    let filePath = path.join(PROJECT_DIR, pathname);
+    // Static Files — with path traversal protection
+    let filePath = path.resolve(path.join(PROJECT_DIR, pathname));
+    if (!filePath.startsWith(path.resolve(PROJECT_DIR))) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Forbidden' }));
+        return;
+    }
     fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
             res.writeHead(404, { 'Content-Type': 'application/json' });
