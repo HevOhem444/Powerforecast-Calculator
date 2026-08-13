@@ -369,6 +369,92 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 3px; }
+
+        /* ===== Responsive Layout ===== */
+
+        /* Mobile sidebar overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 25;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; }
+
+        /* Hamburger button for mobile */
+        .sidebar-hamburger {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: white;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sidebar-hamburger svg { width: 24px; height: 24px; }
+
+        /* Mobile: < 768px */
+        @media (max-width: 767px) {
+            .sidebar-hamburger { display: flex; }
+            .sidebar-overlay { display: block; }
+
+            /* Sidebar becomes a sliding drawer */
+            .app-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .app-sidebar.open {
+                transform: translateX(0);
+            }
+
+            /* Main content takes full width */
+            .app-main {
+                margin-left: 0 !important;
+                padding: 1rem !important;
+            }
+
+            /* Hide bulb on mobile */
+            .bulb-hanging-wrapper { display: none; }
+
+            /* Header adjustments */
+            .header-right-controls { gap: 0.5rem !important; }
+            .header-right-controls .rate-ticker-text { font-size: 0.7rem; }
+            .rate-ticker-badge { padding: 0.25rem 0.5rem !important; }
+            .rate-ticker-badge .rate-ticker-emoji { display: none; }
+            .theme-toggle-label { display: none; }
+
+            /* Settings modal full-width */
+            .pointer-events-auto.w-screen.max-w-md {
+                max-width: 100vw !important;
+            }
+        }
+
+        /* Tablet: 768px - 1024px */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .bulb-hanging-wrapper {
+                opacity: 0.3;
+            }
+        }
+
+        /* Touch targets */
+        @media (pointer: coarse) {
+            .nav-item { min-height: 44px; }
+            .btn-primary, .btn-secondary, button { min-height: 44px; }
+        }
+
+        /* Ultra-wide */
+        @media (min-width: 1441px) {
+            .app-main { max-width: calc(100vw - 16rem); }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden">
@@ -387,28 +473,37 @@
     </div>
 
     <!-- ===== STATIC TOP HEADER BAR ===== -->
-    <header class="fixed top-0 left-0 right-0 h-16 z-40 px-6 flex justify-between items-center text-white" style="background-color: var(--topbar-bg); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-        <!-- Brand Logo & Title -->
-        <a href="home.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <img src="Assets/LOGO.png" alt="PowerForecast Logo" class="h-9 w-auto drop-shadow-md">
-            <div class="flex items-baseline">
-                <span class="text-2xl font-extrabold tracking-tight text-white">power</span>
-                <span class="text-2xl font-extrabold tracking-tight text-amber-400">forecast</span>
-            </div>
-        </a>
+    <header class="fixed top-0 left-0 right-0 h-16 z-40 px-4 sm:px-6 flex justify-between items-center text-white" style="background-color: var(--topbar-bg); border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+        <!-- Left: Hamburger + Brand -->
+        <div class="flex items-center gap-2">
+            <!-- Mobile Hamburger -->
+            <button class="sidebar-hamburger" id="sidebar-toggle-btn" aria-label="Open sidebar navigation">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </button>
+            <!-- Brand Logo & Title -->
+            <a href="home.html" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <img src="Assets/LOGO.png" alt="PowerForecast Logo" class="h-9 w-auto drop-shadow-md">
+                <div class="flex items-baseline">
+                    <span class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">power</span>
+                    <span class="text-xl sm:text-2xl font-extrabold tracking-tight text-amber-400">forecast</span>
+                </div>
+            </a>
+        </div>
 
-        <!-- Right Clock, Rate Ticker & Theme Controls -->
-        <div class="flex items-center gap-6">
+        <!-- Right Clock, Rate Ticker & Theme Controls (Hidden on Mobile < 768px) -->
+        <div class="hidden md:flex items-center gap-3 sm:gap-6 header-right-controls">
             <!-- Clock & Date Widget -->
-            <div class="hidden md:flex flex-col items-end text-right">
+            <div class="flex flex-col items-end text-right">
                 <span id="headerClock" class="text-base font-bold tracking-wide text-white">12:04 AM</span>
                 <span id="headerDate" class="text-[11px] text-slate-300 font-medium">Thursday, August 13, 2026 (GMT+8)</span>
             </div>
 
-            <!-- Rate Ticker Badge (Matches Fetched Meralco Base Gen Rate) -->
-            <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-950/80 border border-blue-800/80 text-white shadow-inner">
-                <span class="text-base">💵</span>
-                <span class="text-sm font-bold" id="headerRateTicker">₱9.2504/kWh</span>
+            <!-- Rate Ticker Badge -->
+            <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-950/80 border border-blue-800/80 text-white shadow-inner rate-ticker-badge">
+                <span class="text-base rate-ticker-emoji">💵</span>
+                <span class="text-sm font-bold rate-ticker-text headerRateTicker" id="headerRateTicker">₱9.2504/kWh</span>
                 <button onclick="fetchRates()" class="ml-1 text-slate-300 hover:text-amber-400 transition-colors" title="Refresh Rates">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -418,9 +513,9 @@
 
             <!-- Dark/Light Mode Toggle -->
             <div class="flex items-center gap-2.5">
-                <span class="text-sm font-semibold text-white" id="theme-label">Dark</span>
+                <span class="text-sm font-semibold text-white theme-label" id="theme-label">Dark</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="theme-checkbox" checked>
+                    <input type="checkbox" class="theme-checkbox" id="theme-checkbox" checked>
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -430,38 +525,77 @@
     <!-- ===== MAIN APPLICATION BODY (WITH STATIC SIDEBAR & SCROLLING CONTENT) ===== -->
     <div class="flex pt-16 min-h-screen">
 
-        <!-- ===== STATIC LEFT NAVIGATION SIDEBAR ===== -->
-        <aside class="fixed top-16 left-0 bottom-0 w-64 z-30 flex flex-col justify-between p-4 text-white" style="background-color: var(--sidebar-bg); border-right: 1px solid rgba(255, 255, 255, 0.08);">
-            <!-- Navigation Items -->
-            <nav class="flex flex-col gap-2 pt-4">
-                <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item">
-                    <span class="text-xl">📊</span>
-                    <span>Dashboard</span>
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- ===== LEFT NAVIGATION SIDEBAR ===== -->
+        <aside class="app-sidebar fixed top-16 left-0 bottom-0 w-64 z-30 flex flex-col justify-between p-4 text-white overflow-y-auto" style="background-color: var(--sidebar-bg); border-right: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="flex flex-col gap-4">
+                <!-- Mobile Only: Generation Rate & Theme Controls inside Hamburger Side Panel -->
+                <div class="md:hidden flex flex-col gap-2.5 pt-2 pb-3 border-b border-slate-800/80">
+                    <!-- Rate Ticker Badge (Mobile Side Panel) -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-blue-950/90 border border-blue-800/80 text-white shadow-inner">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-lg">💵</span>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Generation Rate</span>
+                                <span class="text-sm font-extrabold text-amber-400 headerRateTicker">₱9.2504/kWh</span>
+                            </div>
+                        </div>
+                        <button onclick="fetchRates()" class="p-1.5 rounded-lg bg-blue-900/50 text-slate-300 hover:text-amber-400 transition-colors" title="Refresh Rates">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Dark/Light Theme Toggle (Mobile Side Panel) -->
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 text-white">
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">🌙</span>
+                            <span class="text-xs font-semibold text-slate-200">Theme Mode</span>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xs font-semibold text-white theme-label">Dark</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="theme-checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <div onclick="switchView('calculator')" id="nav-calculator" class="nav-item active">
-                    <span class="text-xl">⚡</span>
-                    <span>Calculator</span>
-                </div>
-                <div onclick="switchView('appliances')" id="nav-appliances" class="nav-item">
-                    <span class="text-xl">🔌</span>
-                    <span>Appliances</span>
-                </div>
-                <div onclick="switchView('calendar')" id="nav-calendar" class="nav-item">
-                    <span class="text-xl">📅</span>
-                    <span>Calendar</span>
-                </div>
-                <div onclick="switchView('analytics')" id="nav-analytics" class="nav-item">
-                    <span class="text-xl">📈</span>
-                    <span>Analytics</span>
-                </div>
-                <div onclick="switchView('forecasting')" id="nav-forecasting" class="nav-item">
-                    <span class="text-xl">🔮</span>
-                    <span>Forecasting</span>
-                </div>
-            </nav>
+
+                <!-- Navigation Items -->
+                <nav class="flex flex-col gap-2 pt-2">
+                    <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item">
+                        <span class="text-xl">📊</span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div onclick="switchView('calculator')" id="nav-calculator" class="nav-item active">
+                        <span class="text-xl">⚡</span>
+                        <span>Calculator</span>
+                    </div>
+                    <div onclick="switchView('appliances')" id="nav-appliances" class="nav-item">
+                        <span class="text-xl">🔌</span>
+                        <span>Appliances</span>
+                    </div>
+                    <div onclick="switchView('calendar')" id="nav-calendar" class="nav-item">
+                        <span class="text-xl">📅</span>
+                        <span>Calendar</span>
+                    </div>
+                    <div onclick="switchView('analytics')" id="nav-analytics" class="nav-item">
+                        <span class="text-xl">📈</span>
+                        <span>Analytics</span>
+                    </div>
+                    <div onclick="switchView('forecasting')" id="nav-forecasting" class="nav-item">
+                        <span class="text-xl">🔮</span>
+                        <span>Forecasting</span>
+                    </div>
+                </nav>
+            </div>
 
             <!-- Sidebar Footer Actions -->
-            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between px-2">
+            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between px-2 mt-4">
                 <a href="login.html" class="p-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition-all flex items-center gap-2" title="Sign Out">
                     <span class="text-2xl">🚪</span>
                 </a>
@@ -472,7 +606,7 @@
         </aside>
 
         <!-- ===== MAIN CONTENT AREA (SCROLLABLE) ===== -->
-        <main class="ml-64 flex-1 p-6 md:p-8 min-h-[calc(100vh-4rem)] relative z-20">
+        <main class="app-main ml-64 flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-4rem)] relative z-20">
 
             <!-- PANEL 1: DASHBOARD VIEW (BLANK) -->
             <section id="view-dashboard" class="view-panel hidden flex-col gap-6 min-h-[400px]">
@@ -1380,20 +1514,21 @@
         updateClock();
 
         // ===== Theme & Light Bulb Switcher =====
-        const themeCheckbox = document.getElementById('theme-checkbox');
-        const themeLabel = document.getElementById('theme-label');
         const htmlEl = document.documentElement;
 
         function setTheme(isDark) {
+            const themeCheckboxes = document.querySelectorAll('.theme-checkbox, #theme-checkbox');
+            const themeLabels = document.querySelectorAll('.theme-label, #theme-label');
+
             if (isDark) {
                 htmlEl.setAttribute('data-theme', 'dark');
-                if (themeLabel) themeLabel.textContent = 'Dark';
-                if (themeCheckbox) themeCheckbox.checked = true;
+                themeLabels.forEach(el => el.textContent = 'Dark');
+                themeCheckboxes.forEach(cb => cb.checked = true);
                 localStorage.setItem('powerforecast_theme', 'dark');
             } else {
                 htmlEl.setAttribute('data-theme', 'light');
-                if (themeLabel) themeLabel.textContent = 'Light';
-                if (themeCheckbox) themeCheckbox.checked = false;
+                themeLabels.forEach(el => el.textContent = 'Light');
+                themeCheckboxes.forEach(cb => cb.checked = false);
                 localStorage.setItem('powerforecast_theme', 'light');
             }
         }
@@ -1403,11 +1538,11 @@
             setTheme(currentTheme !== 'dark');
         }
 
-        if (themeCheckbox) {
-            themeCheckbox.addEventListener('change', () => {
-                setTheme(themeCheckbox.checked);
+        document.querySelectorAll('.theme-checkbox, #theme-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                setTheme(e.target.checked);
             });
-        }
+        });
 
         const savedTheme = localStorage.getItem('powerforecast_theme');
         setTheme(savedTheme ? savedTheme === 'dark' : true);
@@ -1567,11 +1702,10 @@
             if (genInput) genInput.value = targetRate.toFixed(4);
             if (helperText) helperText.textContent = labelText;
 
-            // Sync top header rate badge with fetched Base Gen Rate
-            const headerTicker = document.getElementById('headerRateTicker');
-            if (headerTicker) {
-                headerTicker.textContent = `₱${targetRate.toFixed(4)}/kWh`;
-            }
+            // Sync top header and mobile side panel rate badges with fetched Base Gen Rate
+            document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
+                el.textContent = `₱${targetRate.toFixed(4)}/kWh`;
+            });
         }
 
         function syncKwhInput(value) {
@@ -1607,11 +1741,10 @@
             const kwh = parseFloat(kwhInput.value) || 0;
             const otherCharges = parseFloat(otherInput.value) || 0;
 
-            // Always sync top header rate badge to current Base Generation Charge
-            const headerTicker = document.getElementById('headerRateTicker');
-            if (headerTicker) {
-                headerTicker.textContent = `₱${genRate.toFixed(4)}/kWh`;
-            }
+            // Always sync top header and mobile side panel rate badges to current Base Generation Charge
+            document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
+                el.textContent = `₱${genRate.toFixed(4)}/kWh`;
+            });
 
             const genCost = Math.round(kwh * genRate * 100) / 100;
             const transCost = Math.round(kwh * activeRates.transmission * 100) / 100;
@@ -2504,6 +2637,38 @@
 
         // Initialize AI module health check
         checkAiHealth();
+
+        /* ===== Mobile Sidebar Toggle ===== */
+        function openSidebar() {
+            const sidebar = document.querySelector('.app-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.add('open');
+            overlay.style.display = 'block';
+            requestAnimationFrame(() => overlay.classList.add('active'));
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSidebar() {
+            const sidebar = document.querySelector('.app-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            setTimeout(() => { overlay.style.display = 'none'; document.body.style.overflow = ''; }, 350);
+        }
+
+        // Wire up sidebar toggle and close on nav item click (mobile)
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar on nav item click for mobile
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 768) closeSidebar();
+                });
+            });
+        });
 
         // Initialize on page load
         initRates();

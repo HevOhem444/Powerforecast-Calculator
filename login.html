@@ -295,6 +295,7 @@
             z-index: 20;
             width: 100%;
             max-width: 430px;
+            box-sizing: border-box;
         }
 
         .login-card {
@@ -601,6 +602,46 @@
             }
             .login-card {
                 padding: 30px 22px;
+            }
+        }
+
+        /* Extra-small phones */
+        @media (max-width: 360px) {
+            .login-card {
+                padding: 24px 16px;
+            }
+            .login-card-container {
+                max-width: 100%;
+            }
+            .google-btn {
+                width: 100%;
+            }
+            .main-container {
+                padding: 20px 12px;
+            }
+        }
+
+        /* Mid-tablet (768px-960px) refinement */
+        @media (min-width: 768px) and (max-width: 960px) {
+            .bulb-wrapper {
+                opacity: 0.12;
+            }
+        }
+
+        /* Ultra-wide screens */
+        @media (min-width: 1441px) {
+            .main-container {
+                max-width: 1600px;
+            }
+        }
+
+        /* Touch targets for touch devices */
+        @media (pointer: coarse) {
+            .input-group input {
+                min-height: 48px;
+            }
+            .login-btn, .google-btn {
+                min-height: 48px;
             }
         }
     </style>

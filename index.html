@@ -252,6 +252,145 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 4px; }
+
+        /* ===== Responsive: Fluid Typography ===== */
+        .hero-heading { font-size: clamp(1.875rem, 4vw + 0.5rem, 3.75rem); }
+        .section-heading { font-size: clamp(1.5rem, 3vw + 0.25rem, 2.25rem); }
+
+        /* ===== Mobile Hamburger Menu ===== */
+        .hamburger-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hamburger-btn svg { width: 24px; height: 24px; }
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 55;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .mobile-menu-overlay.active { opacity: 1; }
+
+        .mobile-menu-drawer {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: min(320px, 85vw);
+            height: 100%;
+            z-index: 60;
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid var(--card-border);
+            flex-direction: column;
+            padding: 0;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        .mobile-menu-drawer.active { transform: translateX(0); }
+
+        .mobile-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .mobile-menu-close {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: var(--text-primary);
+            border-radius: 0.75rem;
+        }
+        .mobile-menu-close:hover { background: rgba(108, 122, 224, 0.1); }
+        .mobile-menu-close svg { width: 24px; height: 24px; }
+
+        .mobile-menu-links {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 0.25rem;
+        }
+        .mobile-menu-links a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            min-height: 44px;
+        }
+        .mobile-menu-links a:hover {
+            background: rgba(108, 122, 224, 0.1);
+            color: var(--accent-text);
+        }
+
+        .mobile-menu-actions {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: auto;
+        }
+
+        /* ===== Responsive Breakpoints ===== */
+
+        /* Mobile: < 480px */
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr !important; text-align: center; }
+            .hero-cta-wrap { flex-direction: column; align-items: stretch; }
+            .hero-cta-wrap a { justify-content: center; width: 100%; }
+        }
+
+        /* Mobile & Tablet: < 768px — Show hamburger */
+        @media (max-width: 767px) {
+            .hamburger-btn { display: flex; }
+            .mobile-menu-overlay,
+            .mobile-menu-drawer { display: block; }
+            .mobile-menu-drawer { display: flex; }
+            .desktop-header-actions .login-btn-desktop { display: none !important; }
+        }
+
+        /* Touch targets for touch devices */
+        @media (pointer: coarse) {
+            .btn-primary, .btn-gold, .btn-secondary,
+            a[class*="btn-"], button {
+                min-height: 44px;
+            }
+        }
+
+        /* Ultra-wide: > 1440px */
+        @media (min-width: 1441px) {
+            .max-w-7xl { max-width: 90rem; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative">
@@ -278,7 +417,7 @@
                 </a>
 
                 <!-- Desktop Nav Links -->
-                <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+                <nav class="hidden md:flex items-center gap-8 text-sm font-medium" id="desktop-nav">
                     <a href="#features" class="t-secondary hover:t-accent transition-colors">Core Modules</a>
                     <a href="#demo" class="t-secondary hover:t-accent transition-colors">Live Estimator</a>
                     <a href="#impact" class="t-secondary hover:t-accent transition-colors">System Impact</a>
@@ -292,7 +431,7 @@
                 </nav>
 
                 <!-- Actions & Theme Toggle -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 desktop-header-actions">
                     <!-- Theme Toggle -->
                     <div class="flex items-center gap-2 mr-2">
                         <span class="text-xs font-semibold hidden sm:inline" id="theme-label" style="color: var(--toggle-label-color);">Dark</span>
@@ -302,18 +441,69 @@
                         </label>
                     </div>
 
-                    <a href="login.html" class="px-4 py-2 rounded-xl text-sm font-semibold btn-secondary hidden sm:inline-flex items-center gap-2">
+                    <a href="login.html" class="login-btn-desktop px-4 py-2 rounded-xl text-sm font-semibold btn-secondary hidden sm:inline-flex items-center gap-2">
                         Log In
                     </a>
-                    <a href="home.html" class="px-5 py-2.5 rounded-xl text-sm font-bold btn-gold flex items-center gap-2">
+                    <a href="home.html" class="hidden sm:flex px-5 py-2.5 rounded-xl text-sm font-bold btn-gold items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                         Launch App
                     </a>
+
+                    <!-- Mobile Hamburger Button -->
+                    <button class="hamburger-btn" id="mobile-menu-btn" aria-label="Open navigation menu">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+        <!-- Mobile Menu Drawer -->
+        <nav class="mobile-menu-drawer" id="mobile-menu-drawer" aria-label="Mobile navigation">
+            <div class="mobile-menu-header">
+                <a href="index.html" class="flex items-center gap-2">
+                    <img src="Assets/LOGO.png" alt="PowerForecast Logo" class="w-8 h-auto">
+                    <div class="flex items-center gap-1">
+                        <span class="text-lg font-extrabold tracking-tight t-primary">power</span>
+                        <span class="text-lg font-extrabold tracking-tight text-gold">forecast</span>
+                    </div>
+                </a>
+                <button class="mobile-menu-close" id="mobile-menu-close" aria-label="Close navigation menu">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mobile-menu-links">
+                <a href="#features" onclick="closeMobileMenu()">Core Modules</a>
+                <a href="#demo" onclick="closeMobileMenu()">Live Estimator</a>
+                <a href="#impact" onclick="closeMobileMenu()">System Impact</a>
+                <a href="#quality" onclick="closeMobileMenu()">Software Metrics</a>
+                <a href="docs.html">
+                    <svg class="w-4 h-4 text-pf-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    API Docs
+                </a>
+            </div>
+            <div class="mobile-menu-actions">
+                <a href="login.html" class="px-4 py-2.5 rounded-xl text-sm font-semibold btn-secondary flex items-center justify-center gap-2">
+                    Log In
+                </a>
+                <a href="home.html" class="px-5 py-2.5 rounded-xl text-sm font-bold btn-gold flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Launch App
+                </a>
+            </div>
+        </nav>
 
         <!-- Hero Section -->
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 lg:pt-20 lg:pb-24 flex flex-col lg:flex-row items-center gap-12">
@@ -324,7 +514,7 @@
                     PowerForecast v1.0 • Smart Meralco Bill Forecasting
                 </div>
                 
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight t-primary">
+                <h1 class="font-black tracking-tight leading-tight t-primary hero-heading">
                     Household Energy <br class="hidden sm:inline">
                     <span class="bg-gradient-to-r from-pf-400 via-indigo-400 to-amber-300 bg-clip-text text-transparent">Intelligence & Forecasting</span>
                 </h1>
@@ -333,7 +523,7 @@
                     Identify household appliances, compute kilowatt-hour consumption, track live Meralco electricity rates, predict upcoming utility bills, and unlock actionable energy-saving recommendations.
                 </p>
 
-                <div class="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
+                <div class="mt-8 flex flex-wrap justify-center lg:justify-start gap-4 hero-cta-wrap">
                     <a href="home.html" class="px-7 py-3.5 rounded-2xl text-base font-bold btn-gold flex items-center gap-2.5 shadow-lg">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -349,7 +539,7 @@
                 </div>
 
                 <!-- Stats summary bar -->
-                <div class="mt-12 grid grid-cols-3 gap-6 pt-8 border-t border-slate-700/30 w-full max-w-lg">
+                <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-slate-700/30 w-full max-w-lg stats-grid">
                     <div>
                         <div class="text-2xl sm:text-3xl font-extrabold t-primary">7</div>
                         <div class="text-xs font-medium t-muted uppercase tracking-wider mt-1">Core System Modules</div>
@@ -445,7 +635,7 @@
                     <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider module-badge inline-block mb-3">
                         Interactive Feature
                     </span>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold t-primary">Quick Household Appliance Cost Estimator</h2>
+                    <h2 class="font-extrabold t-primary section-heading">Quick Household Appliance Cost Estimator</h2>
                     <p class="mt-2 text-sm sm:text-base t-secondary">Pick an appliance and daily usage duration to instantly simulate monthly electricity costs.</p>
                 </div>
 
@@ -518,7 +708,7 @@
                 <span class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider module-badge inline-block mb-3">
                     System Architecture & Capabilities
                 </span>
-                <h2 class="text-3xl sm:text-4xl font-black t-primary tracking-tight">
+                <h2 class="font-black t-primary tracking-tight section-heading">
                     7 Integrated Modules for Total Power Mastery
                 </h2>
                 <p class="mt-4 text-base t-secondary">
@@ -712,7 +902,7 @@
                     <span class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider module-badge inline-block mb-3">
                         Software Quality Verification
                     </span>
-                    <h2 class="text-2xl sm:text-3xl font-black t-primary">Engineered to Standard Software Quality Metrics</h2>
+                    <h2 class="font-black t-primary section-heading">Engineered to Standard Software Quality Metrics</h2>
                     <p class="mt-2 text-sm t-secondary">Evaluated according to ISO software quality frameworks to ensure superior performance and user trust.</p>
                 </div>
 
@@ -755,7 +945,7 @@
                 <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl mb-6">
                     ⚡
                 </div>
-                <h2 class="text-3xl sm:text-4xl font-black t-primary max-w-2xl">
+                <h2 class="font-black t-primary max-w-2xl section-heading">
                     Ready to Take Control of Your Electricity Bills?
                 </h2>
                 <p class="mt-4 text-base t-secondary max-w-xl">
@@ -839,9 +1029,40 @@
             document.getElementById('estimator-cost').textContent = '₱' + monthlyCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        /* === Mobile Menu Toggle === */
+        function openMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const drawer = document.getElementById('mobile-menu-drawer');
+            overlay.style.display = 'block';
+            drawer.style.display = 'flex';
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+            });
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const drawer = document.getElementById('mobile-menu-drawer');
+            overlay.classList.remove('active');
+            drawer.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                drawer.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 350);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             syncThemeToggle();
             calculateEstimator();
+
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const menuClose = document.getElementById('mobile-menu-close');
+            const menuOverlay = document.getElementById('mobile-menu-overlay');
+            if (menuBtn) menuBtn.addEventListener('click', openMobileMenu);
+            if (menuClose) menuClose.addEventListener('click', closeMobileMenu);
+            if (menuOverlay) menuOverlay.addEventListener('click', closeMobileMenu);
         });
     </script>
 </body>

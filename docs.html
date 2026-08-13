@@ -50,6 +50,67 @@
                 padding-bottom: 1rem;
             }
         }
+
+        /* ===== Responsive Breakpoints ===== */
+
+        /* Mobile: < 640px */
+        @media (max-width: 639px) {
+            /* Header wraps on mobile */
+            .docs-header {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+
+            /* Sidebar becomes horizontal scrollable nav */
+            .docs-sidebar .glass {
+                position: static;
+                flex-direction: row;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                white-space: nowrap;
+            }
+            .docs-sidebar .glass > span {
+                display: none;
+            }
+            .docs-sidebar .glass > a {
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+
+            /* Code blocks prevent overflow */
+            pre {
+                max-width: calc(100vw - 2rem);
+                overflow-x: auto;
+                font-size: 0.7rem;
+            }
+
+            /* Base URL display wraps */
+            .base-url-display {
+                flex-wrap: wrap;
+                word-break: break-all;
+            }
+        }
+
+        /* Tablet: 640-1024px */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            pre {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Touch targets */
+        @media (pointer: coarse) {
+            .docs-sidebar a {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+            button {
+                min-height: 44px;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen min-h-dvh flex flex-col justify-between selection:bg-meralco-500 selection:text-white">
@@ -57,7 +118,7 @@
     <!-- Ambient Glow Background -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[350px] bg-gradient-to-b from-meralco-500/10 to-transparent blur-[120px] pointer-events-none -z-10"></div>
 
-    <header class="max-w-6xl mx-auto w-full px-4 pt-8 pb-4 flex justify-between items-center border-b border-slate-900/80">
+    <header class="docs-header max-w-6xl mx-auto w-full px-4 pt-8 pb-4 flex justify-between items-center border-b border-slate-900/80">
         <div class="flex items-center gap-3">
             <a href="home.html" class="p-2.5 bg-meralco-500/10 rounded-xl border border-meralco-500/30 text-meralco-500 hover:bg-meralco-500/20 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
@@ -82,7 +143,7 @@
     <main class="max-w-6xl mx-auto w-full px-4 py-8 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <!-- Navigation Sidebar -->
-        <aside class="lg:col-span-3 flex flex-col gap-2">
+        <aside class="docs-sidebar lg:col-span-3 flex flex-col gap-2">
             <div class="glass p-4 rounded-2xl sticky top-8 flex flex-col gap-1 text-sm font-medium">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider px-3 py-1">API Endpoints</span>
                 <a href="#endpoint-rates" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all flex items-center justify-between">
@@ -112,7 +173,7 @@
                 <p class="text-sm text-slate-400 leading-relaxed">
                     The PowerForecast API allows developers to fetch parsed Meralco rate schedules, query common household appliance wattage metrics, and perform precise, itemized bill calculations. Hosted on Vercel Serverless Functions with CORS enabled.
                 </p>
-                <div class="flex items-center gap-2 mt-2 bg-slate-900/90 border border-slate-800 px-4 py-2.5 rounded-xl text-xs font-mono text-slate-300">
+                <div class="flex items-center gap-2 mt-2 bg-slate-900/90 border border-slate-800 px-4 py-2.5 rounded-xl text-xs font-mono text-slate-300 base-url-display">
                     <span class="text-slate-500">Base URL:</span>
                     <span id="baseUrlDisplay" class="text-meralco-500 font-semibold">https://powerforecast-api.vercel.app</span>
                 </div>
