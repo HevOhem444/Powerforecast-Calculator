@@ -1,25 +1,53 @@
 <!DOCTYPE html>
-<html lang="en" class="dark h-full">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PowerForecast API Documentation & Playground</title>
+    <meta name="description" content="PowerForecast API Documentation & Playground — Public Meralco Electricity Rates & Calculation Endpoints.">
+    <title>PowerForecast — API Documentation & Playground</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Outfit) -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('powerforecast_theme');
+            if (savedTheme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        meralco: {
-                            500: '#fc8803',
-                            600: '#ea580c',
+                        pf: {
+                            50: '#eef0ff',
+                            100: '#dfe3ff',
+                            200: '#c5caff',
+                            300: '#a2a5ff',
+                            400: '#8183fc',
+                            500: '#6c7ae0',
+                            600: '#5a5cc7',
+                            700: '#4a49a2',
+                            800: '#1a1072',
+                            900: '#0d0d5e',
+                            950: '#090940',
+                        },
+                        accent: {
+                            400: '#ffd54f',
+                            500: '#ffc107',
                         }
                     }
                 }
@@ -27,214 +55,559 @@
         }
     </script>
     <style>
-        .glass {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        :root {
+            --transition-speed: 0.4s;
+            --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Multi-resolution & Display-Ratio Resilience */
-        @media (min-width: 1920px) {
-            .max-w-6xl {
-                max-width: 84rem; /* Expand on 2K, 4K, and 21:9 ultrawide screens */
-            }
-        }
-        @media (max-height: 750px) {
-            header {
-                padding-top: 1rem;
-                padding-bottom: 0.5rem;
-            }
-            main {
-                padding-top: 1rem;
-                padding-bottom: 1rem;
-            }
-        }
-
-        /* ===== Responsive Breakpoints ===== */
-
-        /* Mobile: < 640px */
-        @media (max-width: 639px) {
-            /* Header wraps on mobile */
-            .docs-header {
-                flex-wrap: wrap;
-                gap: 0.75rem;
-            }
-
-            /* Sidebar becomes horizontal scrollable nav */
-            .docs-sidebar .glass {
-                position: static;
-                flex-direction: row;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                gap: 0.5rem;
-                padding: 0.75rem;
-                white-space: nowrap;
-            }
-            .docs-sidebar .glass > span {
-                display: none;
-            }
-            .docs-sidebar .glass > a {
-                flex-shrink: 0;
-                white-space: nowrap;
-            }
-
-            /* Code blocks prevent overflow */
-            pre {
-                max-width: calc(100vw - 2rem);
-                overflow-x: auto;
-                font-size: 0.7rem;
-            }
-
-            /* Base URL display wraps */
-            .base-url-display {
-                flex-wrap: wrap;
-                word-break: break-all;
-            }
+        /* ===== Theme Variables ===== */
+        [data-theme="dark"] {
+            --page-bg: #090938;
+            --topbar-bg: rgba(7, 7, 46, 0.85);
+            --card-bg: rgba(15, 14, 58, 0.75);
+            --card-border: rgba(108, 122, 224, 0.18);
+            --card-glow-bg: rgba(20, 18, 80, 0.9);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --input-bg: rgba(15, 15, 60, 0.85);
+            --input-bg-solid: #0d0a33;
+            --input-border: rgba(108, 122, 224, 0.25);
+            --input-focus: #6c7ae0;
+            --accent: #6c7ae0;
+            --accent-text: #a2a5ff;
+            --accent-glow: rgba(108, 122, 224, 0.15);
+            --highlight: #ffd54f;
+            --divider: rgba(108, 122, 224, 0.12);
+            --toggle-label-color: #ffffff;
+            --overlay-bg: rgba(5, 5, 30, 0.92);
+            --code-bg: #070624;
+            --code-border: rgba(108, 122, 224, 0.2);
+            --badge-bg: rgba(108, 122, 224, 0.15);
+            --badge-border: rgba(108, 122, 224, 0.3);
         }
 
-        /* Tablet: 640-1024px */
-        @media (min-width: 640px) and (max-width: 1023px) {
-            pre {
-                font-size: 0.75rem;
-            }
+        [data-theme="light"] {
+            --page-bg: #f4f5fc;
+            --topbar-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --card-border: rgba(108, 122, 224, 0.22);
+            --card-glow-bg: rgba(255, 255, 255, 0.96);
+            --text-primary: #100b46;
+            --text-secondary: #3d3e75;
+            --text-muted: #696b9e;
+            --input-bg: #ffffff;
+            --input-bg-solid: #ffffff;
+            --input-border: rgba(108, 122, 224, 0.28);
+            --input-focus: #5a5cc7;
+            --accent: #5a5cc7;
+            --accent-text: #3b3a8c;
+            --accent-glow: rgba(108, 122, 224, 0.12);
+            --highlight: #d97706;
+            --divider: rgba(108, 122, 224, 0.15);
+            --toggle-label-color: #1a1072;
+            --overlay-bg: rgba(255, 255, 255, 0.95);
+            --code-bg: #131448;
+            --code-border: rgba(108, 122, 224, 0.3);
+            --badge-bg: rgba(90, 92, 199, 0.1);
+            --badge-border: rgba(90, 92, 199, 0.25);
         }
 
-        /* Touch targets */
-        @media (pointer: coarse) {
-            .docs-sidebar a {
-                min-height: 44px;
-                display: flex;
-                align-items: center;
-            }
-            button {
-                min-height: 44px;
-            }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+            transition: background-color var(--transition-speed) var(--transition-ease),
+                        color var(--transition-speed) var(--transition-ease);
         }
+
+        /* ===== Ambient Background Layers ===== */
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) var(--transition-ease);
+        }
+        .bg-dark-layer {
+            background: 
+                radial-gradient(circle at 20% 15%, rgba(108, 122, 224, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 80% 60%, rgba(255, 213, 79, 0.08) 0%, transparent 40%),
+                linear-gradient(160deg, #090938 0%, #0d0d5e 50%, #04041d 100%);
+            opacity: 1;
+        }
+        .bg-light-layer {
+            background: 
+                radial-gradient(circle at 20% 15%, rgba(108, 122, 224, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 193, 7, 0.10) 0%, transparent 45%),
+                linear-gradient(160deg, #f4f5fc 0%, #eae8ff 50%, #e3e4f8 100%);
+            opacity: 0;
+        }
+        [data-theme="light"] .bg-dark-layer { opacity: 0; }
+        [data-theme="light"] .bg-light-layer { opacity: 1; }
+
+        /* ===== Glassmorphism Cards ===== */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            transition: background var(--transition-speed) var(--transition-ease),
+                        border-color var(--transition-speed) var(--transition-ease),
+                        box-shadow 0.3s ease;
+        }
+
+        .glow-card {
+            background: var(--card-glow-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 0 30px -8px rgba(108, 122, 224, 0.25);
+            transition: background var(--transition-speed) var(--transition-ease),
+                        border-color var(--transition-speed) var(--transition-ease),
+                        box-shadow var(--transition-speed) var(--transition-ease);
+        }
+
+        [data-theme="light"] .glow-card {
+            box-shadow: 0 4px 24px -4px rgba(108, 122, 224, 0.15);
+        }
+
+        /* Typography */
+        .t-primary { color: var(--text-primary); transition: color var(--transition-speed) var(--transition-ease); }
+        .t-secondary { color: var(--text-secondary); transition: color var(--transition-speed) var(--transition-ease); }
+        .t-muted { color: var(--text-muted); transition: color var(--transition-speed) var(--transition-ease); }
+        .t-accent { color: var(--accent-text); transition: color var(--transition-speed) var(--transition-ease); }
+        .text-gold { color: var(--highlight); }
+
+        /* Inputs */
+        .pf-input {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        .pf-input:focus {
+            border-color: var(--input-focus);
+            box-shadow: 0 0 0 3px rgba(108, 122, 224, 0.25);
+            outline: none;
+        }
+        .pf-input::placeholder { color: var(--text-muted); }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #6c7ae0 0%, #4a49a2 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(108, 122, 224, 0.35);
+            transition: all 0.25s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(108, 122, 224, 0.5);
+            filter: brightness(1.08);
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent-text);
+            transform: translateY(-1px);
+        }
+
+        /* Toggle switch */
+        .toggle-switch { position: relative; width: 52px; height: 28px; cursor: pointer; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; inset: 0;
+            background: rgba(108, 122, 224, 0.25);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            transition: background 0.3s ease;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute; top: 3px; left: 3px;
+            width: 20px; height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #6c7ae0; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(24px); }
+
+        /* Sidebar Nav Link */
+        .doc-nav-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.85rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .doc-nav-link:hover {
+            background: rgba(108, 122, 224, 0.12);
+            color: var(--text-primary);
+            border-color: rgba(108, 122, 224, 0.2);
+        }
+        .doc-nav-link.active {
+            background: rgba(108, 122, 224, 0.2);
+            color: var(--text-primary);
+            border-color: rgba(108, 122, 224, 0.4);
+            font-weight: 600;
+        }
+
+        /* Mobile drawer overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; }
+
+        .mobile-drawer {
+            display: none;
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: min(320px, 85vw);
+            z-index: 50;
+            background: var(--overlay-bg);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid var(--card-border);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .mobile-drawer.active { transform: translateX(0); }
+
+        /* Code block container */
+        .code-container {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: 0.85rem;
+            overflow: hidden;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 3px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen min-h-dvh flex flex-col justify-between selection:bg-meralco-500 selection:text-white">
+<body class="min-h-screen flex flex-col justify-between relative selection:bg-pf-500 selection:text-white">
 
-    <!-- Ambient Glow Background -->
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[350px] bg-gradient-to-b from-meralco-500/10 to-transparent blur-[120px] pointer-events-none -z-10"></div>
+    <!-- Ambient Background -->
+    <div class="bg-layer bg-dark-layer"></div>
+    <div class="bg-layer bg-light-layer"></div>
 
-    <header class="docs-header max-w-6xl mx-auto w-full px-4 pt-8 pb-4 flex justify-between items-center border-b border-slate-900/80">
-        <div class="flex items-center gap-3">
-            <a href="home.html" class="p-2.5 bg-meralco-500/10 rounded-xl border border-meralco-500/30 text-meralco-500 hover:bg-meralco-500/20 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                </svg>
-            </a>
-            <div>
-                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">PowerForecast API Docs</h1>
-                <p class="text-xs text-slate-500">Meralco Electricity Rates & Calculation Endpoints</p>
+    <!-- Top Glass Navigation Bar -->
+    <header class="sticky top-0 z-30 w-full backdrop-blur-xl bg-[var(--topbar-bg)] border-b border-[var(--card-border)] transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3">
+                <a href="landing.html" class="flex items-center gap-3 group">
+                    <img src="Assets/LOGO.png" alt="PowerForecast Logo" class="w-10 h-auto drop-shadow-lg group-hover:scale-105 transition-transform duration-300">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl font-extrabold tracking-tight t-primary">power</span>
+                            <span class="text-xl font-extrabold tracking-tight text-gold">forecast</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-pf-500/15 text-pf-400 border border-pf-500/30 uppercase tracking-wider">API Docs</span>
+                        </div>
+                        <p class="text-[11px] t-muted hidden sm:block">Public Meralco Electricity Rates & Calculation Endpoints</p>
+                    </div>
+                </a>
             </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="home.html" class="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all">
-                ← Web Calculator
-            </a>
-            <span class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-medium flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> CORS Enabled
-            </span>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-1.5 text-xs font-semibold">
+                <a href="home.html" class="px-3.5 py-2 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)] transition-all">
+                    <i class="fa-solid fa-calculator mr-1.5 opacity-70"></i>Calculator
+                </a>
+                <a href="landing.html" class="px-3.5 py-2 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)] transition-all">
+                    <i class="fa-solid fa-house mr-1.5 opacity-70"></i>Overview
+                </a>
+                <a href="docs.html" class="px-3.5 py-2 rounded-xl t-primary font-bold bg-pf-500/20 border border-pf-500/40 text-pf-400 shadow-sm">
+                    <i class="fa-solid fa-code mr-1.5 text-pf-400"></i>API Playground
+                </a>
+                <a href="login.html" class="px-3.5 py-2 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)] transition-all">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5 opacity-70"></i>Account
+                </a>
+            </nav>
+
+            <!-- Right Controls: CORS status + Theme Toggle + Mobile Menu -->
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    CORS Active
+                </span>
+
+                <!-- Theme Toggle -->
+                <div class="flex items-center gap-2 pl-2 border-l border-[var(--card-border)]">
+                    <span class="text-xs font-semibold t-muted hidden sm:inline" id="theme-label">Dark</span>
+                    <label class="toggle-switch" title="Toggle Light/Dark Theme">
+                        <input type="checkbox" id="theme-checkbox" onchange="toggleTheme()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Mobile Hamburger Button -->
+                <button onclick="openMobileMenu()" class="md:hidden p-2 rounded-xl btn-secondary text-base flex items-center justify-center w-10 h-10" aria-label="Open Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto w-full px-4 py-8 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu-overlay" class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+    <div id="mobile-menu-drawer" class="mobile-drawer p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex items-center justify-between pb-4 border-b border-[var(--card-border)]">
+                <a href="landing.html" class="flex items-center gap-2">
+                    <img src="Assets/LOGO.png" alt="PowerForecast Logo" class="w-8 h-auto drop-shadow-sm">
+                    <div class="flex items-center gap-1 font-extrabold t-primary">
+                        <span>power</span><span class="text-gold">forecast</span>
+                    </div>
+                </a>
+                <button onclick="closeMobileMenu()" class="p-2 t-muted hover:t-primary">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <nav class="flex flex-col gap-2 mt-6 font-medium text-sm">
+                <a href="home.html" class="px-4 py-3 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)]">
+                    <i class="fa-solid fa-calculator mr-2.5"></i>Web Calculator
+                </a>
+                <a href="landing.html" class="px-4 py-3 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)]">
+                    <i class="fa-solid fa-house mr-2.5"></i>Landing Page
+                </a>
+                <a href="docs.html" class="px-4 py-3 rounded-xl t-primary font-bold bg-pf-500/20 text-pf-400 border border-pf-500/30">
+                    <i class="fa-solid fa-code mr-2.5"></i>API Docs & Playground
+                </a>
+                <a href="login.html" class="px-4 py-3 rounded-xl t-secondary hover:t-primary hover:bg-[var(--badge-bg)]">
+                    <i class="fa-solid fa-right-to-bracket mr-2.5"></i>Login / Account
+                </a>
+            </nav>
+        </div>
+        <div class="pt-4 border-t border-[var(--card-border)] text-xs t-muted flex items-center justify-between">
+            <span>CORS Enabled API</span>
+            <span class="text-emerald-400 font-semibold">v1.0 Ready</span>
+        </div>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         
-        <!-- Navigation Sidebar -->
-        <aside class="docs-sidebar lg:col-span-3 flex flex-col gap-2">
-            <div class="glass p-4 rounded-2xl sticky top-8 flex flex-col gap-1 text-sm font-medium">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider px-3 py-1">API Endpoints</span>
-                <a href="#endpoint-rates" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all flex items-center justify-between">
+        <!-- Sidebar Navigation -->
+        <aside class="lg:col-span-3 flex flex-col gap-4">
+            <div class="glass-card p-4 rounded-2xl sticky top-24 flex flex-col gap-1.5 shadow-xl">
+                <span class="text-[11px] font-bold t-muted uppercase tracking-wider px-3 py-1">API Navigation</span>
+                <a href="#endpoint-rates" class="doc-nav-link group">
                     <span>GET /api/rates</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">GET</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">GET</span>
                 </a>
-                <a href="#endpoint-appliances" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all flex items-center justify-between">
+                <a href="#endpoint-appliances" class="doc-nav-link group">
                     <span>GET /api/appliances</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">GET</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">GET</span>
                 </a>
-                <a href="#endpoint-calculate" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all flex items-center justify-between">
+                <a href="#endpoint-calculate" class="doc-nav-link group">
                     <span>POST /api/calculate</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">POST</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">POST</span>
                 </a>
-                <a href="#playground" class="px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all mt-4 border-t border-slate-800 pt-3 flex items-center gap-2">
-                    <span>⚡ Live Playground</span>
+                <a href="#playground" class="doc-nav-link group mt-3 border-t border-[var(--card-border)] pt-3 text-pf-400">
+                    <span class="flex items-center gap-2 font-bold"><i class="fa-solid fa-bolt text-amber-400"></i> Live Playground</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
                 </a>
+            </div>
+
+            <!-- Quick Specs Box -->
+            <div class="glass-card p-4 rounded-2xl flex flex-col gap-3 text-xs t-secondary">
+                <span class="font-bold t-primary uppercase tracking-wider text-[10px] text-pf-400">API Capabilities</span>
+                <div class="flex items-center justify-between">
+                    <span class="t-muted">Response Format:</span>
+                    <span class="font-mono font-semibold t-primary">JSON (UTF-8)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="t-muted">HTTP Protocol:</span>
+                    <span class="font-mono font-semibold text-emerald-400">HTTPS / REST</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="t-muted">Serverless Deploy:</span>
+                    <span class="font-mono font-semibold t-primary">Vercel Ready</span>
+                </div>
             </div>
         </aside>
 
-        <!-- Documentation Content -->
+        <!-- Main Content Column -->
         <section class="lg:col-span-9 flex flex-col gap-8">
 
-            <!-- Intro Header -->
-            <div class="glass p-6 rounded-2xl flex flex-col gap-3">
-                <h2 class="text-2xl font-bold text-white">Public Meralco Rate & Calculation API</h2>
-                <p class="text-sm text-slate-400 leading-relaxed">
-                    The PowerForecast API allows developers to fetch parsed Meralco rate schedules, query common household appliance wattage metrics, and perform precise, itemized bill calculations. Hosted on Vercel Serverless Functions with CORS enabled.
+            <!-- Hero Overview Card -->
+            <div class="glow-card p-6 sm:p-8 rounded-3xl flex flex-col gap-4 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-48 h-48 bg-pf-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex items-center gap-2 text-xs font-semibold text-pf-400">
+                    <i class="fa-solid fa-cubes"></i> Developer Platform
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl font-extrabold t-primary tracking-tight leading-tight">
+                    Public Meralco Rate & Bill Calculation API
+                </h1>
+                
+                <p class="text-sm t-secondary leading-relaxed max-w-3xl">
+                    The PowerForecast REST API provides real-time access to parsed Philippine Meralco rate bulletins, household appliance wattage standards, and precision itemized bill calculation formulas.
                 </p>
-                <div class="flex items-center gap-2 mt-2 bg-slate-900/90 border border-slate-800 px-4 py-2.5 rounded-xl text-xs font-mono text-slate-300 base-url-display">
-                    <span class="text-slate-500">Base URL:</span>
-                    <span id="baseUrlDisplay" class="text-meralco-500 font-semibold">https://powerforecast-api.vercel.app</span>
+
+                <!-- Base URL Display -->
+                <div class="mt-2 bg-[var(--input-bg-solid)] border border-[var(--input-border)] p-3 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <span class="text-xs font-bold uppercase tracking-wider t-muted">Base URL:</span>
+                        <span id="baseUrlDisplay" class="font-mono text-xs sm:text-sm font-semibold text-pf-400 truncate">https://powerforecast-api.vercel.app</span>
+                    </div>
+                    <button onclick="copyBaseUrl()" id="btnCopyBase" class="btn-secondary px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Endpoint 1: GET /api/rates -->
-            <div id="endpoint-rates" class="glass p-6 rounded-2xl flex flex-col gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-md">GET</span>
-                    <h3 class="text-lg font-bold text-white font-mono">/api/rates</h3>
-                </div>
-                <p class="text-xs text-slate-400">Retrieves the latest parsed Meralco residential rate brackets, generation charges, and rate trends.</p>
-
-                <!-- Code Examples Tabs -->
-                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                    <div class="bg-slate-950 px-4 py-2 flex gap-4 text-xs font-medium border-b border-slate-800 text-slate-400">
-                        <button onclick="switchTab('rates', 'js')" id="tab-rates-js" class="text-meralco-500 font-bold hover:text-white transition-all">JavaScript</button>
-                        <button onclick="switchTab('rates', 'curl')" id="tab-rates-curl" class="hover:text-white transition-all">cURL</button>
-                        <button onclick="switchTab('rates', 'py')" id="tab-rates-py" class="hover:text-white transition-all">Python</button>
+            <div id="endpoint-rates" class="glass-card p-6 sm:p-8 rounded-3xl flex flex-col gap-5 relative">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/30">GET</span>
+                        <h2 class="text-lg sm:text-xl font-bold t-primary font-mono">/api/rates</h2>
                     </div>
-                    <pre class="p-4 text-xs font-mono text-slate-300 overflow-x-auto"><code id="code-rates">fetch('https://billshock-api.vercel.app/api/rates')
+                    <span class="text-xs t-muted">Content-Type: <code class="text-pf-400">application/json</code></span>
+                </div>
+
+                <p class="text-xs sm:text-sm t-secondary leading-relaxed">
+                    Fetches the latest effective residential rate schedule per consumption tier, including generation charges, distribution brackets, transmission fees, and tax ratios.
+                </p>
+
+                <!-- Code Tabs Container -->
+                <div class="code-container">
+                    <div class="bg-[var(--topbar-bg)] px-4 py-2.5 flex items-center justify-between border-b border-[var(--code-border)]">
+                        <div class="flex gap-4 text-xs font-semibold t-muted">
+                            <button onclick="switchTab('rates', 'js')" id="tab-rates-js" class="text-pf-400 font-bold border-b-2 border-pf-500 pb-0.5">JavaScript</button>
+                            <button onclick="switchTab('rates', 'curl')" id="tab-rates-curl" class="hover:t-primary transition-colors pb-0.5">cURL</button>
+                            <button onclick="switchTab('rates', 'py')" id="tab-rates-py" class="hover:t-primary transition-colors pb-0.5">Python</button>
+                        </div>
+                        <button onclick="copyCode('code-rates', this)" class="text-xs t-muted hover:t-primary transition-colors flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <pre class="p-4 text-xs font-mono text-pf-200 overflow-x-auto"><code id="code-rates">fetch('https://powerforecast-api.vercel.app/api/rates')
   .then(res => res.json())
   .then(data => console.log(data));</code></pre>
                 </div>
             </div>
 
             <!-- Endpoint 2: GET /api/appliances -->
-            <div id="endpoint-appliances" class="glass p-6 rounded-2xl flex flex-col gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-md">GET</span>
-                    <h3 class="text-lg font-bold text-white font-mono">/api/appliances</h3>
-                </div>
-                <p class="text-xs text-slate-400">Returns typical Philippine household appliance wattage standards, operational ranges, and default daily usage hours.</p>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                    <div class="bg-slate-950 px-4 py-2 flex gap-4 text-xs font-medium border-b border-slate-800 text-slate-400">
-                        <button onclick="switchTab('appliances', 'js')" id="tab-appliances-js" class="text-meralco-500 font-bold hover:text-white transition-all">JavaScript</button>
-                        <button onclick="switchTab('appliances', 'curl')" id="tab-appliances-curl" class="hover:text-white transition-all">cURL</button>
-                        <button onclick="switchTab('appliances', 'py')" id="tab-appliances-py" class="hover:text-white transition-all">Python</button>
+            <div id="endpoint-appliances" class="glass-card p-6 sm:p-8 rounded-3xl flex flex-col gap-5 relative">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/30">GET</span>
+                        <h2 class="text-lg sm:text-xl font-bold t-primary font-mono">/api/appliances</h2>
                     </div>
-                    <pre class="p-4 text-xs font-mono text-slate-300 overflow-x-auto"><code id="code-appliances">fetch('https://billshock-api.vercel.app/api/appliances')
+                    <span class="text-xs t-muted">Content-Type: <code class="text-pf-400">application/json</code></span>
+                </div>
+
+                <p class="text-xs sm:text-sm t-secondary leading-relaxed">
+                    Returns standard wattage specifications, hourly consumption rates, and operational power ranges for common Philippine household appliances.
+                </p>
+
+                <!-- Code Tabs Container -->
+                <div class="code-container">
+                    <div class="bg-[var(--topbar-bg)] px-4 py-2.5 flex items-center justify-between border-b border-[var(--code-border)]">
+                        <div class="flex gap-4 text-xs font-semibold t-muted">
+                            <button onclick="switchTab('appliances', 'js')" id="tab-appliances-js" class="text-pf-400 font-bold border-b-2 border-pf-500 pb-0.5">JavaScript</button>
+                            <button onclick="switchTab('appliances', 'curl')" id="tab-appliances-curl" class="hover:t-primary transition-colors pb-0.5">cURL</button>
+                            <button onclick="switchTab('appliances', 'py')" id="tab-appliances-py" class="hover:t-primary transition-colors pb-0.5">Python</button>
+                        </div>
+                        <button onclick="copyCode('code-appliances', this)" class="text-xs t-muted hover:t-primary transition-colors flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <pre class="p-4 text-xs font-mono text-pf-200 overflow-x-auto"><code id="code-appliances">fetch('https://powerforecast-api.vercel.app/api/appliances')
   .then(res => res.json())
   .then(data => console.log(data));</code></pre>
                 </div>
             </div>
 
             <!-- Endpoint 3: POST /api/calculate -->
-            <div id="endpoint-calculate" class="glass p-6 rounded-2xl flex flex-col gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="px-2.5 py-1 bg-amber-500/20 text-amber-400 text-xs font-bold rounded-md">POST / GET</span>
-                    <h3 class="text-lg font-bold text-white font-mono">/api/calculate</h3>
-                </div>
-                <p class="text-xs text-slate-400">Calculates a fully itemized Meralco bill based on consumption metrics.</p>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                    <div class="bg-slate-950 px-4 py-2 flex gap-4 text-xs font-medium border-b border-slate-800 text-slate-400">
-                        <button onclick="switchTab('calculate', 'js')" id="tab-calculate-js" class="text-meralco-500 font-bold hover:text-white transition-all">JavaScript</button>
-                        <button onclick="switchTab('calculate', 'curl')" id="tab-calculate-curl" class="hover:text-white transition-all">cURL</button>
-                        <button onclick="switchTab('calculate', 'py')" id="tab-calculate-py" class="hover:text-white transition-all">Python</button>
+            <div id="endpoint-calculate" class="glass-card p-6 sm:p-8 rounded-3xl flex flex-col gap-5 relative">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-bold rounded-lg border border-amber-500/30">POST</span>
+                        <h2 class="text-lg sm:text-xl font-bold t-primary font-mono">/api/calculate</h2>
                     </div>
-                    <pre class="p-4 text-xs font-mono text-slate-300 overflow-x-auto"><code id="code-calculate">fetch('https://billshock-api.vercel.app/api/calculate', {
+                    <span class="text-xs t-muted">Content-Type: <code class="text-pf-400">application/json</code></span>
+                </div>
+
+                <p class="text-xs sm:text-sm t-secondary leading-relaxed">
+                    Calculates a complete, itemized Meralco electric bill given monthly energy consumption in kilowatt-hours (kWh) and base generation rate.
+                </p>
+
+                <!-- Parameters Table -->
+                <div class="overflow-x-auto rounded-xl border border-[var(--card-border)]">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-[var(--input-bg-solid)] t-primary font-semibold border-b border-[var(--card-border)]">
+                            <tr>
+                                <th class="p-3">Field</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Required</th>
+                                <th class="p-3">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody class="t-secondary divide-y divide-[var(--card-border)]">
+                            <tr>
+                                <td class="p-3 font-mono text-pf-400 font-semibold">kwh</td>
+                                <td class="p-3 font-mono">number</td>
+                                <td class="p-3 text-emerald-400 font-semibold">Yes</td>
+                                <td class="p-3">Monthly consumption in kilowatt-hours (e.g. 300)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-mono text-pf-400 font-semibold">generation_rate</td>
+                                <td class="p-3 font-mono">number</td>
+                                <td class="p-3 text-amber-400">Optional</td>
+                                <td class="p-3">Base generation charge per kWh (Default: 9.2504)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-mono text-pf-400 font-semibold">other_charges</td>
+                                <td class="p-3 font-mono">number</td>
+                                <td class="p-3 text-amber-400">Optional</td>
+                                <td class="p-3">Flat fee or additional municipal adjustments (Default: 0.00)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Code Tabs Container -->
+                <div class="code-container">
+                    <div class="bg-[var(--topbar-bg)] px-4 py-2.5 flex items-center justify-between border-b border-[var(--code-border)]">
+                        <div class="flex gap-4 text-xs font-semibold t-muted">
+                            <button onclick="switchTab('calculate', 'js')" id="tab-calculate-js" class="text-pf-400 font-bold border-b-2 border-pf-500 pb-0.5">JavaScript</button>
+                            <button onclick="switchTab('calculate', 'curl')" id="tab-calculate-curl" class="hover:t-primary transition-colors pb-0.5">cURL</button>
+                            <button onclick="switchTab('calculate', 'py')" id="tab-calculate-py" class="hover:t-primary transition-colors pb-0.5">Python</button>
+                        </div>
+                        <button onclick="copyCode('code-calculate', this)" class="text-xs t-muted hover:t-primary transition-colors flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <pre class="p-4 text-xs font-mono text-pf-200 overflow-x-auto"><code id="code-calculate">fetch('https://powerforecast-api.vercel.app/api/calculate', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -248,57 +621,145 @@
                 </div>
             </div>
 
-            <!-- Live Playground -->
-            <div id="playground" class="glass p-6 rounded-2xl flex flex-col gap-4 border border-meralco-500/30">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span>⚡ Interactive API Playground</span>
-                    </h3>
-                    <span class="text-xs text-slate-400">Test live requests</span>
+            <!-- Live Interactive Playground -->
+            <div id="playground" class="glow-card p-6 sm:p-8 rounded-3xl flex flex-col gap-6 relative border-2 border-pf-500/30">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--card-border)] pb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold t-primary">Interactive API Playground</h2>
+                            <p class="text-xs t-muted">Test live API requests directly in your browser</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono px-2.5 py-1 rounded-lg bg-pf-500/15 text-pf-400 font-semibold">Live Sandbox</span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- Input Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="text-xs font-semibold text-slate-300">Consumption (kWh)</label>
-                        <input type="number" id="playKwh" value="200" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white mt-1 outline-none focus:border-meralco-500">
+                        <label class="text-xs font-semibold t-secondary block mb-1">Consumption (kWh)</label>
+                        <input type="number" id="playKwh" value="300" class="pf-input w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-slate-300">Gen Rate (PHP/kWh)</label>
-                        <input type="number" id="playGenRate" value="9.2504" step="0.0001" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white mt-1 outline-none focus:border-meralco-500">
+                        <label class="text-xs font-semibold t-secondary block mb-1">Gen Rate (PHP/kWh)</label>
+                        <input type="number" id="playGenRate" value="9.2504" step="0.0001" class="pf-input w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-slate-300">Other Charges (PHP)</label>
-                        <input type="number" id="playOther" value="0.00" step="0.01" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white mt-1 outline-none focus:border-meralco-500">
+                        <label class="text-xs font-semibold t-secondary block mb-1">Other Charges (PHP)</label>
+                        <input type="number" id="playOther" value="0.00" step="0.01" class="pf-input w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold">
                     </div>
                 </div>
 
-                <div class="flex gap-3">
-                    <button onclick="runPlaygroundTest('/api/rates')" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200">Test GET /api/rates</button>
-                    <button onclick="runPlaygroundTest('/api/appliances')" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200">Test GET /api/appliances</button>
-                    <button onclick="runPlaygroundCalculate()" class="py-2.5 px-4 bg-meralco-500 hover:bg-meralco-600 text-white rounded-xl text-xs font-semibold">Test POST /api/calculate</button>
+                <!-- Test Action Buttons -->
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="runPlaygroundTest('/api/rates')" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-bolt-lightning text-emerald-400"></i> Test GET /api/rates
+                    </button>
+                    <button onclick="runPlaygroundTest('/api/appliances')" class="btn-secondary px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-tv text-pf-400"></i> Test GET /api/appliances
+                    </button>
+                    <button onclick="runPlaygroundCalculate()" class="btn-primary px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-calculator"></i> Run POST /api/calculate
+                    </button>
                 </div>
 
-                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                    <div class="flex justify-between text-xs text-slate-500 font-mono mb-2">
-                        <span>Response Output</span>
-                        <span id="playStatus">Status: Ready</span>
+                <!-- Response Window -->
+                <div class="code-container">
+                    <div class="bg-[var(--topbar-bg)] px-4 py-2.5 flex items-center justify-between border-b border-[var(--code-border)] text-xs font-mono">
+                        <span class="t-muted flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Response Output
+                        </span>
+                        <div class="flex items-center gap-3">
+                            <span id="playStatus" class="text-emerald-400 font-semibold">Status: Ready</span>
+                            <button onclick="copyCode('playOutput', this)" class="t-muted hover:t-primary transition-colors flex items-center gap-1 text-[11px]">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
                     </div>
-                    <pre id="playOutput" class="text-xs font-mono text-emerald-400 overflow-x-auto max-h-60"><code>// Click a button above to run a test request...</code></pre>
+                    <pre id="playOutput" class="p-4 text-xs font-mono text-emerald-400 overflow-x-auto max-h-80"><code>// Click any button above to send a live request to the endpoint server...</code></pre>
                 </div>
             </div>
 
         </section>
     </main>
 
-    <footer class="max-w-6xl mx-auto w-full px-4 py-8 border-t border-slate-900 text-center text-xs text-slate-600">
-        PowerForecast API Documentation &bull; Vercel Serverless Ready
+    <!-- Footer -->
+    <footer class="w-full border-t border-[var(--card-border)] bg-[var(--topbar-bg)] mt-12 py-8 text-center text-xs t-muted relative z-10">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded-md bg-pf-500 flex items-center justify-center text-[10px] text-white font-bold">PF</div>
+                <span>PowerForecast Electricity Billing & Calculation Engine</span>
+            </div>
+            <div>
+                Vercel Serverless Compatible &bull; CORS Enabled
+            </div>
+        </div>
     </footer>
 
+    <!-- JavaScript Logic -->
     <script>
-        // Update Base URL display dynamically
+        // Sync Base URL with window location
         const baseUrl = window.location.origin;
         document.getElementById('baseUrlDisplay').textContent = baseUrl;
 
+        function copyBaseUrl() {
+            navigator.clipboard.writeText(baseUrl);
+            const btn = document.getElementById('btnCopyBase');
+            btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Copied!`;
+            setTimeout(() => {
+                btn.innerHTML = `<i class="fa-regular fa-copy"></i><span>Copy</span>`;
+            }, 2000);
+        }
+
+        // Theme Toggle Logic
+        function syncThemeToggle() {
+            const savedTheme = localStorage.getItem('powerforecast_theme');
+            const checkbox = document.getElementById('theme-checkbox');
+            const label = document.getElementById('theme-label');
+            if (checkbox) {
+                const isDark = savedTheme !== 'light';
+                checkbox.checked = isDark;
+                if (label) label.textContent = isDark ? 'Dark' : 'Light';
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('powerforecast_theme', next);
+            syncThemeToggle();
+        }
+        syncThemeToggle();
+
+        // Mobile Menu Drawer Logic
+        function openMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const drawer = document.getElementById('mobile-menu-drawer');
+            overlay.style.display = 'block';
+            drawer.style.display = 'flex';
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+                drawer.classList.add('active');
+            });
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const drawer = document.getElementById('mobile-menu-drawer');
+            overlay.classList.remove('active');
+            drawer.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                drawer.style.display = 'none';
+            }, 300);
+            document.body.style.overflow = '';
+        }
+
+        // Code Examples Data
         const CODE_EXAMPLES = {
             rates: {
                 js: `fetch('${baseUrl}/api/rates')\n  .then(res => res.json())\n  .then(data => console.log(data));`,
@@ -322,9 +783,9 @@
                 const btn = document.getElementById(`tab-${endpoint}-${l}`);
                 if (btn) {
                     if (l === lang) {
-                        btn.className = 'text-meralco-500 font-bold hover:text-white transition-all';
+                        btn.className = 'text-pf-400 font-bold border-b-2 border-pf-500 pb-0.5';
                     } else {
-                        btn.className = 'hover:text-white transition-all text-slate-400';
+                        btn.className = 'hover:t-primary transition-colors pb-0.5 t-muted';
                     }
                 }
             });
@@ -335,6 +796,20 @@
             }
         }
 
+        function copyCode(elemId, btnElem) {
+            const codeElem = document.getElementById(elemId);
+            if (!codeElem) return;
+            const textToCopy = codeElem.textContent || codeElem.innerText;
+            navigator.clipboard.writeText(textToCopy);
+            
+            const origHtml = btnElem.innerHTML;
+            btnElem.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Copied!`;
+            setTimeout(() => {
+                btnElem.innerHTML = origHtml;
+            }, 2000);
+        }
+
+        // Playground API Fetcher & Fallback Engine
         async function safeFetchJson(url, fallbackUrl, mockDataFn) {
             try {
                 const res = await fetch(url);
@@ -345,12 +820,12 @@
                         try {
                             return { status: res.status, data: JSON.parse(text) };
                         } catch (e) {
-                            // ignore and try fallback
+                            // try fallback
                         }
                     }
                 }
             } catch (e) {
-                // ignore and try fallback
+                // try fallback
             }
 
             if (fallbackUrl) {
@@ -369,13 +844,14 @@
                 return { status: 200, data: mockDataFn() };
             }
 
-            throw new Error("Unable to parse endpoint JSON output.");
+            throw new Error("Unable to parse endpoint output.");
         }
 
         async function runPlaygroundTest(endpoint) {
             const output = document.getElementById('playOutput');
             const status = document.getElementById('playStatus');
             status.textContent = 'Status: Sending request...';
+            status.className = 'text-amber-400 font-semibold';
 
             let fallbackUrl = null;
             if (endpoint.includes('rates')) fallbackUrl = 'rates.json';
@@ -384,9 +860,11 @@
             try {
                 const result = await safeFetchJson(endpoint, fallbackUrl);
                 status.textContent = `Status: ${result.status} OK`;
+                status.className = 'text-emerald-400 font-semibold';
                 output.textContent = JSON.stringify(result.data, null, 2);
             } catch (err) {
                 status.textContent = 'Status: Error';
+                status.className = 'text-rose-400 font-semibold';
                 output.textContent = JSON.stringify({ error: err.message }, null, 2);
             }
         }
@@ -399,6 +877,7 @@
             const other = parseFloat(document.getElementById('playOther').value) || 0;
 
             status.textContent = 'Status: Calculating...';
+            status.className = 'text-amber-400 font-semibold';
 
             const calculateLocal = () => {
                 const genCost = Math.round(kwh * genRate * 100) / 100;
@@ -443,7 +922,7 @@
                     itemized: {
                         generation_charge: genCost,
                         transmission_charge: transCost,
-                        system_loss_charge: sys_loss_cost,
+                        system_loss_charge: sysLossCost,
                         distribution_charge: distCost,
                         metering_supply_charge: Math.round((meteringCost + supplyCost) * 100) / 100,
                         subsidies_and_refunds: Math.round((awatRefund + regReset + seniorCost) * 100) / 100,
@@ -454,15 +933,22 @@
             };
 
             try {
-                const url = `api/calculate.py?kwh=${kwh}&gen_rate=${genRate}&other=${other}`;
+                const url = `api/calculate?kwh=${kwh}&gen_rate=${genRate}&other=${other}`;
                 const result = await safeFetchJson(url, null, calculateLocal);
                 status.textContent = `Status: ${result.status} OK`;
+                status.className = 'text-emerald-400 font-semibold';
                 output.textContent = JSON.stringify(result.data, null, 2);
             } catch (err) {
                 status.textContent = 'Status: Error';
+                status.className = 'text-rose-400 font-semibold';
                 output.textContent = JSON.stringify({ error: err.message }, null, 2);
             }
         }
+
+        // Initialize default code snippets
+        switchTab('rates', 'js');
+        switchTab('appliances', 'js');
+        switchTab('calculate', 'js');
     </script>
 </body>
 </html>
