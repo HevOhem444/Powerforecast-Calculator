@@ -2,131 +2,131 @@
   "success": true,
   "error": null,
   "warning": null,
-  "date": null,
+  "date": "08/2026",
   "data": [
     {
       "kwh": 50,
-      "rate": 15.1869,
-      "generation_rate": 9.2504,
-      "rate_change": 0.343,
-      "rate_change_percent": 2.31,
-      "trend": "up"
+      "rate": 15.1442,
+      "generation_rate": 9.28,
+      "rate_change": -0.0427,
+      "rate_change_percent": -0.28,
+      "trend": "down"
     },
     {
       "kwh": 70,
-      "rate": 15.0494,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3428,
-      "rate_change_percent": 2.33,
-      "trend": "up"
+      "rate": 15.0066,
+      "generation_rate": 9.28,
+      "rate_change": -0.0428,
+      "rate_change_percent": -0.28,
+      "trend": "down"
     },
     {
       "kwh": 100,
-      "rate": 14.9464,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.35,
-      "trend": "up"
+      "rate": 14.9035,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.29,
+      "trend": "down"
     },
     {
       "kwh": 200,
-      "rate": 14.8261,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3428,
-      "rate_change_percent": 2.37,
-      "trend": "up"
+      "rate": 14.7833,
+      "generation_rate": 9.28,
+      "rate_change": -0.0428,
+      "rate_change_percent": -0.29,
+      "trend": "down"
     },
     {
       "kwh": 300,
-      "rate": 15.1354,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.32,
-      "trend": "up"
+      "rate": 15.0925,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.28,
+      "trend": "down"
     },
     {
       "kwh": 400,
-      "rate": 15.445,
-      "generation_rate": 9.2504,
-      "rate_change": 0.343,
-      "rate_change_percent": 2.27,
-      "trend": "up"
+      "rate": 15.402,
+      "generation_rate": 9.28,
+      "rate_change": -0.043,
+      "rate_change_percent": -0.28,
+      "trend": "down"
     },
     {
       "kwh": 500,
-      "rate": 16.0071,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.9642,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 600,
-      "rate": 15.999,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.9561,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 700,
-      "rate": 16.0004,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.9575,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 800,
-      "rate": 16.0079,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.965,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 900,
-      "rate": 16.0135,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.9706,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 1000,
-      "rate": 16.018,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.19,
-      "trend": "up"
+      "rate": 15.9751,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 1500,
-      "rate": 16.0649,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.18,
-      "trend": "up"
+      "rate": 16.0221,
+      "generation_rate": 9.28,
+      "rate_change": -0.0428,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 3000,
-      "rate": 16.187,
-      "generation_rate": 9.2504,
-      "rate_change": 0.3429,
-      "rate_change_percent": 2.16,
-      "trend": "up"
+      "rate": 16.1441,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.27,
+      "trend": "down"
     },
     {
       "kwh": 5000,
-      "rate": 16.2358,
-      "generation_rate": 9.2504,
-      "rate_change": 0.343,
-      "rate_change_percent": 2.16,
-      "trend": "up"
+      "rate": 16.1929,
+      "generation_rate": 9.28,
+      "rate_change": -0.0429,
+      "rate_change_percent": -0.26,
+      "trend": "down"
     }
   ],
   "meta": {
-    "timestamp": "2026-07-28T15:17:58.430118",
-    "source": "https://meralcomain.s3.ap-southeast-1.amazonaws.com/2026-07/07-2026_residential_bills.pdf"
+    "timestamp": "2026-08-17T17:05:35.429338",
+    "source": "https://meralcomain.s3.ap-southeast-1.amazonaws.com/2026-08/08-2026_residential_bills.pdf"
   }
 }

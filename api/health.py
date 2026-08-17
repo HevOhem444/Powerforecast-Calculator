@@ -21,7 +21,7 @@ class handler(BaseHTTPRequestHandler):
             "status": "ok",
             "serverHasKey": bool(api_key),
             "maxImagesSupported": 3,
-            "defaultModel": "gemini-3.6-flash",
-            "supportedModels": ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-flash-latest"]
+            "defaultModel": "gemini-3.7-flash",
+            "supportedModels": ["gemini-3.7-flash", "gemini-2.5-flash", "gemini-flash-latest"]
         }
         self.wfile.write(json.dumps(res).encode('utf-8'))

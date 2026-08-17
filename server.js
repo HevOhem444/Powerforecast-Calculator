@@ -158,8 +158,8 @@ const server = http.createServer((req, res) => {
             status: 'ok',
             serverHasKey,
             maxImagesSupported: 3,
-            defaultModel: 'gemini-3.6-flash',
-            supportedModels: ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-pro-preview', 'gemini-flash-latest']
+            defaultModel: 'gemini-3.7-flash',
+            supportedModels: ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-flash-latest']
         }));
         return;
     }
@@ -224,14 +224,14 @@ const server = http.createServer((req, res) => {
             try {
                 let payload = {};
                 try { payload = JSON.parse(body); } catch (e) {}
-                const { images = [], imageBase64, mimeType = 'image/jpeg', prompt, preset = 'specs', customApiKey, model = 'gemini-3.6-flash' } = payload;
+                const { images = [], imageBase64, mimeType = 'image/jpeg', prompt, preset = 'specs', model = 'gemini-3.7-flash' } = payload;
 
-                const apiKey = customApiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
+                const apiKey = process.env.GEMINI_API_KEY?.trim();
                 if (!apiKey) {
                     res.writeHead(401, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         error: 'Missing Gemini API Key',
-                        message: 'No API key provided. Please configure GEMINI_API_KEY in server environment or enter custom key in settings.'
+                        message: 'No GEMINI_API_KEY configured in server environment variables.'
                     }));
                     return;
                 }
@@ -282,7 +282,7 @@ Your objective is to identify household, kitchen, commercial, or HVAC appliances
                 const finalPrompt = presetInstructions[preset] || `${systemPromptPrefix}\n${prompt || 'Provide full technical specifications.'}`;
                 parts.push({ text: finalPrompt });
 
-                const targetModel = model || 'gemini-3.6-flash';
+                const targetModel = model || 'gemini-3.7-flash';
                 const postData = JSON.stringify({ contents: [{ parts }] });
 
                 const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;

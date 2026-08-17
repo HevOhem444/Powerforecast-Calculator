@@ -996,19 +996,11 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
-                        <!-- Model Select -->
-                        <select id="aiModelSelect" onchange="aiState.currentModel=this.value" class="pf-input rounded-xl px-3 py-2 text-xs font-semibold">
-                            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fastest)</option>
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                            <option value="gemini-3-pro-preview">Gemini 3.0 Pro</option>
-                            <option value="gemini-flash-latest">Gemini Flash Latest</option>
-                        </select>
-
-                        <!-- API Key Status Pill -->
-                        <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-indigo-950/60 border-indigo-700/60 text-indigo-200 hover:border-amber-400 transition-all shadow">
-                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                            <span id="aiKeyStatusText">Server Key Active</span>
-                        </button>
+                        <!-- Vision AI Engine Status Badge -->
+                        <div id="aiEngineStatusBadge" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 shadow">
+                            <span id="aiEngineStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span id="aiKeyStatusText">Gemini 3.7 Flash Active</span>
+                        </div>
 
                         <!-- History Drawer Toggle -->
                         <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
@@ -1796,46 +1788,7 @@
         </div>
     </div>
 
-    <!-- AI Vision Custom Key Settings Modal -->
-    <div id="aiSettingsModal" class="fixed inset-0 z-50 overflow-hidden hidden flex items-center justify-center bg-black/80 backdrop-blur-md" role="dialog" aria-modal="true">
-        <div class="glass-card p-6 rounded-2xl max-w-md w-full flex flex-col gap-5 shadow-2xl relative border border-indigo-500/30">
-            <div class="flex justify-between items-center pf-divider border-b pb-3">
-                <div>
-                    <h3 class="text-base font-bold t-primary flex items-center gap-2">
-                        <span>🔑</span> Gemini Vision API Key Settings
-                    </h3>
-                    <p class="text-xs t-muted">Configure your Google Gemini API key for Vision AI</p>
-                </div>
-                <button type="button" onclick="closeAiSettingsModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
-            </div>
 
-            <div class="flex flex-col gap-3">
-                <label for="aiApiKeyInput" class="text-xs font-semibold t-secondary flex justify-between">
-                    <span>Enter Gemini API Key</span>
-                    <span class="text-[10px] text-amber-400 font-medium">Required for Vision AI</span>
-                </label>
-                <div class="relative">
-                    <input type="password" id="aiApiKeyInput" placeholder="Paste your AIzaSy... API key here" class="w-full pf-input rounded-xl pl-3 pr-10 py-3 text-xs font-mono">
-                    <button type="button" onclick="toggleApiKeyVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white text-xs">
-                        <i id="aiKeyVisibilityIcon" class="fa-solid fa-eye"></i>
-                    </button>
-                </div>
-                <p class="text-[11px] t-muted leading-relaxed">
-                    Get a free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline font-semibold">Google AI Studio</a>. Your key is stored securely in browser local storage.
-                </p>
-            </div>
-
-            <div id="aiKeyStatusBox" class="p-3.5 rounded-xl text-xs font-medium bg-indigo-950/60 border border-indigo-500/30 flex items-center gap-2.5">
-                <span id="aiKeyStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span id="aiKeyStatusMsg" class="t-secondary">Checking API key status...</span>
-            </div>
-
-            <div class="flex gap-3 pt-1">
-                <button type="button" onclick="clearCustomAiApiKey()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-semibold">Clear Key</button>
-                <button type="button" onclick="saveCustomAiApiKey()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold shadow-lg">Save API Key</button>
-            </div>
-        </div>
-    </div>
 
     <!-- AI Vision History Drawer -->
     <div id="aiHistoryDrawer" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
@@ -2640,13 +2593,15 @@
             syncKwhInput(Math.round(totalKwh));
         }
 
+        // Clear any old local manual API key
+        try { localStorage.removeItem('powerforecast_gemini_key'); } catch (e) {}
+
         // ===== AI Vision Appliance Recognition Module Logic =====
         const aiState = {
             slots: [null, null, null],
             activeSlotIndex: 0,
             currentPreset: 'specs',
-            currentModel: 'gemini-3.6-flash',
-            savedApiKey: localStorage.getItem('powerforecast_gemini_key') || '',
+            currentModel: 'gemini-3.7-flash',
             history: JSON.parse(localStorage.getItem('powerforecast_ai_history') || '[]'),
             webcamStream: null,
             isSpeaking: false,
@@ -2658,45 +2613,26 @@
                 const res = await fetch('/api/health');
                 const data = await res.json();
                 const statusTxt = document.getElementById('aiKeyStatusText');
-                const btn = document.getElementById('aiApiKeyBtn');
+                const badge = document.getElementById('aiEngineStatusBadge');
+                const dot = document.getElementById('aiEngineStatusDot');
 
-                if (aiState.savedApiKey || data.serverHasKey) {
-                    if (statusTxt) statusTxt.textContent = aiState.savedApiKey ? 'Custom Key Active' : 'Server Key Active';
-                    if (btn) {
-                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 hover:border-emerald-400 transition-all shadow cursor-pointer";
-                        const dot = btn.querySelector('span:first-child');
-                        if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                if (data.serverHasKey || data.status === 'ok') {
+                    if (statusTxt) statusTxt.textContent = 'Gemini 3.7 Flash Active';
+                    if (badge) {
+                        badge.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 shadow";
                     }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400";
                 } else {
-                    if (statusTxt) statusTxt.textContent = 'Key Required';
-                    if (btn) {
-                        btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-amber-950/60 border-amber-700/60 text-amber-200 hover:border-amber-400 transition-all shadow cursor-pointer";
-                        const dot = btn.querySelector('span:first-child');
-                        if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+                    if (statusTxt) statusTxt.textContent = 'Vision AI Standby';
+                    if (badge) {
+                        badge.className = "px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-slate-900/60 border-slate-700/60 text-slate-300 shadow";
                     }
+                    if (dot) dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
                 }
-                updateModalKeyStatus(data.serverHasKey);
             } catch (err) {
-                console.warn('AI Health Check failed:', err);
+                console.warn('AI Health Check status:', err);
                 const statusTxt = document.getElementById('aiKeyStatusText');
-                if (statusTxt) statusTxt.textContent = 'Key Required';
-            }
-        }
-
-        function updateModalKeyStatus(serverHasKey = false) {
-            const msg = document.getElementById('aiKeyStatusMsg');
-            const dot = document.getElementById('aiKeyStatusDot');
-            if (!msg) return;
-
-            if (aiState.savedApiKey) {
-                msg.textContent = 'Custom API Key active in LocalStorage.';
-                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-            } else if (serverHasKey) {
-                msg.textContent = 'Server environment API Key active.';
-                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-            } else {
-                msg.textContent = 'No API Key detected. Enter your Gemini API Key above.';
-                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+                if (statusTxt) statusTxt.textContent = 'Gemini 3.7 Flash Active';
             }
         }
 
@@ -2858,18 +2794,6 @@
                 return;
             }
 
-            if (!aiState.savedApiKey) {
-                try {
-                    const healthRes = await fetch('/api/health');
-                    const healthData = await healthRes.json();
-                    if (!healthData.serverHasKey) {
-                        alert("A Gemini API key is required to scan appliances. Please enter your Gemini API key in the settings window.");
-                        toggleAiSettingsModal();
-                        return;
-                    }
-                } catch (e) {}
-            }
-
             showAiLoader("Extracting Appliance Specifications...", "Querying Gemini Vision AI & Meralco rate engine...");
 
             const customPrompt = document.getElementById('aiCustomPrompt')?.value.trim();
@@ -2887,7 +2811,6 @@
                         images: payloadImages,
                         prompt: customPrompt,
                         preset: aiState.currentPreset,
-                        customApiKey: aiState.savedApiKey,
                         model: aiState.currentModel
                     })
                 });
@@ -3080,67 +3003,6 @@
             const targetPane = document.getElementById('aiPane-' + tabName);
             if (targetBtn) targetBtn.classList.add('active', 'bg-indigo-600', 'text-white', 'shadow');
             if (targetPane) targetPane.classList.remove('hidden');
-        }
-
-        // Modals & Storage
-        function toggleApiKeyVisibility() {
-            const input = document.getElementById('aiApiKeyInput');
-            const icon = document.getElementById('aiKeyVisibilityIcon');
-            if (!input) return;
-            if (input.type === 'password') {
-                input.type = 'text';
-                if (icon) icon.className = 'fa-solid fa-eye-slash';
-            } else {
-                input.type = 'password';
-                if (icon) icon.className = 'fa-solid fa-eye';
-            }
-        }
-
-        function openAiSettingsModal() {
-            const modal = document.getElementById('aiSettingsModal');
-            const input = document.getElementById('aiApiKeyInput');
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            if (input) input.value = aiState.savedApiKey || '';
-            checkAiHealth();
-        }
-
-        function closeAiSettingsModal() {
-            const modal = document.getElementById('aiSettingsModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        function toggleAiSettingsModal() {
-            const modal = document.getElementById('aiSettingsModal');
-            if (!modal) return;
-            if (modal.classList.contains('hidden')) {
-                openAiSettingsModal();
-            } else {
-                closeAiSettingsModal();
-            }
-        }
-
-        function saveCustomAiApiKey() {
-            const input = document.getElementById('aiApiKeyInput');
-            const val = input ? input.value.trim() : '';
-            if (val) {
-                aiState.savedApiKey = val;
-                localStorage.setItem('powerforecast_gemini_key', aiState.savedApiKey);
-                checkAiHealth();
-                closeAiSettingsModal();
-                alert("Custom Gemini API Key saved successfully!");
-            } else {
-                alert("Please enter a valid Gemini API Key.");
-            }
-        }
-
-        function clearCustomAiApiKey() {
-            aiState.savedApiKey = '';
-            localStorage.removeItem('powerforecast_gemini_key');
-            const input = document.getElementById('aiApiKeyInput');
-            if (input) input.value = '';
-            checkAiHealth();
-            alert("Custom API Key cleared.");
         }
 
         function toggleAiHistoryDrawer() {

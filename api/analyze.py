@@ -26,10 +26,9 @@ class handler(BaseHTTPRequestHandler):
         mime_type = payload.get('mimeType', 'image/jpeg')
         prompt = payload.get('prompt')
         preset = payload.get('preset', 'specs')
-        custom_key = payload.get('customApiKey', '')
-        model = payload.get('model', 'gemini-3.6-flash')
+        model = payload.get('model', 'gemini-3.7-flash')
 
-        api_key = (custom_key or os.environ.get('GEMINI_API_KEY', '')).strip()
+        api_key = os.environ.get('GEMINI_API_KEY', '').strip()
         if not api_key:
             self.send_response(401)
             self.send_header('Content-Type', 'application/json')
@@ -37,7 +36,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "error": "Missing Gemini API Key",
-                "message": "No API key provided. Please configure GEMINI_API_KEY or enter custom key in settings."
+                "message": "GEMINI_API_KEY is not configured in Vercel Environment Variables."
             }).encode('utf-8'))
             return
 

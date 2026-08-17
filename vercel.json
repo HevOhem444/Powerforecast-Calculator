@@ -6,8 +6,16 @@
     { "src": "api/rates.py", "use": "@vercel/python" },
     { "src": "api/appliances.py", "use": "@vercel/python" },
     { "src": "api/calculate.py", "use": "@vercel/python" },
+    { "src": "api/health.py", "use": "@vercel/python" },
+    { "src": "api/analyze.py", "use": "@vercel/python" },
+    { "src": "Assets/**", "use": "@vercel/static" },
     { "src": "*.html", "use": "@vercel/static" },
-    { "src": "*.json", "use": "@vercel/static" }
+    { "src": "*.json", "use": "@vercel/static" },
+    { "src": "*.png", "use": "@vercel/static" },
+    { "src": "*.jpg", "use": "@vercel/static" },
+    { "src": "*.svg", "use": "@vercel/static" },
+    { "src": "*.css", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/static" }
   ],
   "headers": [
     {
@@ -24,10 +32,15 @@
     { "src": "/", "dest": "/login.html" },
     { "src": "/index", "dest": "/login.html" },
     { "src": "/index.html", "dest": "/login.html" },
+    { "src": "/home", "dest": "/home.html" },
     { "src": "/docs", "dest": "/docs.html" },
+    { "src": "/Assets/(.*)", "dest": "/Assets/$1" },
+    { "src": "/assets/(.*)", "dest": "/Assets/$1" },
     { "src": "/api/rates", "dest": "/api/rates.py" },
     { "src": "/api/appliances", "dest": "/api/appliances.py" },
     { "src": "/api/calculate", "dest": "/api/calculate.py" },
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/api/analyze", "dest": "/api/analyze.py" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }

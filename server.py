@@ -103,8 +103,8 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
             "status": "ok",
             "serverHasKey": bool(api_key),
             "maxImagesSupported": 3,
-            "defaultModel": "gemini-3.6-flash",
-            "supportedModels": ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-flash-latest"]
+            "defaultModel": "gemini-3.7-flash",
+            "supportedModels": ["gemini-3.7-flash", "gemini-2.5-flash", "gemini-flash-latest"]
         }
         self.wfile.write(json.dumps(res).encode('utf-8'))
 
@@ -122,10 +122,9 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
         mime_type = payload.get('mimeType', 'image/jpeg')
         prompt = payload.get('prompt')
         preset = payload.get('preset', 'specs')
-        custom_key = payload.get('customApiKey', '')
-        model = payload.get('model', 'gemini-3.6-flash')
+        model = payload.get('model', 'gemini-3.7-flash')
 
-        api_key = (custom_key or os.environ.get('GEMINI_API_KEY', '')).strip()
+        api_key = os.environ.get('GEMINI_API_KEY', '').strip()
         if not api_key:
             self.send_response(401)
             self.send_header('Content-Type', 'application/json')
@@ -133,7 +132,7 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "error": "Missing Gemini API Key",
-                "message": "No API key provided. Please configure GEMINI_API_KEY or enter key in settings."
+                "message": "No GEMINI_API_KEY configured in server environment variables."
             }).encode('utf-8'))
             return
 
