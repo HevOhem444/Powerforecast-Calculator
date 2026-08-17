@@ -619,17 +619,32 @@
                         <h2 class="text-2xl font-extrabold t-primary">Interactive Bill Calculator</h2>
                         <p class="text-sm t-muted">Configure monthly electricity parameters to inspect real-time itemized cost breakdowns.</p>
                     </div>
-                    <button onclick="toggleSettingsModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-2">
-                        <span>⚙️ Tweak Rates</span>
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button onclick="resetAllCalculatorInputs()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-2 hover:border-rose-500/50 hover:text-rose-300 transition-all" title="Clear and reset all calculator inputs to zero">
+                            <span>🔄</span> Reset Inputs
+                        </button>
+                        <button onclick="toggleSettingsModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-2">
+                            <span>⚙️ Tweak Rates</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
                     <!-- Left Column: Inputs & Estimator -->
-                    <div class="lg:col-span-5 flex flex-col gap-6">
-                        <!-- Parameters Input Card -->
-                        <div class="glass-card p-6 rounded-2xl shadow-xl flex flex-col gap-6">
+                    <div class="lg:col-span-5 flex flex-col gap-5">
+                        <!-- Mode Switcher Pill Bar -->
+                        <div class="glass-card p-1.5 rounded-2xl flex border border-slate-700/50 text-xs font-semibold shadow-inner">
+                            <button onclick="requestCalculatorModeSwitch('bill')" id="calcModeBtn-bill" class="flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md">
+                                <span>📊</span> Bill Parameters
+                            </button>
+                            <button onclick="requestCalculatorModeSwitch('estimator')" id="calcModeBtn-estimator" class="flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+                                <span>🔌</span> Appliance Energy Estimator
+                            </button>
+                        </div>
+
+                        <!-- Parameters Input Card (Mode A) -->
+                        <div id="card-bill-parameters" class="glass-card p-6 rounded-2xl shadow-xl flex flex-col gap-6">
                             <div>
                                 <h3 class="text-base font-semibold t-primary">Bill Parameters</h3>
                                 <p class="text-xs t-muted">Configure your consumption metrics below.</p>
@@ -722,8 +737,8 @@
                             </div>
                         </div>
 
-                        <!-- Appliance Estimator Card -->
-                        <div class="glass-card p-6 rounded-2xl shadow-xl flex flex-col gap-5">
+                        <!-- Appliance Estimator Card (Mode B - Hidden by Default) -->
+                        <div id="card-appliance-estimator" class="glass-card p-6 rounded-2xl shadow-xl hidden flex-col gap-5">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <h3 class="text-sm font-bold t-primary flex items-center gap-2">
@@ -1197,8 +1212,356 @@
                 </div>
             </section>
 
-            <!-- PANEL 4: CALENDAR VIEW (BLANK) -->
-            <section id="view-calendar" class="view-panel hidden flex-col gap-6 min-h-[400px]">
+            <!-- PANEL 4: CALENDAR VIEW (MATCHING REFERENCE UI) -->
+            <section id="view-calendar" class="view-panel hidden flex-col gap-6">
+                <!-- Top Calendar Section Banner / Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold t-primary flex items-center gap-2">
+                            <span>📅</span> Household Utility & Energy Calendar
+                        </h2>
+                        <p class="text-sm t-muted">Schedule appliance usage, track Meralco bill due dates, monitor peak tariff hours, and plan energy audits starting 2026.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="openNewEventModal()" class="px-4 py-2.5 rounded-xl btn-primary text-sm font-semibold flex items-center gap-2 shadow-lg shadow-indigo-500/20">
+                            <span>➕</span> Schedule Event
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Calendar Dashboard Layout (Split Left Navigation Panel & Right View Grid) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                    <!-- LEFT PANEL: Mini Calendar Navigation & Category Filters (4 Columns on LG) -->
+                    <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-5">
+                        <!-- Mini Month Calendar Card -->
+                        <div class="glass-card rounded-3xl p-5 flex flex-col gap-4 shadow-xl border border-slate-700/40">
+                            <!-- Mini Month Header -->
+                            <div class="flex justify-between items-center px-1">
+                                <span id="miniCalendarMonthYear" class="text-base font-bold t-primary">August 2026</span>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="navMonth(-1)" class="p-1.5 rounded-lg hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-xs" title="Previous Month">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <button onclick="navMonth(1)" class="p-1.5 rounded-lg hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-xs" title="Next Month">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Mini 7x5 Days Header -->
+                            <div class="grid grid-cols-7 text-center text-xs font-semibold text-slate-400 py-1 border-b border-slate-700/30">
+                                <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
+                            </div>
+
+                            <!-- Mini Calendar Date Grid Matrix -->
+                            <div id="miniCalendarDays" class="grid grid-cols-7 gap-1 text-center text-xs">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="border-t border-slate-700/30 my-1"></div>
+
+                            <!-- My Calendars Filter Checkboxes -->
+                            <div class="flex flex-col gap-2.5">
+                                <div class="flex justify-between items-center text-xs font-bold text-slate-300 tracking-wide uppercase px-1">
+                                    <span>My Calendars</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
+                                </div>
+                                <div class="flex flex-col gap-2 text-xs">
+                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
+                                        <input type="checkbox" checked onchange="filterEvents()" class="accent-indigo-500 rounded w-3.5 h-3.5" data-category="billing">
+                                        <span>Meralco Bill Due Dates</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
+                                        <input type="checkbox" checked onchange="filterEvents()" class="accent-amber-400 rounded w-3.5 h-3.5" data-category="peak">
+                                        <span>Peak Tariff Hours (TOU)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
+                                        <input type="checkbox" checked onchange="filterEvents()" class="accent-emerald-400 rounded w-3.5 h-3.5" data-category="appliance">
+                                        <span>Appliance Schedules</span>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
+                                        <input type="checkbox" checked onchange="filterEvents()" class="accent-sky-400 rounded w-3.5 h-3.5" data-category="audit">
+                                        <span>Solar & Energy Audits</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Favorites Section -->
+                            <div class="flex flex-col gap-2 pt-1">
+                                <div class="flex justify-between items-center text-xs font-bold text-slate-300 tracking-wide uppercase px-1">
+                                    <span>Favorites</span>
+                                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-500"></i>
+                                </div>
+                            </div>
+
+                            <!-- Categories Section -->
+                            <div class="flex flex-col gap-2.5 pt-1">
+                                <div class="flex justify-between items-center text-xs font-bold text-slate-300 tracking-wide uppercase px-1">
+                                    <span>Categories</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-500"></i>
+                                </div>
+                                <div class="flex flex-col gap-2 text-xs">
+                                    <div class="flex items-center gap-2.5 text-slate-300">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                                        <span>Billing & Payments</span>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 text-slate-300">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                                        <span>Peak Hours Alert</span>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 text-slate-300">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                                        <span>Appliance Optimizations</span>
+                                    </div>
+                                    <div class="flex items-center gap-2.5 text-slate-300">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                                        <span>Maintenance & Service</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Teammates / Household Members Avatars -->
+                            <div class="pt-3 border-t border-slate-700/30 flex items-center justify-between px-1">
+                                <div class="flex -space-x-2 overflow-hidden">
+                                    <img class="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Avatar 1">
+                                    <img class="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Avatar 2">
+                                    <img class="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" alt="Avatar 3">
+                                    <img class="inline-block h-7 w-7 rounded-full ring-2 ring-slate-900 object-cover" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80" alt="Avatar 4">
+                                    <div class="h-7 w-7 rounded-full bg-slate-800 ring-2 ring-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-300">+2</div>
+                                </div>
+                                <button class="text-slate-400 hover:text-white p-1 text-xs" title="More options">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT PANEL: Main Calendar View & Grid (8 Columns on LG) -->
+                    <div class="lg:col-span-8 xl:col-span-9 flex flex-col gap-5">
+                        <div class="glass-card rounded-3xl p-5 flex flex-col gap-5 shadow-2xl border border-slate-700/40 relative min-h-[650px] overflow-hidden">
+                            
+                            <!-- Main Header Navigation & View Selector Toolbar -->
+                            <div class="flex flex-wrap justify-between items-center gap-4 pb-2 border-b border-slate-700/30">
+                                <!-- Left: Month Title + Navigation -->
+                                <div class="flex items-center gap-3">
+                                    <h3 id="mainCalendarMonthTitle" class="text-xl font-extrabold t-primary tracking-tight">August 2026</h3>
+                                    <button onclick="navToday()" class="px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700/50 transition-all">
+                                        Today
+                                    </button>
+                                    <div class="flex items-center gap-1 bg-slate-900/60 rounded-xl p-1 border border-slate-800">
+                                        <button onclick="navMonth(-1)" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center transition-all text-xs" title="Previous Month">
+                                            <i class="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                        <button onclick="navMonth(1)" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center transition-all text-xs" title="Next Month">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: View Mode Selector Pills & Action Button -->
+                                <div class="flex items-center gap-3">
+                                    <div class="flex bg-slate-900/80 p-1 rounded-2xl border border-slate-800/80 text-xs font-semibold">
+                                        <button onclick="switchCalendarView('month')" id="calViewBtn-month" class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
+                                            Month
+                                        </button>
+                                        <button onclick="switchCalendarView('week')" id="calViewBtn-week" class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow transition-all">
+                                            Week
+                                        </button>
+                                        <button onclick="switchCalendarView('day')" id="calViewBtn-day" class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
+                                            Day
+                                        </button>
+                                    </div>
+
+                                    <button onclick="openNewEventModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5">
+                                        <span>➕</span> Join
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Week Days Header Strip with GMT+8 Tag -->
+                            <div class="grid grid-cols-8 gap-2 items-center text-center text-xs font-medium py-1.5 px-2 bg-slate-900/40 rounded-2xl border border-slate-800/40">
+                                <div class="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1 px-1.5">
+                                    GMT+8
+                                </div>
+                                <div id="dayStrip-mon" class="flex flex-col py-1.5 rounded-xl bg-lime-400/20 text-lime-300 border border-lime-400/40 font-bold transition-all cursor-pointer hover:scale-105" onclick="selectCalendarDay('mon')">
+                                    <span class="text-[10px] uppercase tracking-wider">mon</span>
+                                    <span id="dayNum-mon" class="text-lg font-extrabold">17</span>
+                                </div>
+                                <div id="dayStrip-tue" class="flex flex-col py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold transition-all cursor-pointer hover:scale-105" onclick="selectCalendarDay('tue')">
+                                    <span class="text-[10px] uppercase tracking-wider">tue</span>
+                                    <span id="dayNum-tue" class="text-lg font-extrabold">18</span>
+                                </div>
+                                <div id="dayStrip-wed" class="flex flex-col py-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold transition-all cursor-pointer hover:scale-105" onclick="selectCalendarDay('wed')">
+                                    <span class="text-[10px] uppercase tracking-wider">wed</span>
+                                    <span id="dayNum-wed" class="text-lg font-extrabold">19</span>
+                                </div>
+                                <div id="dayStrip-thu" class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer" onclick="selectCalendarDay('thu')">
+                                    <span class="text-[10px] uppercase tracking-wider">thu</span>
+                                    <span id="dayNum-thu" class="text-base font-bold text-slate-200">20</span>
+                                </div>
+                                <div id="dayStrip-fri" class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer" onclick="selectCalendarDay('fri')">
+                                    <span class="text-[10px] uppercase tracking-wider">fri</span>
+                                    <span id="dayNum-fri" class="text-base font-bold text-slate-200">21</span>
+                                </div>
+                                <div id="dayStrip-sat" class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer" onclick="selectCalendarDay('sat')">
+                                    <span class="text-[10px] uppercase tracking-wider">sat</span>
+                                    <span id="dayNum-sat" class="text-base font-bold text-slate-200">22</span>
+                                </div>
+                                <div id="dayStrip-sun" class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer" onclick="selectCalendarDay('sun')">
+                                    <span class="text-[10px] uppercase tracking-wider">sun</span>
+                                    <span id="dayNum-sun" class="text-base font-bold text-slate-200">23</span>
+                                </div>
+                            </div>
+
+                            <!-- Main Hourly Schedule View Area (Clean State) -->
+                            <div id="mainScheduleViewArea" class="flex-1 overflow-y-auto max-h-[500px] relative pr-2 flex flex-col gap-1">
+                                
+                                <!-- Hourly Rows (8 AM to 5 PM) -->
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(8)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">8 am</span>
+                                    <div id="slot-hour-8" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 8:00 AM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(9)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">9 am</span>
+                                    <div id="slot-hour-9" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 9:00 AM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(10)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">10 am</span>
+                                    <div id="slot-hour-10" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 10:00 AM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(11)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">11 am</span>
+                                    <div id="slot-hour-11" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 11:00 AM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(12)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">12 pm</span>
+                                    <div id="slot-hour-12" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 12:00 PM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(13)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">1 pm</span>
+                                    <div id="slot-hour-13" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 1:00 PM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(14)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">2 pm</span>
+                                    <div id="slot-hour-14" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 2:00 PM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(15)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">3 pm</span>
+                                    <div id="slot-hour-15" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 3:00 PM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(16)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">4 pm</span>
+                                    <div id="slot-hour-16" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 4:00 PM</span>
+                                    </div>
+                                </div>
+
+                                <div class="relative grid grid-cols-8 min-h-[58px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(17)">
+                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">5 pm</span>
+                                    <div id="slot-hour-17" class="col-span-7 h-full relative flex items-center">
+                                        <span class="text-[10px] text-slate-600/60 italic pl-3 opacity-0 hover:opacity-100 transition-opacity">Click to schedule event at 5:00 PM</span>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Interactive Schedule Creator / Detail Popover Modal (Clean State) -->
+                            <div id="eventDetailModal" class="absolute top-[20%] left-[30%] sm:left-[40%] z-30 w-80 p-5 rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl flex flex-col gap-4 transition-all duration-300 scale-95 opacity-0 pointer-events-none">
+                                <div class="flex justify-between items-center pb-1 border-b border-slate-800">
+                                    <span id="modalHeaderTitle" class="text-xs font-extrabold uppercase text-indigo-400 tracking-wider">Schedule Event</span>
+                                    <button onclick="closeEventModal()" class="text-slate-400 hover:text-white p-1 text-xs rounded-full hover:bg-slate-800" title="Close">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex flex-col gap-3 text-xs">
+                                    <div class="flex flex-col gap-1">
+                                        <label for="eventTitleInput" class="text-[11px] font-semibold text-slate-400">Title</label>
+                                        <input id="eventTitleInput" type="text" placeholder="e.g. Meralco Bill Payment" class="pf-input rounded-xl px-3 py-2 text-xs font-semibold text-white">
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <label for="eventCategorySelect" class="text-[11px] font-semibold text-slate-400">Category</label>
+                                        <select id="eventCategorySelect" class="pf-input rounded-xl px-3 py-2 text-xs text-white">
+                                            <option value="billing">Billing & Rates</option>
+                                            <option value="peak">Peak Hours Alert (TOU)</option>
+                                            <option value="appliance">Appliance Schedule</option>
+                                            <option value="audit">Maintenance & Audit</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex flex-col gap-1">
+                                            <label for="eventHourSelect" class="text-[11px] font-semibold text-slate-400">Start Time</label>
+                                            <select id="eventHourSelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs text-white">
+                                                <option value="8">8:00 AM</option>
+                                                <option value="9">9:00 AM</option>
+                                                <option value="10">10:00 AM</option>
+                                                <option value="11">11:00 AM</option>
+                                                <option value="12">12:00 PM</option>
+                                                <option value="13">1:00 PM</option>
+                                                <option value="14">2:00 PM</option>
+                                                <option value="15">3:00 PM</option>
+                                                <option value="16">4:00 PM</option>
+                                                <option value="17">5:00 PM</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <label for="eventDaySelect" class="text-[11px] font-semibold text-slate-400">Day</label>
+                                            <select id="eventDaySelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs text-white">
+                                                <option value="mon">Monday (17)</option>
+                                                <option value="tue">Tuesday (18)</option>
+                                                <option value="wed">Wednesday (19)</option>
+                                                <option value="thu">Thursday (20)</option>
+                                                <option value="fri">Friday (21)</option>
+                                                <option value="sat">Saturday (22)</option>
+                                                <option value="sun">Sunday (23)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-2">
+                                        <button onclick="deleteSelectedEvent()" id="deleteEventBtn" class="text-rose-400 hover:text-rose-300 text-xs font-semibold px-2 py-1 rounded hover:bg-rose-500/10 hidden">
+                                            Delete
+                                        </button>
+                                        <div class="flex items-center gap-2 ml-auto">
+                                            <button onclick="closeEventModal()" class="px-3 py-1.5 rounded-xl btn-secondary text-xs">Cancel</button>
+                                            <button onclick="saveCalendarEvent()" class="px-4 py-1.5 rounded-xl btn-primary text-xs font-bold shadow">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             </section>
 
             <!-- PANEL 5: ANALYTICS VIEW (BLANK) -->
@@ -1738,7 +2101,20 @@
             if (!genInput || !kwhInput || !otherInput) return;
 
             const genRate = parseFloat(genInput.value) || 0;
-            const kwh = parseFloat(kwhInput.value) || 0;
+            let kwh = 0;
+
+            if (typeof calculatorMode !== 'undefined' && calculatorMode === 'estimator') {
+                let loadTotal = 0;
+                if (typeof householdLoadList !== 'undefined' && householdLoadList.length > 0) {
+                    householdLoadList.forEach(item => loadTotal += item.kwh);
+                } else if (typeof updateApplianceKwhCalculation === 'function') {
+                    loadTotal = updateApplianceKwhCalculation();
+                }
+                kwh = Math.round(loadTotal * 100) / 100;
+            } else {
+                kwh = parseFloat(kwhInput.value) || 0;
+            }
+
             const otherCharges = parseFloat(otherInput.value) || 0;
 
             // Always sync top header and mobile side panel rate badges to current Base Generation Charge
@@ -2670,11 +3046,478 @@
             });
         });
 
+        // ===== Household Utility Calendar Controller =====
+        const CAL_MONTH_NAMES = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        let calendarState = {
+            year: 2026,
+            month: 7, // August (0-indexed)
+            selectedDay: 17,
+            viewMode: 'week'
+        };
+
+        function renderMiniCalendar() {
+            const monthYearEl = document.getElementById('miniCalendarMonthYear');
+            const mainTitleEl = document.getElementById('mainCalendarMonthTitle');
+            const daysContainer = document.getElementById('miniCalendarDays');
+            
+            if (!daysContainer) return;
+
+            const formattedTitle = `${CAL_MONTH_NAMES[calendarState.month]} ${calendarState.year}`;
+            if (monthYearEl) monthYearEl.textContent = formattedTitle;
+            if (mainTitleEl) mainTitleEl.textContent = formattedTitle;
+
+            daysContainer.innerHTML = '';
+
+            const firstDayIndex = new Date(calendarState.year, calendarState.month, 1).getDay();
+            const startOffset = (firstDayIndex + 6) % 7; // Mon = 0
+            const daysInMonth = new Date(calendarState.year, calendarState.month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(calendarState.year, calendarState.month, 0).getDate();
+
+            // Previous month overflow days
+            for (let i = startOffset - 1; i >= 0; i--) {
+                const d = daysInPrevMonth - i;
+                const dayEl = document.createElement('div');
+                dayEl.className = 'py-1 text-slate-600 dark:text-slate-600 text-xs font-normal opacity-50 cursor-not-allowed';
+                dayEl.textContent = d;
+                daysContainer.appendChild(dayEl);
+            }
+
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('button');
+                const isSelected = (day === calendarState.selectedDay && calendarState.year === 2026 && calendarState.month === 7);
+                const isToday = (day === 17 && calendarState.year === 2026 && calendarState.month === 7);
+
+                let classes = 'py-1 rounded-full text-xs font-semibold transition-all hover:bg-indigo-500/30 hover:text-white flex items-center justify-center mx-auto w-7 h-7 ';
+                
+                if (isToday) {
+                    classes += 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-500/30 ';
+                } else if (isSelected) {
+                    classes += 'bg-amber-400 text-slate-900 font-extrabold shadow-md shadow-amber-400/30 ';
+                } else {
+                    classes += 'text-slate-300 hover:bg-slate-700/60 ';
+                }
+
+                dayEl.className = classes;
+                dayEl.textContent = day;
+                dayEl.onclick = () => {
+                    calendarState.selectedDay = day;
+                    renderMiniCalendar();
+                    updateWeekStripDays();
+                };
+
+                daysContainer.appendChild(dayEl);
+            }
+
+            // Next month overflow days
+            const totalRendered = startOffset + daysInMonth;
+            const remaining = (7 - (totalRendered % 7)) % 7;
+            for (let i = 1; i <= remaining; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'py-1 text-slate-600 dark:text-slate-600 text-xs font-normal opacity-50 cursor-not-allowed';
+                dayEl.textContent = i;
+                daysContainer.appendChild(dayEl);
+            }
+        }
+
+        function updateWeekStripDays() {
+            const baseDay = calendarState.selectedDay || 17;
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            days.forEach((dayKey, index) => {
+                const numEl = document.getElementById(`dayNum-${dayKey}`);
+                if (numEl) {
+                    numEl.textContent = baseDay + index;
+                }
+            });
+        }
+
+        function navMonth(delta) {
+            calendarState.month += delta;
+            if (calendarState.month < 0) {
+                calendarState.month = 11;
+                calendarState.year--;
+            } else if (calendarState.month > 11) {
+                calendarState.month = 0;
+                calendarState.year++;
+            }
+
+            // Enforce starting from 2026 and further
+            if (calendarState.year < 2026) {
+                calendarState.year = 2026;
+                calendarState.month = 0; // January 2026
+            }
+
+            renderMiniCalendar();
+            updateWeekStripDays();
+        }
+
+        function navToday() {
+            calendarState.year = 2026;
+            calendarState.month = 7; // August 2026
+            calendarState.selectedDay = 17;
+            renderMiniCalendar();
+            updateWeekStripDays();
+        }
+
+        function switchCalendarView(mode) {
+            calendarState.viewMode = mode;
+            ['month', 'week', 'day'].forEach(m => {
+                const btn = document.getElementById(`calViewBtn-${m}`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.className = 'px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow transition-all';
+                    } else {
+                        btn.className = 'px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all';
+                    }
+                }
+            });
+        }
+
+        function selectCalendarDay(dayKey) {
+            document.querySelectorAll('[id^="dayStrip-"]').forEach(el => {
+                el.className = 'flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer';
+            });
+            const selectedStrip = document.getElementById(`dayStrip-${dayKey}`);
+            if (selectedStrip) {
+                selectedStrip.className = 'flex flex-col py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold transition-all cursor-pointer hover:scale-105';
+            }
+        }
+
+        // Dynamic Calendar Events Store (Clean State)
+        let calendarEvents = [];
+        let activeEventId = null;
+
+        const CATEGORY_STYLES = {
+            billing: { name: "Billing & Rates", bg: "bg-purple-500/20", border: "border-purple-400/40", text: "text-purple-200", badge: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+            peak: { name: "Peak Hours Alert", bg: "bg-amber-500/20", border: "border-amber-400/40", text: "text-amber-200", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
+            appliance: { name: "Appliance Schedule", bg: "bg-cyan-500/20", border: "border-cyan-400/40", text: "text-cyan-200", badge: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
+            audit: { name: "Maintenance & Audit", bg: "bg-emerald-500/20", border: "border-emerald-400/40", text: "text-emerald-200", badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" }
+        };
+
+        function renderCalendarEvents() {
+            // Clear existing event cards from hourly slots
+            for (let h = 8; h <= 17; h++) {
+                const slot = document.getElementById(`slot-hour-${h}`);
+                if (slot) {
+                    const cards = slot.querySelectorAll('.cal-event-card');
+                    cards.forEach(c => c.remove());
+                }
+            }
+
+            // Render all events in calendarEvents
+            calendarEvents.forEach(evt => {
+                const slot = document.getElementById(`slot-hour-${evt.hour}`);
+                if (!slot) return;
+
+                const style = CATEGORY_STYLES[evt.category] || CATEGORY_STYLES.billing;
+                const card = document.createElement('div');
+                card.className = `cal-event-card absolute top-1 left-[2%] w-[90%] sm:w-[45%] ${style.bg} border ${style.border} ${style.text} p-2.5 rounded-2xl text-xs shadow-lg backdrop-blur-md cursor-pointer hover:scale-[1.02] transition-transform z-10`;
+                card.onclick = (e) => {
+                    e.stopPropagation();
+                    openEditEventModal(evt.id);
+                };
+                card.innerHTML = `
+                    <div class="font-bold flex items-center justify-between">
+                        <span>${escapeHtml(evt.title)}</span>
+                    </div>
+                    <div class="text-[10px] opacity-80">${evt.hour > 12 ? (evt.hour - 12) + ':00 PM' : (evt.hour === 12 ? '12:00 PM' : evt.hour + ':00 AM')} (${evt.day.toUpperCase()})</div>
+                `;
+                slot.appendChild(card);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function openNewEventModal(hour = 9) {
+            activeEventId = null;
+            const modal = document.getElementById('eventDetailModal');
+            if (!modal) return;
+
+            document.getElementById('modalHeaderTitle').textContent = 'Schedule Utility Event';
+            document.getElementById('eventTitleInput').value = '';
+            document.getElementById('eventCategorySelect').value = 'billing';
+            document.getElementById('eventHourSelect').value = String(hour);
+            document.getElementById('eventDaySelect').value = 'mon';
+            
+            const delBtn = document.getElementById('deleteEventBtn');
+            if (delBtn) delBtn.classList.add('hidden');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+            modal.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
+        }
+
+        function openEditEventModal(eventId) {
+            const evt = calendarEvents.find(e => e.id === eventId);
+            if (!evt) return;
+
+            activeEventId = eventId;
+            const modal = document.getElementById('eventDetailModal');
+            if (!modal) return;
+
+            document.getElementById('modalHeaderTitle').textContent = 'Edit Schedule Event';
+            document.getElementById('eventTitleInput').value = evt.title;
+            document.getElementById('eventCategorySelect').value = evt.category;
+            document.getElementById('eventHourSelect').value = String(evt.hour);
+            document.getElementById('eventDaySelect').value = evt.day;
+
+            const delBtn = document.getElementById('deleteEventBtn');
+            if (delBtn) delBtn.classList.remove('hidden');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+            modal.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
+        }
+
+        function saveCalendarEvent() {
+            const title = document.getElementById('eventTitleInput').value.trim();
+            if (!title) {
+                alert("Please enter an event title.");
+                return;
+            }
+
+            const category = document.getElementById('eventCategorySelect').value;
+            const hour = parseInt(document.getElementById('eventHourSelect').value, 10);
+            const day = document.getElementById('eventDaySelect').value;
+
+            if (activeEventId) {
+                // Update existing
+                const idx = calendarEvents.findIndex(e => e.id === activeEventId);
+                if (idx !== -1) {
+                    calendarEvents[idx] = { id: activeEventId, title, category, hour, day };
+                }
+            } else {
+                // Create new
+                calendarEvents.push({
+                    id: 'evt_' + Date.now(),
+                    title,
+                    category,
+                    hour,
+                    day
+                });
+            }
+
+            closeEventModal();
+            renderCalendarEvents();
+        }
+
+        function deleteSelectedEvent() {
+            if (!activeEventId) return;
+            calendarEvents = calendarEvents.filter(e => e.id !== activeEventId);
+            closeEventModal();
+            renderCalendarEvents();
+        }
+
+        function closeEventModal() {
+            const modal = document.getElementById('eventDetailModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+                modal.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+            }
+        }
+
+        function filterEvents() {
+            renderCalendarEvents();
+        }
+
         // Initialize on page load
         initRates();
         fetchRates();
         fetchApplianceCatalog();
         calculateBill();
+        renderMiniCalendar();
+        updateWeekStripDays();
+        renderCalendarEvents();
+    </script>
+
+    <!-- Custom Confirmation Modal for Mode Switch / Navigation -->
+    <div id="confirmResetModal" class="fixed inset-0 z-50 overflow-hidden hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity" onclick="cancelPendingNavigation()"></div>
+        <div class="relative z-10 w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-700/80 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center gap-3 text-amber-400">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-xl">
+                    ⚠️
+                </div>
+                <div>
+                    <h3 id="confirmModalTitle" class="text-base font-extrabold text-white">Confirm Action</h3>
+                    <p class="text-xs text-slate-400">Potential data conflict warning</p>
+                </div>
+            </div>
+            <p id="confirmModalMsg" class="text-xs text-slate-300 leading-relaxed">
+                Switching mode or navigating away will clear your current inputs to prevent calculation conflicts. Do you want to proceed?
+            </p>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button onclick="cancelPendingNavigation()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-semibold">
+                    Cancel
+                </button>
+                <button onclick="confirmPendingNavigation()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-all">
+                    Yes, Clear &amp; Proceed
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // Mode & View State Management
+        let calculatorMode = 'bill'; // 'bill' (Bill Parameters) or 'estimator' (Appliance Energy Estimator)
+        let currentViewName = 'calculator';
+        let pendingAction = null;
+
+        function hasActiveCalculatorInputs() {
+            if (calculatorMode === 'bill') {
+                const kwh = parseFloat(document.getElementById('kwhInput')?.value || 0);
+                const other = parseFloat(document.getElementById('otherChargesInput')?.value || 0);
+                return kwh > 0 || other > 0;
+            } else {
+                const loadCount = householdLoadList.length;
+                const estKwh = updateApplianceKwhCalculation();
+                return loadCount > 0 || estKwh > 0;
+            }
+        }
+
+        function resetCalculatorInputs(mode) {
+            if (mode === 'bill' || !mode) {
+                const kwhIn = document.getElementById('kwhInput');
+                const kwhSlider = document.getElementById('kwhSlider');
+                const otherIn = document.getElementById('otherChargesInput');
+                if (kwhIn) kwhIn.value = 0;
+                if (kwhSlider) kwhSlider.value = 0;
+                if (otherIn) otherIn.value = "0.00";
+            }
+            if (mode === 'estimator' || !mode) {
+                householdLoadList = [];
+                renderHouseholdLoadList();
+                const wattsIn = document.getElementById('applianceWattsInput');
+                if (wattsIn) wattsIn.value = 0;
+                const hoursSlider = document.getElementById('applianceHoursSlider');
+                if (hoursSlider) hoursSlider.value = 8;
+                const lblHours = document.getElementById('lblApplianceHours');
+                if (lblHours) lblHours.textContent = '8';
+
+                const daysSlider = document.getElementById('applianceDaysSlider');
+                if (daysSlider) daysSlider.value = 30;
+                const lblDays = document.getElementById('lblApplianceDays');
+                if (lblDays) lblDays.textContent = '30';
+
+                const appSel = document.getElementById('applianceSelect');
+                if (appSel) appSel.selectedIndex = 0;
+                updateApplianceKwhCalculation();
+            }
+            calculateBill();
+        }
+
+        function resetAllCalculatorInputs() {
+            isGenerationRateManual = false;
+            if (typeof updateGenRateFromRates === 'function') updateGenRateFromRates();
+            resetCalculatorInputs();
+        }
+
+        function requestCalculatorModeSwitch(targetMode) {
+            if (targetMode === calculatorMode) return;
+
+            if (hasActiveCalculatorInputs()) {
+                pendingAction = { type: 'mode', target: targetMode };
+                showConfirmModal(
+                    "Clear Inputs & Switch Mode?",
+                    `Switching to ${targetMode === 'estimator' ? 'Appliance Energy Estimator' : 'Bill Parameters'} mode will clear your current inputs to avoid calculation conflicts. Are you sure you want to proceed?`
+                );
+            } else {
+                executeCalculatorModeSwitch(targetMode);
+            }
+        }
+
+        function executeCalculatorModeSwitch(targetMode) {
+            calculatorMode = targetMode;
+            
+            const billBtn = document.getElementById('calcModeBtn-bill');
+            const estBtn = document.getElementById('calcModeBtn-estimator');
+            const billCard = document.getElementById('card-bill-parameters');
+            const estCard = document.getElementById('card-appliance-estimator');
+
+            if (targetMode === 'bill') {
+                if (billBtn) billBtn.className = 'flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md';
+                if (estBtn) estBtn.className = 'flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+                if (billCard) billCard.classList.remove('hidden');
+                if (estCard) estCard.classList.add('hidden');
+            } else {
+                if (estBtn) estBtn.className = 'flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md';
+                if (billBtn) billBtn.className = 'flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+                if (estCard) estCard.classList.remove('hidden');
+                if (billCard) billCard.classList.add('hidden');
+            }
+
+            calculateBill();
+        }
+
+        function switchView(viewName) {
+            if (currentViewName === 'calculator' && viewName !== 'calculator' && hasActiveCalculatorInputs()) {
+                pendingAction = { type: 'view', target: viewName };
+                showConfirmModal(
+                    "Confirm Navigation",
+                    "Leaving the Calculator view will clear your active inputs to prevent calculation conflicts. Do you want to proceed?"
+                );
+                return;
+            }
+            executeSwitchView(viewName);
+        }
+
+        function executeSwitchView(viewName) {
+            currentViewName = viewName;
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const targetPanel = document.getElementById('view-' + viewName);
+            const targetNav = document.getElementById('nav-' + viewName);
+
+            if (targetPanel) {
+                targetPanel.classList.remove('hidden');
+                targetPanel.classList.add('flex');
+            }
+            if (targetNav) {
+                targetNav.classList.add('active');
+            }
+        }
+
+        function showConfirmModal(title, msg) {
+            const modal = document.getElementById('confirmResetModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const msgEl = document.getElementById('confirmModalMsg');
+            if (titleEl) titleEl.textContent = title;
+            if (msgEl) msgEl.textContent = msg;
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function cancelPendingNavigation() {
+            pendingAction = null;
+            const modal = document.getElementById('confirmResetModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function confirmPendingNavigation() {
+            const modal = document.getElementById('confirmResetModal');
+            if (modal) modal.classList.add('hidden');
+
+            if (pendingAction) {
+                if (pendingAction.type === 'mode') {
+                    resetCalculatorInputs(calculatorMode);
+                    executeCalculatorModeSwitch(pendingAction.target);
+                } else if (pendingAction.type === 'view') {
+                    resetCalculatorInputs(calculatorMode);
+                    executeSwitchView(pendingAction.target);
+                }
+                pendingAction = null;
+            }
+        }
     </script>
 </body>
 </html>
