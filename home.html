@@ -1240,91 +1240,94 @@
                 </div>
 
                 <!-- MODE 2: DOE PELP Certified Database Container -->
-                <div id="applianceMode-pelp" class="hidden flex-col gap-6">
+                <div id="applianceMode-pelp" class="hidden flex-col gap-5">
 
-                    <!-- Sub-Header & Live Stats Banner -->
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 shadow-lg">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-bold border border-amber-400/30 shadow-inner">
-                                🇵🇭
+                    <!-- Unified Top PELP Banner & Control Panel -->
+                    <div class="glass-card p-5 sm:p-6 rounded-3xl flex flex-col gap-4 shadow-xl border border-indigo-500/30">
+                        <!-- Sub-Header & Live Stats Banner -->
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-bold border border-amber-400/30 shadow-inner">
+                                    🇵🇭
+                                </div>
+                                <div>
+                                    <h3 class="text-sm sm:text-base font-bold t-primary">Philippine Energy Labeling Program (PELP) Certified Database</h3>
+                                    <p class="text-xs t-muted mt-0.5">Official Department of Energy (DOE) energy-efficiency ratings & power specs for Philippine appliances.</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-sm font-bold t-primary">Philippine Energy Labeling Program (PELP) Certified Database</h3>
-                                <p class="text-xs t-muted">Official Department of Energy (DOE) energy-efficiency ratings & power specs for Philippine appliances.</p>
+                            <div class="flex items-center gap-2">
+                                <span id="pelpTotalProductsBadge" class="text-xs font-bold px-3 py-1 badge rounded-full">6,819 Certified Appliances</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span id="pelpTotalProductsBadge" class="text-xs font-bold px-3 py-1 badge rounded-full">6,819 Certified Appliances</span>
+
+                        <!-- Category Filter Buttons (Official DOE Categories Only) -->
+                        <div class="flex flex-wrap gap-2 pt-1 border-t pf-divider" id="pelpCategoryButtons">
+                            <button data-cat="all" onclick="selectPelpCategory('all')" class="pelp-cat-btn active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow transition-all">
+                                🌐 All Categories
+                            </button>
+                            <button data-cat="air-conditioners" onclick="selectPelpCategory('air-conditioners')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                ❄️ Air Conditioners (1,787)
+                            </button>
+                            <button data-cat="refrigerating-appliances" onclick="selectPelpCategory('refrigerating-appliances')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                🧊 Refrigerators (827)
+                            </button>
+                            <button data-cat="electric-fans" onclick="selectPelpCategory('electric-fans')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                🌀 Electric Fans (153)
+                            </button>
+                            <button data-cat="television-sets" onclick="selectPelpCategory('television-sets')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                📺 Television Sets (1,320)
+                            </button>
+                            <button data-cat="clothes-washing-machines" onclick="selectPelpCategory('clothes-washing-machines')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                🧺 Washing Machines (10)
+                            </button>
+                            <button data-cat="lighting-products" onclick="selectPelpCategory('lighting-products')" class="pelp-cat-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                                💡 Lighting (2,722)
+                            </button>
+                        </div>
+
+                        <!-- Integrated Search & Brand Filter Bar -->
+                        <div class="flex flex-col gap-2.5 pt-1 border-t pf-divider">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center t-muted text-sm">🔍</span>
+                                <input
+                                    type="text"
+                                    id="pelpSearchInput"
+                                    placeholder="Search by brand (Samsung, Sharp, Panasonic, Carrier...), model, or specs..."
+                                    class="w-full pf-input rounded-xl pl-10 pr-10 py-2.5 text-xs font-medium"
+                                    oninput="debouncedPelpSearch()"
+                                >
+                                <button onclick="clearPelpSearch()" id="pelpClearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs t-muted hover:text-white">✕</button>
+                            </div>
+
+                            <!-- Quick Brand Filter Pills -->
+                            <div class="flex flex-wrap items-center gap-1.5 text-[11px] t-muted">
+                                <span class="font-semibold text-xs text-slate-300">Popular Brands:</span>
+                                <button onclick="setPelpBrandSearch('Samsung')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Samsung</button>
+                                <button onclick="setPelpBrandSearch('Panasonic')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Panasonic</button>
+                                <button onclick="setPelpBrandSearch('Sharp')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Sharp</button>
+                                <button onclick="setPelpBrandSearch('Carrier')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Carrier</button>
+                                <button onclick="setPelpBrandSearch('LG')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">LG</button>
+                                <button onclick="setPelpBrandSearch('Tough Mama')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Tough Mama</button>
+                                <button onclick="setPelpBrandSearch('Condura')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Condura</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Category Filter Buttons (Official DOE Categories Only) -->
-                    <div class="flex flex-wrap gap-2" id="pelpCategoryButtons">
-                        <button data-cat="all" onclick="selectPelpCategory('all')" class="pelp-cat-btn active px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow transition-all">
-                            🌐 All Categories
-                        </button>
-                        <button data-cat="air-conditioners" onclick="selectPelpCategory('air-conditioners')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            ❄️ Air Conditioners (1,787)
-                        </button>
-                        <button data-cat="refrigerating-appliances" onclick="selectPelpCategory('refrigerating-appliances')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            🧊 Refrigerators (827)
-                        </button>
-                        <button data-cat="electric-fans" onclick="selectPelpCategory('electric-fans')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            🌀 Electric Fans (153)
-                        </button>
-                        <button data-cat="television-sets" onclick="selectPelpCategory('television-sets')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            📺 Television Sets (1,320)
-                        </button>
-                        <button data-cat="clothes-washing-machines" onclick="selectPelpCategory('clothes-washing-machines')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            🧺 Washing Machines (10)
-                        </button>
-                        <button data-cat="lighting-products" onclick="selectPelpCategory('lighting-products')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
-                            💡 Lighting (2,722)
-                        </button>
-                    </div>
+                    <!-- 2-Column Main Layout for Results & Load Customizer -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-                    <!-- 2-Column Main Layout for PELP & Load Customizer -->
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-                        <!-- Left Column: Search & Results Table / List -->
+                        <!-- Left Column: Results List -->
                         <div class="lg:col-span-7 flex flex-col gap-4">
 
-                            <!-- Search & Filter Card -->
-                            <div class="glass-card p-4 rounded-2xl flex flex-col gap-3 shadow-xl">
-                                <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center t-muted text-sm">🔍</span>
-                                    <input
-                                        type="text"
-                                        id="pelpSearchInput"
-                                        placeholder="Search by brand (Samsung, Sharp, Panasonic, Carrier...), model, or specs..."
-                                        class="w-full pf-input rounded-xl pl-10 pr-10 py-2.5 text-xs font-medium"
-                                        oninput="debouncedPelpSearch()"
-                                    >
-                                    <button onclick="clearPelpSearch()" id="pelpClearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs t-muted hover:text-white">✕</button>
-                                </div>
-
-                                <!-- Quick Brand Filter Pills -->
-                                <div class="flex flex-wrap items-center gap-1.5 text-[11px] t-muted">
-                                    <span class="font-semibold text-xs text-slate-300">Popular Brands:</span>
-                                    <button onclick="setPelpBrandSearch('Samsung')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Samsung</button>
-                                    <button onclick="setPelpBrandSearch('Panasonic')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Panasonic</button>
-                                    <button onclick="setPelpBrandSearch('Sharp')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Sharp</button>
-                                    <button onclick="setPelpBrandSearch('Carrier')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Carrier</button>
-                                    <button onclick="setPelpBrandSearch('LG')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">LG</button>
-                                    <button onclick="setPelpBrandSearch('Tough Mama')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Tough Mama</button>
-                                    <button onclick="setPelpBrandSearch('Condura')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Condura</button>
-                                </div>
-                            </div>
-
                             <!-- Search Results Container -->
-                            <div class="glass-card p-4 rounded-2xl flex flex-col gap-3 shadow-xl min-h-[460px]">
-                                <div class="flex justify-between items-center px-1">
+                            <div class="glass-card p-5 sm:p-6 rounded-3xl flex flex-col gap-3.5 shadow-xl min-h-[480px]">
+                                <div class="flex justify-between items-center px-1 pb-2 border-b pf-divider">
                                     <span id="pelpResultsCount" class="text-xs font-bold t-secondary">Found Certified Appliances</span>
                                     <span class="text-[11px] t-muted">Click any item to customize usage & save load</span>
                                 </div>
 
                                 <!-- Scrollable Results List -->
-                                <div id="pelpResultsList" class="flex flex-col gap-2.5 max-h-[540px] overflow-y-auto pr-1">
+                                <div id="pelpResultsList" class="flex flex-col gap-2.5 max-h-[560px] overflow-y-auto pr-1">
                                     <div class="flex flex-col items-center justify-center p-8 text-center gap-2">
                                         <div class="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
                                         <span class="text-xs t-muted">Loading DOE PELP database...</span>
@@ -1335,10 +1338,10 @@
                         </div>
 
                         <!-- Right Column: Selected Appliance Load Configurator & Household Load List -->
-                        <div class="lg:col-span-5 flex flex-col gap-6">
+                        <div class="lg:col-span-5 flex flex-col gap-5">
 
                             <!-- Selected / Configured Appliance Card -->
-                            <div id="pelpConfigCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative">
+                            <div id="pelpConfigCard" class="glow-card p-5 sm:p-6 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <span id="pelpConfigCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">PELP Certified Load</span>
@@ -1414,7 +1417,7 @@
                             </div>
 
                             <!-- Household Load List Card -->
-                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                            <div class="glass-card p-5 sm:p-6 rounded-3xl flex flex-col gap-4 shadow-xl">
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <span class="text-base">📋</span>
