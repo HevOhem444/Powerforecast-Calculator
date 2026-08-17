@@ -2034,12 +2034,18 @@
                     const result = await response.json();
                     if (result.success && result.data) {
                         meralcoRatesData = result.data;
+                        
+                        // Set top header & mobile side panel rate tickers strictly to official Meralco API rate
+                        const officialRate = meralcoRatesData[0]?.generation_rate || 9.2504;
+                        document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
+                            el.textContent = `₱${officialRate.toFixed(4)}/kWh`;
+                        });
+
                         updateGenRateFromRates();
                         calculateBill();
 
                         if (isUserClick) {
-                            const activeRate = meralcoRatesData[0]?.generation_rate || 9.2504;
-                            showRateToast(`⚡ Meralco Rates Synced! Rate: ₱${activeRate.toFixed(4)}/kWh`);
+                            showRateToast(`⚡ Meralco Rates Synced! Official Rate: ₱${officialRate.toFixed(4)}/kWh`);
                         }
                     }
                 }
@@ -2099,11 +2105,6 @@
 
             if (genInput) genInput.value = targetRate.toFixed(4);
             if (helperText) helperText.textContent = labelText;
-
-            // Sync top header and mobile side panel rate badges with fetched Base Gen Rate
-            document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
-                el.textContent = `₱${targetRate.toFixed(4)}/kWh`;
-            });
         }
 
         function syncKwhInput(value) {
@@ -2151,11 +2152,6 @@
             }
 
             const otherCharges = parseFloat(otherInput.value) || 0;
-
-            // Always sync top header and mobile side panel rate badges to current Base Generation Charge
-            document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
-                el.textContent = `₱${genRate.toFixed(4)}/kWh`;
-            });
 
             const genCost = Math.round(kwh * genRate * 100) / 100;
             const transCost = Math.round(kwh * activeRates.transmission * 100) / 100;
