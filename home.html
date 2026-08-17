@@ -1009,51 +1009,16 @@
                             </button>
                         </div>
 
-                        <!-- Vision AI Engine Status Badge -->
-                        <div id="aiEngineStatusBadge" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-slate-900/60 border-slate-700/60 text-slate-300 shadow transition-all">
-                            <span id="aiEngineStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-                            <span id="aiEngineStatusText">Checking Vision AI...</span>
-                        </div>
-
-                        <!-- History Drawer Toggle -->
-                        <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
-                            <span>📜</span> History
-                            <span id="aiHistoryBadge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold">0</span>
+                        <!-- API Key Status Pill Indicator -->
+                        <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-rose-950/40 border-rose-700/50 text-rose-200 hover:border-rose-400 transition-all shadow cursor-pointer" title="Click to view API Key Connection Status &amp; Setup">
+                            <span id="aiApiKeyDot" class="w-2 h-2 rounded-full bg-rose-400"></span>
+                            <span id="aiApiKeyText">No API Key Connected</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- MODE 1: AI Vision Appliance Recognition Container -->
                 <div id="applianceMode-vision" class="flex flex-col gap-6">
-
-                    <!-- AI Controls Top Bar -->
-                    <div class="flex flex-wrap justify-between items-center gap-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Vision Engine:</span>
-                            <!-- Model Select -->
-                            <select id="aiModelSelect" onchange="aiState.currentModel=this.value" class="pf-input rounded-xl px-3 py-1.5 text-xs font-semibold">
-                                <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
-                                <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fastest)</option>
-                                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                                <option value="gemini-3-pro-preview">Gemini 3.0 Pro</option>
-                                <option value="gemini-flash-latest">Gemini Flash Latest</option>
-                            </select>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <!-- API Key Status Pill -->
-                            <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-slate-900/60 border-slate-700/60 text-slate-300 hover:border-indigo-400 transition-all shadow cursor-pointer" title="Click to view API Key Connection Status & Setup Guide">
-                                <span id="aiApiKeyDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-                                <span id="aiApiKeyText">Checking Server Key...</span>
-                            </button>
-
-                            <!-- History Drawer Toggle -->
-                            <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-1.5 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
-                                <span>📜</span> History
-                                <span id="aiHistoryBadge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold">0</span>
-                            </button>
-                        </div>
-                    </div>
 
                     <!-- Main 2-Column Grid for AI Vision -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -3763,9 +3728,6 @@
             const apiKeyBtn = document.getElementById('aiApiKeyBtn');
             const apiKeyDot = document.getElementById('aiApiKeyDot');
             const apiKeyText = document.getElementById('aiApiKeyText');
-            const engineBadge = document.getElementById('aiEngineStatusBadge');
-            const engineDot = document.getElementById('aiEngineStatusDot');
-            const engineText = document.getElementById('aiEngineStatusText');
 
             // Modal elements
             const modalPill = document.getElementById('aiModalStatusPill');
@@ -3788,7 +3750,7 @@
 
                 if (data && data.serverHasKey === true) {
                     const detectedName = data.keyNameDetected || 'GEMINI_API_KEY';
-                    // 1. Sub-bar Pill
+                    // 1. Header Pill
                     if (apiKeyText) apiKeyText.textContent = 'Server Key Active';
                     if (apiKeyDot) apiKeyDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
                     if (apiKeyBtn) {
@@ -3796,18 +3758,11 @@
                         apiKeyBtn.title = `Server Key Active (${detectedName} detected)`;
                     }
 
-                    // 2. Engine Header Badge
-                    if (engineText) engineText.textContent = 'Gemini 3.7 Flash Active';
-                    if (engineDot) engineDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                    if (engineBadge) {
-                        engineBadge.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 shadow transition-all';
-                    }
-
-                    // 3. Modal status
+                    // 2. Modal status
                     if (modalPill) modalPill.className = 'px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
                     if (modalDot) modalDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
                     if (modalText) modalText.textContent = 'Active & Connected';
-                    if (modalDesc) modalDesc.innerHTML = `<span class="text-emerald-300 font-semibold">Ready to scan!</span> Environment variable <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[11px]">${detectedName}</code> is active and securely loaded on your Vercel server.`;
+                    if (modalDesc) modalDesc.innerHTML = `<span class="text-emerald-300 font-semibold">Ready to scan!</span> Environment variable <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[11px]">${detectedName}</code> is active and securely loaded on your server.`;
                     if (modalCard) modalCard.className = 'p-4 rounded-2xl border transition-all flex flex-col gap-2.5 bg-emerald-950/30 border-emerald-500/30';
 
                     if (isManualCheck) {
@@ -3815,30 +3770,23 @@
                     }
                 } else {
                     // No key detected
-                    // 1. Sub-bar Pill
+                    // 1. Header Pill
                     if (apiKeyText) apiKeyText.textContent = 'No API Key Connected';
                     if (apiKeyDot) apiKeyDot.className = 'w-2 h-2 rounded-full bg-amber-400';
                     if (apiKeyBtn) {
                         apiKeyBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-amber-950/40 border-amber-700/50 text-amber-200 hover:border-amber-400 transition-all shadow cursor-pointer';
-                        apiKeyBtn.title = 'No API key configured in Vercel Environment Variables. Click to setup.';
+                        apiKeyBtn.title = 'No API key configured in server environment variables. Click to setup.';
                     }
 
-                    // 2. Engine Header Badge
-                    if (engineText) engineText.textContent = 'Vision AI Standby (No Key)';
-                    if (engineDot) engineDot.className = 'w-2 h-2 rounded-full bg-amber-400';
-                    if (engineBadge) {
-                        engineBadge.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-slate-900/60 border-slate-700/60 text-slate-300 shadow transition-all';
-                    }
-
-                    // 3. Modal status
+                    // 2. Modal status
                     if (modalPill) modalPill.className = 'px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30';
                     if (modalDot) modalDot.className = 'w-2 h-2 rounded-full bg-amber-400';
                     if (modalText) modalText.textContent = 'No Key Detected';
-                    if (modalDesc) modalDesc.innerHTML = `<span class="text-amber-300 font-semibold">API Key Required.</span> No <code class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[11px]">GEMINI_API_KEY</code> was found in your server environment variables. Follow the steps below to configure it in Vercel.`;
+                    if (modalDesc) modalDesc.innerHTML = `<span class="text-amber-300 font-semibold">API Key Required.</span> No <code class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[11px]">GEMINI_API_KEY</code> was found in your server environment variables.`;
                     if (modalCard) modalCard.className = 'p-4 rounded-2xl border transition-all flex flex-col gap-2.5 bg-amber-950/30 border-amber-500/30';
 
                     if (isManualCheck) {
-                        showToast("No API Key Detected", "Please add GEMINI_API_KEY in Vercel Settings > Environment Variables, then redeploy.", "warning");
+                        showToast("No API Key Detected", "Please add GEMINI_API_KEY to your server environment variables.", "warning");
                     }
                 }
             } catch (err) {
@@ -3848,23 +3796,17 @@
                 if (apiKeyDot) apiKeyDot.className = 'w-2 h-2 rounded-full bg-rose-400';
                 if (apiKeyBtn) {
                     apiKeyBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-rose-950/40 border-rose-700/50 text-rose-200 hover:border-rose-400 transition-all shadow cursor-pointer';
-                    apiKeyBtn.title = 'Server endpoint unreachable or no API key. Click for setup guide.';
-                }
-
-                if (engineText) engineText.textContent = 'Vision AI Offline';
-                if (engineDot) engineDot.className = 'w-2 h-2 rounded-full bg-rose-400';
-                if (engineBadge) {
-                    engineBadge.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-slate-900/60 border-slate-700/60 text-slate-300 shadow transition-all';
+                    apiKeyBtn.title = 'Server endpoint unreachable or no API key. Click for status.';
                 }
 
                 if (modalPill) modalPill.className = 'px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30';
                 if (modalDot) modalDot.className = 'w-2 h-2 rounded-full bg-rose-400';
                 if (modalText) modalText.textContent = 'Server Standby';
-                if (modalDesc) modalDesc.innerHTML = `<span class="text-rose-300 font-semibold">Could not verify connection.</span> Ensure your server or Vercel deployment is active with <code class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[11px]">GEMINI_API_KEY</code> set in Environment Variables.`;
+                if (modalDesc) modalDesc.innerHTML = `<span class="text-rose-300 font-semibold">Could not verify connection.</span> Ensure your server is active with <code class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[11px]">GEMINI_API_KEY</code> set in environment variables.`;
                 if (modalCard) modalCard.className = 'p-4 rounded-2xl border transition-all flex flex-col gap-2.5 bg-rose-950/30 border-rose-500/30';
 
                 if (isManualCheck) {
-                    showToast("Health Check Offline", "Could not reach server endpoint. Check Vercel deployment status.", "error");
+                    showToast("Health Check Offline", "Could not reach server endpoint.", "error");
                 }
             } finally {
                 isAiHealthChecking = false;
