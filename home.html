@@ -3750,23 +3750,37 @@
 
                 if (data && data.serverHasKey === true) {
                     const detectedName = data.keyNameDetected || 'GEMINI_API_KEY';
+                    const keyCount = data.keyCount || 1;
+                    const isMultiKey = keyCount > 1;
+
                     // 1. Header Pill
-                    if (apiKeyText) apiKeyText.textContent = 'Server Key Active';
+                    if (apiKeyText) {
+                        apiKeyText.textContent = isMultiKey ? `Server Key Active (${keyCount} Keys)` : 'Server Key Active';
+                    }
                     if (apiKeyDot) apiKeyDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
                     if (apiKeyBtn) {
                         apiKeyBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-emerald-950/60 border-emerald-700/60 text-emerald-200 hover:border-emerald-400 transition-all shadow cursor-pointer';
-                        apiKeyBtn.title = `Server Key Active (${detectedName} detected)`;
+                        apiKeyBtn.title = isMultiKey
+                            ? `${keyCount} API Keys Active: ${detectedName}. Automatic fallback rotation enabled.`
+                            : `Server Key Active (${detectedName} detected)`;
                     }
 
                     // 2. Modal status
                     if (modalPill) modalPill.className = 'px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
                     if (modalDot) modalDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-                    if (modalText) modalText.textContent = 'Active & Connected';
-                    if (modalDesc) modalDesc.innerHTML = `<span class="text-emerald-300 font-semibold">Ready to scan!</span> Environment variable <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[11px]">${detectedName}</code> is active and securely loaded on your server.`;
+                    if (modalText) modalText.textContent = isMultiKey ? `${keyCount} Keys Active & Fallback Ready` : 'Active & Connected';
+                    if (modalDesc) {
+                        modalDesc.innerHTML = isMultiKey
+                            ? `<span class="text-emerald-300 font-semibold">Ready to scan with ${keyCount} keys!</span> Environment variables <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[11px]">${detectedName}</code> are loaded. If one key reaches quota or rate limits, the system will automatically fall back to the next key seamlessly.`
+                            : `<span class="text-emerald-300 font-semibold">Ready to scan!</span> Environment variable <code class="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-mono text-[11px]">${detectedName}</code> is active and securely loaded on your server.`;
+                    }
                     if (modalCard) modalCard.className = 'p-4 rounded-2xl border transition-all flex flex-col gap-2.5 bg-emerald-950/30 border-emerald-500/30';
 
                     if (isManualCheck) {
-                        showToast("API Key Connected", `Server key (${detectedName}) is active and ready for AI vision scans!`, "success");
+                        const msg = isMultiKey
+                            ? `${keyCount} Gemini API keys loaded with automatic fallback redundancy!`
+                            : `Server key (${detectedName}) is active and ready for AI vision scans!`;
+                        showToast("API Key Connected", msg, "success");
                     }
                 } else {
                     // No key detected

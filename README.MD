@@ -52,6 +52,18 @@ npm install -g vercel
 vercel --prod
 ```
 
+### 🔑 AI Vision API Key & Fallback Configuration (Vercel & Local)
+
+PowerForecast features an **automatic multi-key fallback system**. You can configure more than 1 Gemini API key in your Vercel Project Settings (`Settings > Environment Variables`) or local `.env.local` file. If the primary key hits quota, rate limits, or errors, the server automatically rotates to the next available fallback key seamlessly:
+
+| Environment Variable | Description | Example |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | Primary Gemini API Key | `AIzaSy...` |
+| `GEMINI_API_KEY_2` | Second Fallback API Key | `AIzaSy...` |
+| `GEMINI_API_KEY_3` | Third Fallback API Key | `AIzaSy...` |
+| `GEMINI_API_KEY_FALLBACK` | Named Fallback API Key | `AIzaSy...` |
+| `GEMINI_API_KEYS` | Comma-separated list of multiple keys | `key1,key2,key3` |
+
 ---
 
 ## 📡 API Endpoints

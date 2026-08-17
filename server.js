@@ -29,6 +29,53 @@ for (const envFile of ['.env.local', '.env']) {
     }
 }
 
+/**
+ * Collects all configured Gemini API keys from environment variables.
+ * Supports GEMINI_API_KEY, GEMINI_API_KEY_1..10, GEMINI_API_KEY_FALLBACK,
+ * GEMINI_API_KEYS (comma-separated), GOOGLE_API_KEY, and GOOGLE_GEMINI_API_KEY.
+ */
+function getGeminiApiKeys() {
+    const keys = [];
+    const pushKey = (val) => {
+        if (!val || typeof val !== 'string') return;
+        if (/[,;\n\r]/.test(val)) {
+            val.split(/[,;\n\r]+/).forEach(k => pushKey(k));
+            return;
+        }
+        const clean = val.trim().replace(/^["']|["']$/g, '');
+        if (clean && !keys.includes(clean)) {
+            keys.push(clean);
+        }
+    };
+
+    pushKey(process.env.GEMINI_API_KEYS);
+
+    // 2. Numbered & standard named fallback keys
+    const keyPrefixes = [
+        'GEMINI_API_KEY',
+        'GEMINI_API_KEY_FALLBACK',
+        'GEMINI_API_KEY_BACKUP',
+        'GEMINI_API_BACKUP_KEY',
+        'GOOGLE_API_KEY',
+        'GOOGLE_GEMINI_API_KEY'
+    ];
+    for (const prefix of keyPrefixes) {
+        pushKey(process.env[prefix]);
+        for (let i = 1; i <= 10; i++) {
+            pushKey(process.env[`${prefix}_${i}`]);
+        }
+    }
+
+    // 3. Dynamic scan of process.env for any GEMINI / GOOGLE API KEY patterns
+    Object.keys(process.env).forEach(envKey => {
+        if (/^(GEMINI|GOOGLE)_.*API_?KEY.*$/i.test(envKey)) {
+            pushKey(process.env[envKey]);
+        }
+    });
+
+    return keys;
+}
+
 const DEFAULT_RATES = {
     transmission: 1.4074,
     systemLoss: 0.7994,
@@ -388,17 +435,34 @@ const server = http.createServer((req, res) => {
     // API Routes
     if (pathname === '/api/health' || pathname === '/api/health.py') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        const geminiKey = process.env.GEMINI_API_KEY?.trim();
-        const googleKey = process.env.GOOGLE_API_KEY?.trim();
-        const googleGeminiKey = process.env.GOOGLE_GEMINI_API_KEY?.trim();
-        const apiKey = geminiKey || googleKey || googleGeminiKey || '';
-        const serverHasKey = Boolean(apiKey);
-        const keyName = geminiKey ? 'GEMINI_API_KEY' : (googleKey ? 'GOOGLE_API_KEY' : (googleGeminiKey ? 'GOOGLE_GEMINI_API_KEY' : null));
+        const keys = getGeminiApiKeys();
+        const keyCount = keys.length;
+        const serverHasKey = keyCount > 0;
+
+        const detectedSources = [];
+        if (process.env.GEMINI_API_KEY) detectedSources.push('GEMINI_API_KEY');
+        for (let i = 1; i <= 10; i++) {
+            if (process.env[`GEMINI_API_KEY_${i}`]) detectedSources.push(`GEMINI_API_KEY_${i}`);
+        }
+        if (process.env.GEMINI_API_KEY_FALLBACK) detectedSources.push('GEMINI_API_KEY_FALLBACK');
+        if (process.env.GEMINI_API_KEYS) detectedSources.push('GEMINI_API_KEYS');
+        if (process.env.GOOGLE_API_KEY) detectedSources.push('GOOGLE_API_KEY');
+        if (process.env.GOOGLE_GEMINI_API_KEY) detectedSources.push('GOOGLE_GEMINI_API_KEY');
+
+        let keyName = null;
+        if (keyCount > 1) {
+            const primary = detectedSources[0] || 'GEMINI_API_KEY';
+            keyName = `${primary} (+${keyCount - 1} Fallback Keys)`;
+        } else if (keyCount === 1) {
+            keyName = detectedSources[0] || 'GEMINI_API_KEY';
+        }
 
         res.end(JSON.stringify({
             status: 'ok',
             serverHasKey,
+            keyCount,
             keyNameDetected: keyName,
+            detectedSources,
             maxImagesSupported: 3,
             defaultModel: 'gemini-3.7-flash',
             supportedModels: ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-flash-latest']
@@ -474,12 +538,12 @@ const server = http.createServer((req, res) => {
                 try { payload = JSON.parse(body); } catch (e) {}
                 const { images = [], imageBase64, mimeType = 'image/jpeg', prompt, preset = 'specs', model = 'gemini-3.7-flash' } = payload;
 
-                const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GEMINI_API_KEY || '').trim();
-                if (!apiKey) {
+                const apiKeys = getGeminiApiKeys();
+                if (apiKeys.length === 0) {
                     res.writeHead(401, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         error: 'Missing Gemini API Key',
-                        message: 'No GEMINI_API_KEY (or GOOGLE_API_KEY) configured in server environment variables.'
+                        message: 'No GEMINI_API_KEY (or fallback keys) configured in server environment variables.'
                     }));
                     return;
                 }
@@ -533,53 +597,96 @@ Your objective is to identify household, kitchen, commercial, or HVAC appliances
                 const targetModel = model || 'gemini-3.7-flash';
                 const postData = JSON.stringify({ contents: [{ parts }] });
 
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+                // Execute query with multi-key fallback rotation
+                let lastError = null;
+                let lastStatusCode = 500;
 
-                const apiReq = https.request(geminiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Content-Length': Buffer.byteLength(postData)
+                for (let i = 0; i < apiKeys.length; i++) {
+                    const apiKey = apiKeys[i];
+                    const keyLabel = `Key #${i + 1} (...${apiKey.slice(-4)})`;
+                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
+
+                    try {
+                        const result = await new Promise((resolve, reject) => {
+                            const apiReq = https.request(geminiUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Content-Length': Buffer.byteLength(postData)
+                                },
+                                timeout: 28000
+                            }, (apiRes) => {
+                                let resBody = '';
+                                apiRes.on('data', chunk => { resBody += chunk; });
+                                apiRes.on('end', () => {
+                                    try {
+                                        const parsedRes = JSON.parse(resBody);
+                                        if (apiRes.statusCode >= 400 || parsedRes.error) {
+                                            const errMsg = parsedRes.error?.message || `Gemini API returned status ${apiRes.statusCode}`;
+                                            const err = new Error(errMsg);
+                                            err.statusCode = apiRes.statusCode || 500;
+                                            err.responseBody = parsedRes;
+                                            reject(err);
+                                        } else {
+                                            resolve({
+                                                data: parsedRes,
+                                                keyIndex: i,
+                                                keyCount: apiKeys.length
+                                            });
+                                        }
+                                    } catch (parseErr) {
+                                        const err = new Error(`Failed to parse Gemini API JSON response: ${resBody.slice(0, 150)}`);
+                                        err.statusCode = apiRes.statusCode || 500;
+                                        reject(err);
+                                    }
+                                });
+                            });
+
+                            apiReq.on('error', (err) => {
+                                err.statusCode = 500;
+                                reject(err);
+                            });
+
+                            apiReq.on('timeout', () => {
+                                apiReq.destroy();
+                                const err = new Error('Gemini API request timed out after 28s');
+                                err.statusCode = 504;
+                                reject(err);
+                            });
+
+                            apiReq.write(postData);
+                            apiReq.end();
+                        });
+
+                        // Successfully received response from Gemini API
+                        const textResult = result.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            success: true,
+                            modelUsed: targetModel,
+                            imageCount: imageList.length,
+                            preset,
+                            analysis: textResult,
+                            keyUsedIndex: i + 1,
+                            totalKeysConfigured: apiKeys.length,
+                            timestamp: new Date().toISOString()
+                        }));
+                        return;
+
+                    } catch (err) {
+                        lastError = err;
+                        lastStatusCode = err.statusCode || 500;
+                        console.warn(`[Gemini API] ${keyLabel} failed (${err.message}). ${i + 1 < apiKeys.length ? `Attempting fallback key #${i + 2}...` : 'No more fallback keys.'}`);
                     }
-                }, (apiRes) => {
-                    let resBody = '';
-                    apiRes.on('data', chunk => { resBody += chunk; });
-                    apiRes.on('end', () => {
-                        try {
-                            const parsedRes = JSON.parse(resBody);
-                            if (apiRes.statusCode >= 400 || parsedRes.error) {
-                                res.writeHead(apiRes.statusCode || 500, { 'Content-Type': 'application/json' });
-                                res.end(JSON.stringify({
-                                    error: 'Appliance Analysis Failed',
-                                    message: parsedRes.error?.message || `Gemini API returned status ${apiRes.statusCode}`
-                                }));
-                                return;
-                            }
+                }
 
-                            const textResult = parsedRes.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                            res.writeHead(200, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({
-                                success: true,
-                                modelUsed: targetModel,
-                                imageCount: imageList.length,
-                                preset,
-                                analysis: textResult,
-                                timestamp: new Date().toISOString()
-                            }));
-                        } catch (err) {
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ error: 'Parse Error', message: err.message }));
-                        }
-                    });
-                });
-
-                apiReq.on('error', (err) => {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Request Failed', message: err.message }));
-                });
-
-                apiReq.write(postData);
-                apiReq.end();
+                // All keys failed:
+                res.writeHead(lastStatusCode, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    error: 'Appliance Analysis Failed',
+                    message: `All ${apiKeys.length} Gemini API key(s) failed. Last error: ${lastError?.message || 'Unknown error'}`,
+                    keysAttempted: apiKeys.length
+                }));
 
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
