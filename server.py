@@ -38,7 +38,10 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
         if path in ['/api/health', '/api/health.py']:
             self.handle_api_health()
         elif path in ['/api/rates', '/api/rates.py']:
-            self.handle_api_rates()
+            params = parse_qs(parsed.query)
+            force_refresh = params.get('refresh', ['false'])[0].lower() in ['true', '1']
+            url = params.get('url', [''])[0]
+            self.handle_api_rates(force_refresh=force_refresh, custom_url=url)
         elif path in ['/api/appliances', '/api/appliances.py']:
             self.handle_api_appliances()
         elif path in ['/api/calculate', '/api/calculate.py']:
@@ -70,6 +73,19 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length).decode('utf-8')
             self.handle_api_analyze(body)
+        elif path in ['/api/rates/fetch', '/api/rates/fetch.py', '/api/rates']:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
+            try:
+                payload = json.loads(body)
+            except Exception:
+                payload = {}
+            self.handle_api_rates(
+                force_refresh=True,
+                custom_url=payload.get('url'),
+                month=payload.get('month'),
+                year=payload.get('year')
+            )
         else:
             self.send_response(404)
             self._send_cors_headers()
@@ -187,19 +203,20 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": "Server Error", "message": str(e)}).encode('utf-8'))
 
-    def handle_api_rates(self):
+    def handle_api_rates(self, force_refresh=False, custom_url=None, month=None, year=None):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self._send_cors_headers()
         self.end_headers()
 
-        rates_path = os.path.join(PROJECT_DIR, 'rates.json')
-        if os.path.exists(rates_path):
-            with open(rates_path, 'r', encoding='utf-8') as f:
-                self.wfile.write(f.read().encode('utf-8'))
+        if custom_url and custom_url.strip():
+            rates = meralco_parser.fetch_rates_from_url(custom_url.strip())
+        elif month and year:
+            rates = meralco_parser.get_rates_for_specific_month(int(year), int(month))
         else:
-            rates = meralco_parser.get_meralco_rates()
-            self.wfile.write(json.dumps(rates, indent=2).encode('utf-8'))
+            rates = meralco_parser.get_meralco_rates(force_refresh=force_refresh)
+
+        self.wfile.write(json.dumps(rates, indent=2).encode('utf-8'))
 
     def handle_api_appliances(self):
         self.send_response(200)

@@ -1596,6 +1596,28 @@
 
                         <!-- Configuration Form -->
                         <div class="flex-1 px-6 py-6 flex flex-col gap-5">
+
+                            <!-- Manual Meralco Rate Fetcher Section -->
+                            <div class="flex flex-col gap-3 p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 shadow-inner">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">⚡ Meralco Rate Scraper</span>
+                                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-mono">Official Fetch</span>
+                                </div>
+                                <p class="text-[11px] t-muted">Fetch rates directly from Meralco S3 bulletins or custom advisory news links.</p>
+                                <div class="flex flex-col gap-2">
+                                    <label for="manualRateUrlInput" class="text-[11px] font-medium text-slate-300">News / Advisory / PDF URL:</label>
+                                    <input type="url" id="manualRateUrlInput" placeholder="https://company.meralco.com.ph/news-and-advisories/..." class="pf-input rounded-xl px-3 py-2 text-xs text-white" value="https://company.meralco.com.ph/news-and-advisories/higher-residential-rates-april-2026">
+                                    <div class="flex gap-2 pt-1">
+                                        <button id="manualFetchBtn" onclick="manualFetchMeralcoRates()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5">
+                                            <span>🔄</span> Fetch &amp; Apply Rate
+                                        </button>
+                                        <button onclick="fetchRates(true)" class="px-3.5 py-2.5 btn-secondary rounded-xl text-xs font-semibold" title="Fetch latest month PDF from Meralco S3">
+                                            Latest Month
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="flex flex-col gap-3">
                                 <span class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Base Rates (PHP/kWh)</span>
                                 <div class="flex flex-col gap-1.5">
@@ -2028,7 +2050,8 @@
             }
 
             try {
-                let response = await fetch('/api/rates');
+                let endpoint = isUserClick ? '/api/rates?refresh=true' : '/api/rates';
+                let response = await fetch(endpoint);
                 if (!response.ok) response = await fetch('rates.json');
                 if (response.ok) {
                     const result = await response.json();
@@ -2036,7 +2059,7 @@
                         meralcoRatesData = result.data;
                         
                         // Set top header & mobile side panel rate tickers strictly to official Meralco API rate
-                        const officialRate = meralcoRatesData[0]?.generation_rate || 9.2504;
+                        const officialRate = meralcoRatesData[0]?.generation_rate || 9.2800;
                         document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
                             el.textContent = `₱${officialRate.toFixed(4)}/kWh`;
                         });
@@ -2045,13 +2068,63 @@
                         calculateBill();
 
                         if (isUserClick) {
-                            showRateToast(`⚡ Meralco Rates Synced! Official Rate: ₱${officialRate.toFixed(4)}/kWh`);
+                            const dateStr = result.date ? ` (${result.date})` : '';
+                            showRateToast(`⚡ Meralco Rates Synced${dateStr}: ₱${officialRate.toFixed(4)}/kWh`);
                         }
                     }
                 }
             } catch (error) {
                 console.warn("Could not fetch rates, using defaults:", error);
             } finally {
+                setTimeout(() => {
+                    icons.forEach(ic => ic.classList.remove('animate-spin'));
+                }, 600);
+            }
+        }
+
+        async function manualFetchMeralcoRates() {
+            const urlInput = document.getElementById('manualRateUrlInput')?.value?.trim();
+            const btn = document.getElementById('manualFetchBtn');
+            if (btn) btn.disabled = true;
+
+            const icons = document.querySelectorAll('.rate-refresh-icon');
+            icons.forEach(ic => ic.classList.add('animate-spin'));
+
+            showRateToast("⏳ Fetching Meralco Rate Bulletin...");
+
+            try {
+                const payload = urlInput ? { url: urlInput } : { refresh: true };
+                let response = await fetch('/api/rates/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.data) {
+                        meralcoRatesData = result.data;
+                        const officialRate = meralcoRatesData[0]?.generation_rate || 9.2800;
+                        
+                        document.querySelectorAll('.headerRateTicker, #headerRateTicker').forEach(el => {
+                            el.textContent = `₱${officialRate.toFixed(4)}/kWh`;
+                        });
+
+                        isGenerationRateManual = false;
+                        updateGenRateFromRates();
+                        calculateBill();
+
+                        const dateStr = result.date || 'Latest Bulletin';
+                        showRateToast(`⚡ Synced ${dateStr}: ₱${officialRate.toFixed(4)}/kWh`);
+                    } else {
+                        alert(result.error || "Could not fetch rates from provided Meralco source.");
+                    }
+                }
+            } catch (err) {
+                console.error("Error manually fetching rates:", err);
+                alert("Failed to connect to Meralco rate endpoint.");
+            } finally {
+                if (btn) btn.disabled = false;
                 setTimeout(() => {
                     icons.forEach(ic => ic.classList.remove('animate-spin'));
                 }, 600);
