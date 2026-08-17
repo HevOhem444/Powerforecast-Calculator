@@ -504,8 +504,8 @@
             <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-950/80 border border-blue-800/80 text-white shadow-inner rate-ticker-badge">
                 <span class="text-base rate-ticker-emoji">💵</span>
                 <span class="text-sm font-bold rate-ticker-text headerRateTicker" id="headerRateTicker">₱9.2504/kWh</span>
-                <button onclick="fetchRates()" class="ml-1 text-slate-300 hover:text-amber-400 transition-colors" title="Refresh Rates">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <button onclick="fetchRates(true)" class="ml-1 text-slate-300 hover:text-amber-400 transition-colors p-1 rounded-lg hover:bg-slate-800/60" title="Refresh Rates from Meralco API">
+                    <svg class="w-4 h-4 rate-refresh-icon transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </button>
@@ -542,8 +542,8 @@
                                 <span class="text-sm font-extrabold text-amber-400 headerRateTicker">₱9.2504/kWh</span>
                             </div>
                         </div>
-                        <button onclick="fetchRates()" class="p-1.5 rounded-lg bg-blue-900/50 text-slate-300 hover:text-amber-400 transition-colors" title="Refresh Rates">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <button onclick="fetchRates(true)" class="p-1.5 rounded-lg bg-blue-900/50 text-slate-300 hover:text-amber-400 transition-colors" title="Refresh Rates from Meralco API">
+                            <svg class="w-4 h-4 rate-refresh-icon transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
@@ -2019,7 +2019,14 @@
         let meralcoRatesData = null;
         let isGenerationRateManual = false;
 
-        async function fetchRates() {
+        async function fetchRates(isUserClick = false) {
+            const icons = document.querySelectorAll('.rate-refresh-icon');
+            icons.forEach(ic => ic.classList.add('animate-spin'));
+
+            if (isUserClick) {
+                isGenerationRateManual = false;
+            }
+
             try {
                 let response = await fetch('/api/rates');
                 if (!response.ok) response = await fetch('rates.json');
@@ -2029,11 +2036,39 @@
                         meralcoRatesData = result.data;
                         updateGenRateFromRates();
                         calculateBill();
+
+                        if (isUserClick) {
+                            const activeRate = meralcoRatesData[0]?.generation_rate || 9.2504;
+                            showRateToast(`⚡ Meralco Rates Synced! Rate: ₱${activeRate.toFixed(4)}/kWh`);
+                        }
                     }
                 }
             } catch (error) {
                 console.warn("Could not fetch rates, using defaults:", error);
+            } finally {
+                setTimeout(() => {
+                    icons.forEach(ic => ic.classList.remove('animate-spin'));
+                }, 600);
             }
+        }
+
+        function showRateToast(message) {
+            let toast = document.getElementById('rateToastNotification');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'rateToastNotification';
+                toast.className = 'fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-indigo-900/90 text-white border border-indigo-500/40 shadow-2xl backdrop-blur-xl flex items-center gap-2 text-xs font-bold transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-none';
+                document.body.appendChild(toast);
+            }
+            
+            toast.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-[-10px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+            }, 3000);
         }
 
         function updateGenRateFromRates() {
