@@ -808,259 +808,830 @@
                 </div>
             </section>
 
-            <!-- PANEL 3: APPLIANCES VIEW (IMAGE RECOGNITION AI & APPLIANCE MANAGER) -->
+            <!-- PANEL 3: APPLIANCES VIEW (IMAGE RECOGNITION AI & DOE PELP CERTIFIED APPLIANCE MANAGER) -->
             <section id="view-appliances" class="view-panel hidden flex-col gap-6">
 
-                <!-- Top Module Header & AI Controls -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <!-- Top Mode Switcher Bar -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pf-divider border-b pb-4">
                     <div>
-                        <h2 class="text-2xl font-extrabold t-primary flex items-center gap-2">
-                            <span>📷</span>
-                            <span>AI Vision Appliance Recognition</span>
-                        </h2>
-                        <p class="text-sm t-muted">Snap or upload photos of appliances to automatically identify models, specs, estimated wattage, and Meralco monthly cost.</p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">🔌</span>
+                            <h2 class="text-2xl font-extrabold t-primary">Appliance Intelligence Center</h2>
+                        </div>
+                        <p class="text-sm t-muted mt-0.5">Scan appliance tags with Vision AI or search 6,800+ DOE Philippine Energy Labeling Program (PELP) certified models.</p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <!-- Model Select -->
-                        <select id="aiModelSelect" onchange="aiState.currentModel=this.value" class="pf-input rounded-xl px-3 py-2 text-xs font-semibold">
-                            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fastest)</option>
-                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-                            <option value="gemini-3-pro-preview">Gemini 3.0 Pro</option>
-                            <option value="gemini-flash-latest">Gemini Flash Latest</option>
-                        </select>
-
-                        <!-- API Key Status Pill -->
-                        <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-indigo-950/60 border-indigo-700/60 text-indigo-200 hover:border-amber-400 transition-all shadow">
-                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                            <span id="aiKeyStatusText">Server Key Active</span>
+                    <!-- Mode Toggle Segmented Control -->
+                    <div class="flex flex-wrap p-1 rounded-xl bg-slate-900/70 border border-indigo-500/20 shadow-inner">
+                        <button id="applianceModeBtn-vision" onclick="switchApplianceMode('vision')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow">
+                            <span>📷</span> AI Vision Scan
                         </button>
-
-                        <!-- History Drawer Toggle -->
-                        <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
-                            <span>📜</span> History
-                            <span id="aiHistoryBadge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold">0</span>
+                        <button id="applianceModeBtn-pelp" onclick="switchApplianceMode('pelp')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
+                            <span>🏷️</span> DOE PELP Catalog
+                        </button>
+                        <button id="applianceModeBtn-manual" onclick="switchApplianceMode('manual')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
+                            <span>✏️</span> Custom / Manual Entry
                         </button>
                     </div>
                 </div>
 
-                <!-- Main 2-Column Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- MODE 1: AI Vision Appliance Recognition Container -->
+                <div id="applianceMode-vision" class="flex flex-col gap-6">
 
-                    <!-- LEFT COLUMN: Multi-Angle Upload, Webcam & Presets -->
-                    <div class="lg:col-span-5 flex flex-col gap-6">
-
-                        <!-- Card 1: Multi-Photo Upload & Dropzone -->
-                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-5 shadow-xl">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <h3 class="text-sm font-bold t-primary flex items-center gap-2">
-                                        <span>📸</span>
-                                        <span>Appliance Photo Slots</span>
-                                    </h3>
-                                    <p class="text-xs t-muted">Upload up to 3 multi-angle photos (Front, Rating Tag, Controls).</p>
-                                </div>
-                                <span id="aiSlotBadge" class="text-xs font-bold px-2.5 py-1 badge rounded-full">0 / 3 Photos</span>
-                            </div>
-
-                            <!-- 3 Photo Thumbnail Slots -->
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="0" onclick="triggerSlotUpload(0)">
-                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                        <span class="text-xl">📷</span>
-                                        <span class="text-[10px] font-semibold t-muted">Slot 1 (Front)</span>
-                                    </div>
-                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 1">
-                                    <button onclick="event.stopPropagation(); removeSlotPhoto(0)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
-                                </div>
-
-                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="1" onclick="triggerSlotUpload(1)">
-                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                        <span class="text-xl">🏷️</span>
-                                        <span class="text-[10px] font-semibold t-muted">Slot 2 (Tag)</span>
-                                    </div>
-                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 2">
-                                    <button onclick="event.stopPropagation(); removeSlotPhoto(1)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
-                                </div>
-
-                                <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="2" onclick="triggerSlotUpload(2)">
-                                    <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                        <span class="text-xl">🎛️</span>
-                                        <span class="text-[10px] font-semibold t-muted">Slot 3 (Panel)</span>
-                                    </div>
-                                    <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 3">
-                                    <button onclick="event.stopPropagation(); removeSlotPhoto(2)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
-                                </div>
-                            </div>
-
-                            <!-- Hidden File Input -->
-                            <input type="file" id="aiFileInput" accept="image/*" multiple class="hidden" onchange="handleAiFileSelect(this.files)">
-
-                            <!-- Dropzone Drag Area & Camera Action -->
-                            <div id="aiDropzone" class="p-5 rounded-xl border-2 border-dashed border-indigo-500/40 bg-indigo-950/30 text-center flex flex-col items-center justify-center gap-3 transition-all">
-                                <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-xl">
-                                    📥
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold t-primary">Drag & Drop Appliance Photos Here</p>
-                                    <p class="text-[10px] t-muted mt-0.5">Supports JPG, PNG, WEBP, SVG or Paste from Clipboard (Ctrl+V)</p>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="document.getElementById('aiFileInput').click()" class="px-3 py-1.5 btn-secondary rounded-lg text-xs font-semibold">
-                                        📂 Browse Files
-                                    </button>
-                                    <button onclick="openWebcamModal()" class="px-3 py-1.5 btn-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
-                                        <span>📷</span> Live Camera
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between items-center">
-                                <button onclick="clearAllAiSlots()" id="aiClearAllBtn" class="hidden text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
-                                    <span>🗑️</span> Clear Uploaded Photos
-                                </button>
-                            </div>
+                    <!-- AI Controls Top Bar -->
+                    <div class="flex flex-wrap justify-between items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Vision Engine:</span>
+                            <!-- Model Select -->
+                            <select id="aiModelSelect" onchange="aiState.currentModel=this.value" class="pf-input rounded-xl px-3 py-1.5 text-xs font-semibold">
+                                <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fastest)</option>
+                                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                                <option value="gemini-3-pro-preview">Gemini 3.0 Pro</option>
+                                <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                            </select>
                         </div>
 
-                        <!-- Card 2: Preset Mode & Analysis Prompt -->
-                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
-                            <h3 class="text-sm font-bold t-primary">Vision Analysis Preset</h3>
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <!-- API Key Status Pill -->
+                            <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-indigo-950/60 border-indigo-700/60 text-indigo-200 hover:border-amber-400 transition-all shadow">
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span id="aiKeyStatusText">Server Key Active</span>
+                            </button>
 
-                            <div class="grid grid-cols-2 gap-2" id="aiPresetGrid">
-                                <button data-preset="specs" onclick="selectAiPreset('specs')" class="ai-preset-btn active p-3 rounded-xl text-left border border-indigo-500/50 bg-indigo-900/40 text-white font-medium text-xs transition-all">
-                                    <div class="font-bold flex items-center gap-1.5">
-                                        <span>⚡</span> Full Spec Sheet
-                                    </div>
-                                    <div class="text-[10px] t-muted mt-1">Brand, model, wattage & care guide.</div>
-                                </button>
-
-                                <button data-preset="electrical" onclick="selectAiPreset('electrical')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                    <div class="font-bold flex items-center gap-1.5">
-                                        <span>🔌</span> Electrical Specs
-                                    </div>
-                                    <div class="text-[10px] t-muted mt-1">Voltage, Amps, Running vs Surge W.</div>
-                                </button>
-
-                                <button data-preset="serial_ocr" onclick="selectAiPreset('serial_ocr')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                    <div class="font-bold flex items-center gap-1.5">
-                                        <span>🔍</span> Rating Label OCR
-                                    </div>
-                                    <div class="text-[10px] t-muted mt-1">Extract physical tag & model codes.</div>
-                                </button>
-
-                                <button data-preset="maintenance" onclick="selectAiPreset('maintenance')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                    <div class="font-bold flex items-center gap-1.5">
-                                        <span>🛠️</span> Care & Maintenance
-                                    </div>
-                                    <div class="text-[10px] t-muted mt-1">Filter routines & error codes.</div>
-                                </button>
-                            </div>
-
-                            <div class="flex flex-col gap-1.5">
-                                <label for="aiCustomPrompt" class="text-xs font-semibold t-muted flex justify-between">
-                                    <span>Custom Technical Question (Optional)</span>
-                                    <button onclick="document.getElementById('aiCustomPrompt').value=''" class="text-[10px] text-slate-400 hover:text-white">Clear</button>
-                                </label>
-                                <textarea id="aiCustomPrompt" rows="2" placeholder="Ask specific technical questions about this appliance..." class="w-full pf-input rounded-xl p-3 text-xs"></textarea>
-                            </div>
-
-                            <button id="runAiAnalysisBtn" onclick="runApplianceVisionAnalysis()" class="w-full py-3.5 btn-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:brightness-110">
-                                <span>⚡</span> Run Vision AI Spec Extraction
+                            <!-- History Drawer Toggle -->
+                            <button onclick="toggleAiHistoryDrawer()" class="px-3.5 py-1.5 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-1.5 shadow">
+                                <span>📜</span> History
+                                <span id="aiHistoryBadge" class="px-1.5 py-0.5 rounded-full text-[10px] bg-amber-400/20 text-amber-300 font-bold">0</span>
                             </button>
                         </div>
-
                     </div>
 
-                    <!-- RIGHT COLUMN: AI Results, Auto-Detected Specs & Meralco Cost Engine -->
-                    <div class="lg:col-span-7 flex flex-col gap-6">
+                    <!-- Main 2-Column Grid for AI Vision -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                        <!-- Card 1: Detected Specs & Meralco Cost Summary -->
-                        <div id="aiDetectedCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-2xl">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Detected Parameters & Meralco Cost Engine</span>
-                                    <h3 id="aiDetectedName" class="text-xl font-extrabold t-primary mt-1">Ready for Appliance Scan</h3>
+                        <!-- LEFT COLUMN: Multi-Angle Upload, Webcam & Presets -->
+                        <div class="lg:col-span-5 flex flex-col gap-6">
+
+                            <!-- Card 1: Multi-Photo Upload & Dropzone -->
+                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-5 shadow-xl">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-sm font-bold t-primary flex items-center gap-2">
+                                            <span>📸</span>
+                                            <span>Appliance Photo Slots</span>
+                                        </h3>
+                                        <p class="text-xs t-muted">Upload up to 3 multi-angle photos (Front, Rating Tag, Controls).</p>
+                                    </div>
+                                    <span id="aiSlotBadge" class="text-xs font-bold px-2.5 py-1 badge rounded-full">0 / 3 Photos</span>
                                 </div>
-                                <span id="aiModelBadge" class="text-xs font-semibold t-muted px-2.5 py-1 badge rounded-lg">Gemini 3.6 Flash</span>
+
+                                <!-- 3 Photo Thumbnail Slots -->
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="0" onclick="triggerSlotUpload(0)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                            <span class="text-xl">📷</span>
+                                            <span class="text-[10px] font-semibold t-muted">Slot 1 (Front)</span>
+                                        </div>
+                                        <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 1">
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(0)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                    </div>
+
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="1" onclick="triggerSlotUpload(1)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                            <span class="text-xl">🏷️</span>
+                                            <span class="text-[10px] font-semibold t-muted">Slot 2 (Tag)</span>
+                                        </div>
+                                        <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 2">
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(1)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                    </div>
+
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="2" onclick="triggerSlotUpload(2)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
+                                            <span class="text-xl">🎛️</span>
+                                            <span class="text-[10px] font-semibold t-muted">Slot 3 (Panel)</span>
+                                        </div>
+                                        <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 3">
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(2)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden File Input -->
+                                <input type="file" id="aiFileInput" accept="image/*" multiple class="hidden" onchange="handleAiFileSelect(this.files)">
+
+                                <!-- Dropzone Drag Area & Camera Action -->
+                                <div id="aiDropzone" class="p-5 rounded-xl border-2 border-dashed border-indigo-500/40 bg-indigo-950/30 text-center flex flex-col items-center justify-center gap-3 transition-all">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-xl">
+                                        📥
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold t-primary">Drag & Drop Appliance Photos Here</p>
+                                        <p class="text-[10px] t-muted mt-0.5">Supports JPG, PNG, WEBP, SVG or Paste from Clipboard (Ctrl+V)</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="document.getElementById('aiFileInput').click()" class="px-3 py-1.5 btn-secondary rounded-lg text-xs font-semibold">
+                                            📂 Browse Files
+                                        </button>
+                                        <button onclick="openWebcamModal()" class="px-3 py-1.5 btn-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
+                                            <span>📷</span> Live Camera
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center">
+                                    <button onclick="clearAllAiSlots()" id="aiClearAllBtn" class="hidden text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
+                                        <span>🗑️</span> Clear Uploaded Photos
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Meralco Rate Calculation Quick Stats -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs">
-                                <div>
-                                    <span class="t-muted text-[10px] block font-medium">ESTIMATED WATTAGE</span>
-                                    <span id="aiDetectedWatts" class="font-extrabold text-amber-400 text-base">0 W</span>
-                                </div>
-                                <div>
-                                    <span class="t-muted text-[10px] block font-medium">DAILY USAGE</span>
-                                    <span id="aiDetectedHours" class="font-bold text-white text-base">8 hrs/day</span>
-                                </div>
-                                <div>
-                                    <span class="t-muted text-[10px] block font-medium">MONTHLY kWh</span>
-                                    <span id="aiDetectedKwh" class="font-extrabold t-accent text-base">0.00 kWh</span>
-                                </div>
-                                <div>
-                                    <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
-                                    <span id="aiDetectedCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
-                                </div>
-                            </div>
+                            <!-- Card 2: Preset Mode & Analysis Prompt -->
+                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                                <h3 class="text-sm font-bold t-primary">Vision Analysis Preset</h3>
 
-                            <div class="flex flex-wrap gap-2.5 pt-1">
-                                <button onclick="applyDetectedToBill()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
-                                    <span>⚡</span> Apply as Calculator Bill kWh
+                                <div class="grid grid-cols-2 gap-2" id="aiPresetGrid">
+                                    <button data-preset="specs" onclick="selectAiPreset('specs')" class="ai-preset-btn active p-3 rounded-xl text-left border border-indigo-500/50 bg-indigo-900/40 text-white font-medium text-xs transition-all">
+                                        <div class="font-bold flex items-center gap-1.5">
+                                            <span>⚡</span> Full Spec Sheet
+                                        </div>
+                                        <div class="text-[10px] t-muted mt-1">Brand, model, wattage & care guide.</div>
+                                    </button>
+
+                                    <button data-preset="electrical" onclick="selectAiPreset('electrical')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                        <div class="font-bold flex items-center gap-1.5">
+                                            <span>🔌</span> Electrical Specs
+                                        </div>
+                                        <div class="text-[10px] t-muted mt-1">Voltage, Amps, Running vs Surge W.</div>
+                                    </button>
+
+                                    <button data-preset="serial_ocr" onclick="selectAiPreset('serial_ocr')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                        <div class="font-bold flex items-center gap-1.5">
+                                            <span>🔍</span> Rating Label OCR
+                                        </div>
+                                        <div class="text-[10px] t-muted mt-1">Extract physical tag & model codes.</div>
+                                    </button>
+
+                                    <button data-preset="maintenance" onclick="selectAiPreset('maintenance')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
+                                        <div class="font-bold flex items-center gap-1.5">
+                                            <span>🛠️</span> Care & Maintenance
+                                        </div>
+                                        <div class="text-[10px] t-muted mt-1">Filter routines & error codes.</div>
+                                    </button>
+                                </div>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label for="aiCustomPrompt" class="text-xs font-semibold t-muted flex justify-between">
+                                        <span>Custom Technical Question (Optional)</span>
+                                        <button onclick="document.getElementById('aiCustomPrompt').value=''" class="text-[10px] text-slate-400 hover:text-white">Clear</button>
+                                    </label>
+                                    <textarea id="aiCustomPrompt" rows="2" placeholder="Ask specific technical questions about this appliance..." class="w-full pf-input rounded-xl p-3 text-xs"></textarea>
+                                </div>
+
+                                <button id="runAiAnalysisBtn" onclick="runApplianceVisionAnalysis()" class="w-full py-3.5 btn-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:brightness-110">
+                                    <span>⚡</span> Run Vision AI Spec Extraction
                                 </button>
-                                <button onclick="addDetectedToLoadList()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
-                                    <span>➕</span> Add to Household Load List
-                                </button>
                             </div>
+
                         </div>
 
-                        <!-- Card 2: Full Spec Sheet Output Tabs -->
-                        <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
-                            <div class="flex flex-wrap justify-between items-center gap-2 pf-divider border-b pb-3">
-                                <!-- Tab Buttons -->
-                                <div class="flex gap-2">
-                                    <button onclick="switchAiTab('formatted')" id="aiTabBtn-formatted" class="ai-tab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow">
-                                        📄 Technical Spec Sheet
-                                    </button>
-                                    <button onclick="switchAiTab('palette')" id="aiTabBtn-palette" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
-                                        🎨 Finish Colors
-                                    </button>
-                                    <button onclick="switchAiTab('raw')" id="aiTabBtn-raw" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
-                                        ⚙️ Raw JSON
-                                    </button>
+                        <!-- RIGHT COLUMN: AI Results, Auto-Detected Specs & Meralco Cost Engine -->
+                        <div class="lg:col-span-7 flex flex-col gap-6">
+
+                            <!-- Card 1: Detected Specs & Meralco Cost Summary -->
+                            <div id="aiDetectedCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-2xl">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Detected Parameters & Meralco Cost Engine</span>
+                                        <h3 id="aiDetectedName" class="text-xl font-extrabold t-primary mt-1">Ready for Appliance Scan</h3>
+                                    </div>
+                                    <span id="aiModelBadge" class="text-xs font-semibold t-muted px-2.5 py-1 badge rounded-lg">Gemini 3.6 Flash</span>
                                 </div>
 
-                                <!-- Actions -->
-                                <div class="flex items-center gap-2 text-xs">
-                                    <button onclick="toggleSpeechSynthesis()" id="aiTtsBtn" class="px-2.5 py-1 rounded-lg btn-secondary text-xs flex items-center gap-1">
-                                        <span>🔊</span> <span id="aiTtsTxt">Listen</span>
+                                <!-- Meralco Rate Calculation Quick Stats -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs">
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">ESTIMATED WATTAGE</span>
+                                        <span id="aiDetectedWatts" class="font-extrabold text-amber-400 text-base">0 W</span>
+                                    </div>
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">DAILY USAGE</span>
+                                        <span id="aiDetectedHours" class="font-bold text-white text-base">8 hrs/day</span>
+                                    </div>
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MONTHLY kWh</span>
+                                        <span id="aiDetectedKwh" class="font-extrabold t-accent text-base">0.00 kWh</span>
+                                    </div>
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
+                                        <span id="aiDetectedCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2.5 pt-1">
+                                    <button onclick="applyDetectedToBill()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                        <span>⚡</span> Apply as Calculator Bill kWh
                                     </button>
-                                    <button onclick="copySpecMarkdown()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">📋 Copy</button>
-                                    <button onclick="downloadSpecReport()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">⬇️ Export</button>
+                                    <button onclick="addDetectedToLoadList()" class="flex-1 py-2.5 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                                        <span>💾</span> Save to Household Load List
+                                    </button>
                                 </div>
                             </div>
 
-                            <!-- Tab Pane 1: Formatted Spec Sheet -->
-                            <div id="aiPane-formatted" class="ai-tab-pane flex flex-col gap-3">
-                                <div id="aiOutputContent" class="prose prose-invert max-w-none text-xs leading-relaxed t-secondary max-h-[480px] overflow-y-auto pr-2">
-                                    <p class="t-muted italic">Upload appliance photo(s) and click <strong>Run Vision AI Spec Extraction</strong> to generate a complete technical specification sheet with Meralco rate cost estimations.</p>
+                            <!-- Card 2: Full Spec Sheet Output Tabs -->
+                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                                <div class="flex flex-wrap justify-between items-center gap-2 pf-divider border-b pb-3">
+                                    <!-- Tab Buttons -->
+                                    <div class="flex gap-2">
+                                        <button onclick="switchAiTab('formatted')" id="aiTabBtn-formatted" class="ai-tab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow">
+                                            📄 Technical Spec Sheet
+                                        </button>
+                                        <button onclick="switchAiTab('palette')" id="aiTabBtn-palette" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                            🎨 Finish Colors
+                                        </button>
+                                        <button onclick="switchAiTab('raw')" id="aiTabBtn-raw" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                            ⚙️ Raw JSON
+                                        </button>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <button onclick="toggleSpeechSynthesis()" id="aiTtsBtn" class="px-2.5 py-1 rounded-lg btn-secondary text-xs flex items-center gap-1">
+                                            <span>🔊</span> <span id="aiTtsTxt">Listen</span>
+                                        </button>
+                                        <button onclick="copySpecMarkdown()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">📋 Copy</button>
+                                        <button onclick="downloadSpecReport()" class="px-2.5 py-1 rounded-lg btn-secondary text-xs">⬇️ Export</button>
+                                    </div>
+                                </div>
+
+                                <!-- Tab Pane 1: Formatted Spec Sheet -->
+                                <div id="aiPane-formatted" class="ai-tab-pane flex flex-col gap-3">
+                                    <div id="aiOutputContent" class="prose prose-invert max-w-none text-xs leading-relaxed t-secondary max-h-[480px] overflow-y-auto pr-2">
+                                        <p class="t-muted italic">Upload appliance photo(s) and click <strong>Run Vision AI Spec Extraction</strong> to generate a complete technical specification sheet with Meralco rate cost estimations.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Tab Pane 2: Finish Color Palette Swatches -->
+                                <div id="aiPane-palette" class="ai-tab-pane hidden flex-col gap-3">
+                                    <p class="text-xs t-muted">Extracted color tones from appliance exterior finish:</p>
+                                    <div id="aiColorGrid" class="grid grid-cols-5 gap-3"></div>
+                                </div>
+
+                                <!-- Tab Pane 3: Raw JSON -->
+                                <div id="aiPane-raw" class="ai-tab-pane hidden flex-col gap-3">
+                                    <pre id="aiJsonOutput" class="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-[400px]">{}</pre>
                                 </div>
                             </div>
 
-                            <!-- Tab Pane 2: Finish Color Palette Swatches -->
-                            <div id="aiPane-palette" class="ai-tab-pane hidden flex-col gap-3">
-                                <p class="text-xs t-muted">Extracted color tones from appliance exterior finish:</p>
-                                <div id="aiColorGrid" class="grid grid-cols-5 gap-3"></div>
-                            </div>
-
-                            <!-- Tab Pane 3: Raw JSON -->
-                            <div id="aiPane-raw" class="ai-tab-pane hidden flex-col gap-3">
-                                <pre id="aiJsonOutput" class="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-[400px]">{}</pre>
-                            </div>
                         </div>
-
                     </div>
                 </div>
+
+                <!-- MODE 2: DOE PELP Certified Database Container -->
+                <div id="applianceMode-pelp" class="hidden flex-col gap-6">
+
+                    <!-- Sub-Header & Live Stats Banner -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center text-xl font-bold border border-amber-400/30 shadow-inner">
+                                🇵🇭
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold t-primary">Philippine Energy Labeling Program (PELP) Certified Database</h3>
+                                <p class="text-xs t-muted">Official Department of Energy (DOE) energy-efficiency ratings & power specs for Philippine appliances.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="pelpTotalProductsBadge" class="text-xs font-bold px-3 py-1 badge rounded-full">6,819 Certified Appliances</span>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter Buttons (Official DOE Categories Only) -->
+                    <div class="flex flex-wrap gap-2" id="pelpCategoryButtons">
+                        <button data-cat="all" onclick="selectPelpCategory('all')" class="pelp-cat-btn active px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow transition-all">
+                            🌐 All Categories
+                        </button>
+                        <button data-cat="air-conditioners" onclick="selectPelpCategory('air-conditioners')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            ❄️ Air Conditioners (1,787)
+                        </button>
+                        <button data-cat="refrigerating-appliances" onclick="selectPelpCategory('refrigerating-appliances')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            🧊 Refrigerators (827)
+                        </button>
+                        <button data-cat="electric-fans" onclick="selectPelpCategory('electric-fans')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            🌀 Electric Fans (153)
+                        </button>
+                        <button data-cat="television-sets" onclick="selectPelpCategory('television-sets')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            📺 Television Sets (1,320)
+                        </button>
+                        <button data-cat="clothes-washing-machines" onclick="selectPelpCategory('clothes-washing-machines')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            🧺 Washing Machines (10)
+                        </button>
+                        <button data-cat="lighting-products" onclick="selectPelpCategory('lighting-products')" class="pelp-cat-btn px-3.5 py-2 rounded-xl text-xs font-semibold btn-secondary transition-all">
+                            💡 Lighting (2,722)
+                        </button>
+                    </div>
+
+                    <!-- 2-Column Main Layout for PELP & Load Customizer -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                        <!-- Left Column: Search & Results Table / List -->
+                        <div class="lg:col-span-7 flex flex-col gap-4">
+
+                            <!-- Search & Filter Card -->
+                            <div class="glass-card p-4 rounded-2xl flex flex-col gap-3 shadow-xl">
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center t-muted text-sm">🔍</span>
+                                    <input
+                                        type="text"
+                                        id="pelpSearchInput"
+                                        placeholder="Search by brand (Samsung, Sharp, Panasonic, Carrier...), model, or specs..."
+                                        class="w-full pf-input rounded-xl pl-10 pr-10 py-2.5 text-xs font-medium"
+                                        oninput="debouncedPelpSearch()"
+                                    >
+                                    <button onclick="clearPelpSearch()" id="pelpClearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs t-muted hover:text-white">✕</button>
+                                </div>
+
+                                <!-- Quick Brand Filter Pills -->
+                                <div class="flex flex-wrap items-center gap-1.5 text-[11px] t-muted">
+                                    <span class="font-semibold text-xs text-slate-300">Popular Brands:</span>
+                                    <button onclick="setPelpBrandSearch('Samsung')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Samsung</button>
+                                    <button onclick="setPelpBrandSearch('Panasonic')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Panasonic</button>
+                                    <button onclick="setPelpBrandSearch('Sharp')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Sharp</button>
+                                    <button onclick="setPelpBrandSearch('Carrier')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Carrier</button>
+                                    <button onclick="setPelpBrandSearch('LG')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">LG</button>
+                                    <button onclick="setPelpBrandSearch('Tough Mama')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Tough Mama</button>
+                                    <button onclick="setPelpBrandSearch('Condura')" class="px-2 py-0.5 rounded-md bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40">Condura</button>
+                                </div>
+                            </div>
+
+                            <!-- Search Results Container -->
+                            <div class="glass-card p-4 rounded-2xl flex flex-col gap-3 shadow-xl min-h-[460px]">
+                                <div class="flex justify-between items-center px-1">
+                                    <span id="pelpResultsCount" class="text-xs font-bold t-secondary">Found Certified Appliances</span>
+                                    <span class="text-[11px] t-muted">Click any item to customize usage & save load</span>
+                                </div>
+
+                                <!-- Scrollable Results List -->
+                                <div id="pelpResultsList" class="flex flex-col gap-2.5 max-h-[540px] overflow-y-auto pr-1">
+                                    <div class="flex flex-col items-center justify-center p-8 text-center gap-2">
+                                        <div class="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                                        <span class="text-xs t-muted">Loading DOE PELP database...</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Selected Appliance Load Configurator & Household Load List -->
+                        <div class="lg:col-span-5 flex flex-col gap-6">
+
+                            <!-- Selected / Configured Appliance Card -->
+                            <div id="pelpConfigCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span id="pelpConfigCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">PELP Certified Load</span>
+                                        <h3 id="pelpConfigTitle" class="text-lg font-extrabold t-primary mt-1">Select an Appliance</h3>
+                                        <p id="pelpConfigSubtitle" class="text-xs t-muted">Pick a certified model from the list to calculate consumption.</p>
+                                    </div>
+                                    <span id="pelpConfigRatingBadge" class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">⭐ Certified</span>
+                                </div>
+
+                                <!-- Wattage & Quantity Inputs -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[11px] font-semibold t-muted">Power Rating (Watts)</label>
+                                        <div class="relative">
+                                            <input type="number" id="pelpWattsInput" value="0" min="1" max="10000" class="w-full pf-input rounded-xl px-3 py-2 text-sm font-bold" oninput="recalcPelpConfig()">
+                                            <span class="absolute right-3 top-2 text-xs t-muted font-bold pointer-events-none">W</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[11px] font-semibold t-muted">Quantity (Units)</label>
+                                        <input type="number" id="pelpQtyInput" value="1" min="1" max="50" class="w-full pf-input rounded-xl px-3 py-2 text-sm font-bold" oninput="recalcPelpConfig()">
+                                    </div>
+                                </div>
+
+                                <!-- Usage Sliders -->
+                                <div class="flex flex-col gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-indigo-500/20">
+                                    <!-- Daily Hours Slider -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="t-secondary font-medium">Daily Usage Time</span>
+                                            <span class="font-bold t-accent"><span id="lblPelpHours">8.0</span> hrs / day</span>
+                                        </div>
+                                        <input type="range" id="pelpHoursSlider" min="0.1" max="24" step="0.1" value="8" class="w-full cursor-pointer" oninput="recalcPelpConfig()">
+                                    </div>
+
+                                    <!-- Days / Month Slider -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="t-secondary font-medium">Days Used per Month</span>
+                                            <span class="font-bold t-accent"><span id="lblPelpDays">30</span> days / mo</span>
+                                        </div>
+                                        <input type="range" id="pelpDaysSlider" min="1" max="30" step="1" value="30" class="w-full cursor-pointer" oninput="recalcPelpConfig()">
+                                    </div>
+                                </div>
+
+                                <!-- Computed Real-Time Metrics -->
+                                <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MONTHLY ENERGY</span>
+                                        <span id="pelpMonthlyKwh" class="font-extrabold text-amber-400 text-base">0.00 kWh</span>
+                                    </div>
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
+                                        <span id="pelpMonthlyCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
+                                    </div>
+                                </div>
+
+                                <!-- Informative Note about Marginal Cost -->
+                                <div class="text-[10px] text-slate-400 bg-indigo-950/30 p-2 rounded-lg border border-indigo-500/20 flex items-center gap-1.5">
+                                    <span>💡</span>
+                                    <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption rate added to your household's monthly electric load.</span>
+                                </div>
+
+                                <!-- Save & Apply Actions -->
+                                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                                    <button onclick="savePelpToLoadList()" class="flex-1 py-3 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg hover:brightness-110">
+                                        <span>💾</span> Save to Household Load List
+                                    </button>
+                                    <button onclick="applyPelpAsBillKwh()" class="flex-1 py-3 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                        <span>⚡</span> Apply to Calculator
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Household Load List Card -->
+                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">📋</span>
+                                        <h4 class="text-sm font-bold t-primary">My Household Load List</h4>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span id="householdLoadCountBadge" class="text-[10px] font-bold px-2 py-0.5 badge rounded-full">0 items</span>
+                                        <button onclick="exportLoadListJson()" class="text-[10px] btn-secondary px-2.5 py-1 rounded-md" title="Export to JSON">⬇️ Export</button>
+                                        <button onclick="clearHouseholdLoads()" class="text-[10px] text-red-400 hover:text-red-300 px-1 font-semibold" title="Clear All">Clear</button>
+                                    </div>
+                                </div>
+
+                                <!-- Scrollable Household Load Items -->
+                                <div id="appliancesModuleLoadItems" class="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+                                    <p class="text-xs t-muted italic">No appliances saved yet. Click "Save to Household Load List" above to add.</p>
+                                </div>
+
+                                <!-- Summary & Calculation Total -->
+                                <div class="flex justify-between items-center pt-3 pf-divider border-t text-xs">
+                                    <div class="flex flex-col">
+                                        <span class="t-muted text-[10px]">TOTAL HOUSEHOLD LOAD</span>
+                                        <span id="appliancesTotalLoadKwh" class="font-extrabold t-accent text-sm">0.00 kWh</span>
+                                    </div>
+                                    <div class="flex flex-col text-right">
+                                        <span class="t-muted text-[10px]">TOTAL EST. MONTHLY BILL</span>
+                                        <span id="appliancesTotalLoadCost" class="font-extrabold text-emerald-400 text-sm">₱0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODE 3: Custom & Non-DOE Household Appliances Studio Container -->
+                <div id="applianceMode-manual" class="hidden flex-col gap-6">
+
+                    <!-- Sub-Header & Live Stats Banner -->
+                    <div class="glass-card p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 to-indigo-950/30">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center text-xl font-bold border border-amber-500/40 shadow-inner">
+                                ✏️
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-white">Custom & Non-DOE Household Appliances Studio</h3>
+                                <p class="text-xs t-muted">Configure household appliances not registered in the DOE PELP scope (e.g. desktop PCs, microwaves, rice cookers, shower heaters).</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">Custom Load Builder</span>
+                        </div>
+                    </div>
+
+                    <!-- 2-Column Main Layout for Manual Studio -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                        <!-- Left Column: Presets Grid & Volts-Amps Tool -->
+                        <div class="lg:col-span-7 flex flex-col gap-4">
+
+                            <!-- 1-Click Popular Presets Grid -->
+                            <div class="glass-card p-5 rounded-2xl flex flex-col gap-3 shadow-xl">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold t-primary flex items-center gap-1.5">
+                                        <span>⚡</span>
+                                        <span>Popular Household Presets (1-Click Fill)</span>
+                                    </h4>
+                                    <span class="text-[10px] text-amber-300 font-semibold">Standard PH Wattages</span>
+                                </div>
+
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="manualPresetsGrid">
+                                    <button type="button" onclick="selectManualPreset('Rice Cooker', 700, 1, 'Kitchen', '🍚')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🍚</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">700 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Rice Cooker</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 1h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Induction Cooker', 1800, 1.5, 'Kitchen', '🍲')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🍲</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1800 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Induction Cooker</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 1.5h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Microwave Oven', 1000, 0.5, 'Kitchen', '🍿')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🍿</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Microwave Oven</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 0.5h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Desktop / Gaming PC', 350, 6, 'Computing', '🖥️')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🖥️</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">350 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Desktop / Gaming PC</span>
+                                        <span class="text-[10px] t-muted">Computing • 6h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Laptop Computer', 65, 8, 'Computing', '💻')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">💻</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">65 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Laptop Computer</span>
+                                        <span class="text-[10px] t-muted">Computing • 8h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Water Dispenser (Hot/Cold)', 550, 24, 'Kitchen', '🚰')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🚰</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">550 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Water Dispenser</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 24h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Electric Kettle', 1500, 0.3, 'Kitchen', '♨️')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">♨️</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1500 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Electric Kettle</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 0.3h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Shower Water Heater', 3500, 0.5, 'Bath', '🚿')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🚿</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">3500 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Shower Heater</span>
+                                        <span class="text-[10px] t-muted">Bath • 0.5h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Gaming Console (PS5/Xbox)', 200, 3, 'Entertainment', '🎮')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🎮</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">200 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Gaming Console</span>
+                                        <span class="text-[10px] t-muted">Entertainment • 3h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Air Purifier', 45, 12, 'Climate', '💨')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">💨</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">45 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Air Purifier</span>
+                                        <span class="text-[10px] t-muted">Climate • 12h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Bread Toaster', 850, 0.2, 'Kitchen', '🍞')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🍞</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">850 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Bread Toaster</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 0.2h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Hair Dryer / Styler', 1400, 0.2, 'Bath', '💇')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">💇</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1400 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Hair Dryer</span>
+                                        <span class="text-[10px] t-muted">Bath • 0.2h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Coffee Maker', 800, 0.3, 'Kitchen', '☕')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">☕</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">800 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Coffee Maker</span>
+                                        <span class="text-[10px] t-muted">Kitchen • 0.3h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Clothes Flat Iron', 1000, 0.5, 'Cleaning', '🧯')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🧯</span>
+                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
+                                        </div>
+                                        <span class="font-bold text-white text-xs">Clothes Iron</span>
+                                        <span class="text-[10px] t-muted">Cleaning • 0.5h/day</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Volts x Amperes Converter Calculator Tool -->
+                            <div class="glass-card p-5 rounded-2xl flex flex-col gap-3 shadow-xl border border-indigo-500/20">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold t-primary flex items-center gap-1.5">
+                                        <span>⚡</span>
+                                        <span>Volts × Amperes Label Helper</span>
+                                    </h4>
+                                    <span class="text-[10px] t-muted">Calculate Watts if only Amps is printed on tag</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[10px] t-muted font-semibold">Voltage (Volts)</label>
+                                        <input type="number" id="helperVoltageInput" value="230" min="100" max="250" class="pf-input rounded-xl px-3 py-1.5 text-xs font-bold" oninput="calcWattsFromVoltsAmps()">
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[10px] t-muted font-semibold">Current (Amperes)</label>
+                                        <input type="number" id="helperAmpsInput" placeholder="e.g. 1.5" step="0.1" min="0.01" max="50" class="pf-input rounded-xl px-3 py-1.5 text-xs font-bold" oninput="calcWattsFromVoltsAmps()">
+                                    </div>
+                                    <div class="flex flex-col justify-end">
+                                        <button type="button" onclick="calcWattsFromVoltsAmps(true)" class="py-1.5 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1 border-amber-500/40 hover:border-amber-400">
+                                            <span>⚡ Apply to Watts</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="helperCalcOutput" class="text-[11px] text-emerald-300 font-mono hidden">
+                                    Formula: <span id="helperCalcFormula">230V × 0A = 0 Watts</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Custom Appliance Load Configurator & Household Load List -->
+                        <div class="lg:col-span-5 flex flex-col gap-6">
+
+                            <!-- Custom Appliance Config Card -->
+                            <div id="manualConfigCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 shadow-2xl relative">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span id="manualConfigCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Custom Appliance Load</span>
+                                        <h3 id="manualConfigTitle" class="text-lg font-extrabold t-primary mt-1">Configure Custom Appliance</h3>
+                                        <p id="manualConfigSubtitle" class="text-xs t-muted">Select a preset on the left or enter custom electrical specifications.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Manual Appliance Name & Category -->
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[11px] font-semibold t-muted">Appliance Name</label>
+                                        <input type="text" id="manualNameInput" placeholder="e.g. Living Room Gaming PC, Kitchen Microwave..." class="w-full pf-input rounded-xl px-3 py-2 text-xs font-semibold" oninput="recalcManualConfig()">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex flex-col gap-1">
+                                            <label class="text-[11px] font-semibold t-muted">Category</label>
+                                            <select id="manualCategorySelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs font-semibold" onchange="recalcManualConfig()">
+                                                <option value="Kitchen">🍳 Kitchen Appliance</option>
+                                                <option value="Computing">🖥️ Computing & Work</option>
+                                                <option value="Entertainment">🎮 Entertainment & Media</option>
+                                                <option value="Climate">💨 Climate & Comfort</option>
+                                                <option value="Bath">🚿 Bath & Grooming</option>
+                                                <option value="Cleaning">🧹 Cleaning & Laundry</option>
+                                                <option value="Home Electronics">🔌 Home Electronics</option>
+                                                <option value="Other">📦 Other Appliance</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <label class="text-[11px] font-semibold t-muted">Brand / Model (Optional)</label>
+                                            <input type="text" id="manualBrandInput" placeholder="e.g. Philips, Xiaomi, Hanabishi..." class="pf-input rounded-xl px-2.5 py-1.5 text-xs" oninput="recalcManualConfig()">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Wattage & Quantity Inputs -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[11px] font-semibold t-muted">Power Rating (Watts)</label>
+                                        <div class="relative">
+                                            <input type="number" id="manualWattsInput" value="350" min="1" max="10000" class="w-full pf-input rounded-xl px-3 py-2 text-sm font-bold" oninput="recalcManualConfig()">
+                                            <span class="absolute right-3 top-2 text-xs t-muted font-bold pointer-events-none">W</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label class="text-[11px] font-semibold t-muted">Quantity (Units)</label>
+                                        <input type="number" id="manualQtyInput" value="1" min="1" max="50" class="w-full pf-input rounded-xl px-3 py-2 text-sm font-bold" oninput="recalcManualConfig()">
+                                    </div>
+                                </div>
+
+                                <!-- Usage Sliders -->
+                                <div class="flex flex-col gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-indigo-500/20">
+                                    <!-- Daily Hours Slider -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="t-secondary font-medium">Daily Usage Time</span>
+                                            <span class="font-bold t-accent"><span id="lblManualHours">4.0</span> hrs / day</span>
+                                        </div>
+                                        <input type="range" id="manualHoursSlider" min="0.1" max="24" step="0.1" value="4" class="w-full cursor-pointer" oninput="recalcManualConfig()">
+                                    </div>
+
+                                    <!-- Days / Month Slider -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="t-secondary font-medium">Days Used per Month</span>
+                                            <span class="font-bold t-accent"><span id="lblManualDays">30</span> days / mo</span>
+                                        </div>
+                                        <input type="range" id="manualDaysSlider" min="1" max="30" step="1" value="30" class="w-full cursor-pointer" oninput="recalcManualConfig()">
+                                    </div>
+                                </div>
+
+                                <!-- Computed Real-Time Metrics -->
+                                <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MONTHLY ENERGY</span>
+                                        <span id="manualMonthlyKwh" class="font-extrabold text-amber-400 text-base">42.00 kWh</span>
+                                    </div>
+                                    <div>
+                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
+                                        <span id="manualMonthlyCost" class="font-extrabold text-emerald-400 text-base">₱535.52 / mo</span>
+                                    </div>
+                                </div>
+
+                                <!-- Informative Note about Marginal Cost -->
+                                <div class="text-[10px] text-slate-400 bg-indigo-950/30 p-2 rounded-lg border border-indigo-500/20 flex items-center gap-1.5">
+                                    <span>💡</span>
+                                    <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption rate added to your household's monthly electric load.</span>
+                                </div>
+
+                                <!-- Save & Apply Actions -->
+                                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                                    <button onclick="saveManualToLoadList()" class="flex-1 py-3 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg hover:brightness-110">
+                                        <span>💾</span> Save to Household Load List
+                                    </button>
+                                    <button onclick="applyManualAsBillKwh()" class="flex-1 py-3 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
+                                        <span>⚡</span> Apply to Calculator
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Household Load List Card (Shared Container or Instance) -->
+                            <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">📋</span>
+                                        <h4 class="text-sm font-bold t-primary">My Household Load List</h4>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="householdLoadCountBadge text-[10px] font-bold px-2 py-0.5 badge rounded-full">0 items</span>
+                                        <button onclick="exportLoadListJson()" class="text-[10px] btn-secondary px-2.5 py-1 rounded-md" title="Export to JSON">⬇️ Export</button>
+                                        <button onclick="clearHouseholdLoads()" class="text-[10px] text-red-400 hover:text-red-300 px-1 font-semibold" title="Clear All">Clear</button>
+                                    </div>
+                                </div>
+
+                                <!-- Scrollable Household Load Items -->
+                                <div class="appliancesModuleLoadItems flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1">
+                                    <p class="text-xs t-muted italic">No appliances saved yet. Click "Save to Household Load List" above to add.</p>
+                                </div>
+
+                                <!-- Summary & Calculation Total -->
+                                <div class="flex justify-between items-center pt-3 pf-divider border-t text-xs">
+                                    <div class="flex flex-col">
+                                        <span class="t-muted text-[10px]">TOTAL HOUSEHOLD LOAD</span>
+                                        <span class="appliancesTotalLoadKwh font-extrabold t-accent text-sm">0.00 kWh</span>
+                                    </div>
+                                    <div class="flex flex-col text-right">
+                                        <span class="t-muted text-[10px]">TOTAL EST. MONTHLY BILL</span>
+                                        <span class="appliancesTotalLoadCost font-extrabold text-emerald-400 text-sm">₱0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
             <!-- PANEL 4: CALENDAR VIEW (BLANK) -->
@@ -1727,7 +2298,6 @@
 
         // ===== Appliance Catalog & Load Estimator =====
         let applianceCatalog = [];
-        let householdLoadList = [];
 
         async function fetchApplianceCatalog() {
             try {
@@ -1833,10 +2403,20 @@
             switchView('calculator');
         }
 
+        // Load saved household loads from localStorage
+        let householdLoadList = [];
+        try {
+            const savedLoads = localStorage.getItem('powerforecast_household_loads_v1');
+            if (savedLoads) householdLoadList = JSON.parse(savedLoads);
+        } catch (e) {
+            console.warn('Failed to parse household loads from localStorage:', e);
+            householdLoadList = [];
+        }
+
         function addApplianceToLoadList() {
             const appSelect = document.getElementById('applianceSelect');
             if (!appSelect || appSelect.selectedIndex <= 0) {
-                alert("Please select an appliance first.");
+                showToast("Select Appliance", "Please choose an appliance from the catalog first.", "warning");
                 return;
             }
 
@@ -1847,58 +2427,197 @@
 
             const kwh = (watts * hours * days) / 1000;
 
-            householdLoadList.push({
+            const item = {
                 id: Date.now(),
+                source: 'catalog',
                 name: appName,
+                category: document.getElementById('applianceCategorySelect')?.value || 'Catalog',
+                brand: '',
+                model: '',
                 watts: watts,
+                qty: 1,
                 hours: hours,
                 days: days,
                 kwh: kwh
-            });
+            };
 
+            householdLoadList.push(item);
             renderHouseholdLoadList();
+            showToast("Appliance Added", `Added "${item.name}" (${item.watts}W) to your Household Load List!`, "success");
         }
 
         function removeHouseholdLoadItem(id) {
             householdLoadList = householdLoadList.filter(item => item.id !== id);
             renderHouseholdLoadList();
+            showToast("Item Removed", "Removed appliance from your Household Load List.", "info");
+        }
+
+        function clearHouseholdLoads() {
+            if (householdLoadList.length === 0) return;
+            if (!confirm("Are you sure you want to clear all appliances from your Household Load List?")) return;
+            householdLoadList = [];
+            renderHouseholdLoadList();
+            showToast("Catalog Cleared", "All household appliance loads have been cleared.", "info");
+        }
+
+        function exportLoadListJson() {
+            if (householdLoadList.length === 0) {
+                showToast("No Data", "Your Household Load List is currently empty.", "warning");
+                return;
+            }
+            const dataStr = JSON.stringify({
+                app: "PowerForecast",
+                version: "1.0.0",
+                exported_at: new Date().toISOString(),
+                total_items: householdLoadList.length,
+                total_kwh: householdLoadList.reduce((acc, i) => acc + (i.kwh || 0), 0),
+                household_loads: householdLoadList
+            }, null, 2);
+
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PowerForecast_Household_Loads_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Export Complete", "Downloaded Household Load profile (JSON).", "success");
         }
 
         function renderHouseholdLoadList() {
-            const container = document.getElementById('householdLoadItems');
+            // Save to localStorage for client-side persistence
+            try {
+                localStorage.setItem('powerforecast_household_loads_v1', JSON.stringify(householdLoadList));
+            } catch (e) {}
+
+            const calcContainer = document.getElementById('householdLoadItems');
+            const appContainers = [
+                document.getElementById('appliancesModuleLoadItems'),
+                ...document.querySelectorAll('.appliancesModuleLoadItems')
+            ].filter(Boolean);
+
             const totalLbl = document.getElementById('totalLoadKwh');
-            if (!container) return;
+            const countBadges = [
+                document.getElementById('householdLoadCountBadge'),
+                ...document.querySelectorAll('.householdLoadCountBadge')
+            ].filter(Boolean);
+
+            const totalKwhLabels = [
+                document.getElementById('appliancesTotalLoadKwh'),
+                ...document.querySelectorAll('.appliancesTotalLoadKwh')
+            ].filter(Boolean);
+
+            const totalCostLabels = [
+                document.getElementById('appliancesTotalLoadCost'),
+                ...document.querySelectorAll('.appliancesTotalLoadCost')
+            ].filter(Boolean);
+
+            countBadges.forEach(b => {
+                b.textContent = `${householdLoadList.length} item${householdLoadList.length === 1 ? '' : 's'}`;
+            });
 
             if (householdLoadList.length === 0) {
-                container.innerHTML = '<p class="text-xs t-muted italic">No appliances added yet.</p>';
+                if (calcContainer) calcContainer.innerHTML = '<p class="text-xs t-muted italic">No appliances added yet.</p>';
+                appContainers.forEach(c => {
+                    c.innerHTML = '<p class="text-xs t-muted italic">No appliances saved yet. Click "Save to Household Load List" above to add.</p>';
+                });
                 if (totalLbl) totalLbl.textContent = '0.00 kWh';
+                totalKwhLabels.forEach(l => l.textContent = '0.00 kWh');
+                totalCostLabels.forEach(l => l.textContent = '₱0.00');
                 return;
             }
 
             let totalKwh = 0;
-            container.innerHTML = '';
+            if (calcContainer) calcContainer.innerHTML = '';
+            appContainers.forEach(c => c.innerHTML = '');
+
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
 
             householdLoadList.forEach(item => {
-                totalKwh += item.kwh;
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center p-2 rounded-lg text-xs';
-                div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--input-border);';
-                div.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="font-medium t-primary">${item.name}</span>
-                        <span class="text-[10px] t-muted">${item.watts}W • ${item.hours}h/day • ${item.days}d/mo</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold t-accent">${item.kwh.toFixed(1)} kWh</span>
-                        <button onclick="removeHouseholdLoadItem(${item.id})" class="t-muted hover:text-red-400 p-1">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(div);
+                const itemKwh = item.kwh || ((item.watts * item.hours * (item.days || 30) * (item.qty || 1)) / 1000);
+                totalKwh += itemKwh;
+
+                const itemCost = item.estCost || (itemKwh * (genRate + 3.5));
+
+                // 1. Render in Calculator Sidebar Load List
+                if (calcContainer) {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-2.5 rounded-xl text-xs transition-all';
+                    div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--input-border);';
+                    div.innerHTML = `
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold t-primary">${item.name}</span>
+                                ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1 rounded bg-indigo-500/20 text-indigo-300 font-bold">×${item.qty}</span>` : ''}
+                            </div>
+                            <span class="text-[10px] t-muted">${item.watts}W • ${item.hours}h/day • ${item.days || 30}d/mo</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold t-accent">${itemKwh.toFixed(1)} kWh</span>
+                            <button onclick="removeHouseholdLoadItem(${item.id})" class="t-muted hover:text-red-400 p-1 transition-colors" title="Remove">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    `;
+                    calcContainer.appendChild(div);
+                }
+
+                // 2. Render in Appliances Module Rich Load Lists
+                appContainers.forEach(container => {
+                    const appDiv = document.createElement('div');
+                    appDiv.className = 'flex justify-between items-center p-3 rounded-xl text-xs bg-slate-900/60 border border-indigo-500/20 hover:border-indigo-400/40 transition-all';
+
+                    let badgeColor = 'bg-indigo-950 text-indigo-300 border-indigo-700/50';
+                    let sourceLabel = 'Certified';
+                    if (item.source === 'ai_vision') {
+                        badgeColor = 'bg-amber-950/60 text-amber-300 border-amber-500/30';
+                        sourceLabel = 'AI Vision';
+                    } else if (item.source === 'manual_entry') {
+                        badgeColor = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30';
+                        sourceLabel = 'Manual';
+                    }
+
+                    appDiv.innerHTML = `
+                        <div class="flex flex-col gap-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold t-primary text-xs">${item.name}</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border ${badgeColor}">${sourceLabel}</span>
+                                ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 font-bold">×${item.qty} units</span>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px] t-muted">
+                                <span>⚡ ${item.watts}W</span>
+                                <span>•</span>
+                                <span>⏱️ ${item.hours} hrs/day</span>
+                                <span>•</span>
+                                <span>📅 ${item.days || 30} days/mo</span>
+                                ${item.energy_rating ? `<span>• <span class="text-amber-400 font-semibold">${item.energy_rating}</span></span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex flex-col text-right">
+                                <span class="font-extrabold t-accent text-xs">${itemKwh.toFixed(2)} kWh</span>
+                                <span class="text-[10px] text-emerald-400 font-bold">₱${itemCost.toFixed(2)}</span>
+                            </div>
+                            <button onclick="removeHouseholdLoadItem(${item.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/30 transition-all" title="Remove Appliance">
+                                🗑️
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(appDiv);
+                });
             });
 
             if (totalLbl) totalLbl.textContent = totalKwh.toFixed(2) + ' kWh';
+            totalKwhLabels.forEach(l => l.textContent = totalKwh.toFixed(2) + ' kWh');
+
+            const grandCalcRes = typeof performCalculation === 'function' ? performCalculation(totalKwh, genRate, 0) : null;
+            const grandTotalCost = grandCalcRes ? grandCalcRes.summary.total_bill : (totalKwh * (genRate + 3.5));
+            totalCostLabels.forEach(l => {
+                l.textContent = `₱${grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            });
+
+            // Sync with Calculator kWh Slider
             syncKwhInput(Math.round(totalKwh));
         }
 
@@ -2306,29 +3025,39 @@
 
         function applyDetectedToBill() {
             if (!aiState.detectedAppliance) {
-                alert("No appliance has been analyzed yet.");
+                showToast("No Analysis", "Please scan or upload an appliance photo first.", "warning");
                 return;
             }
             syncKwhInput(Math.round(aiState.detectedAppliance.kwh));
             switchView('calculator');
+            showToast("Applied to Calculator", `Updated monthly consumption to ${Math.round(aiState.detectedAppliance.kwh)} kWh.`, "success");
         }
 
         function addDetectedToLoadList() {
             if (!aiState.detectedAppliance) {
-                alert("No appliance has been analyzed yet.");
+                showToast("No Analysis", "Please scan or upload an appliance photo first.", "warning");
                 return;
             }
             const item = {
                 id: Date.now(),
+                source: 'ai_vision',
                 name: aiState.detectedAppliance.name,
+                category: 'AI Vision Detected',
+                brand: '',
+                model: '',
                 watts: aiState.detectedAppliance.watts,
+                qty: 1,
                 hours: aiState.detectedAppliance.hours,
                 days: 30,
-                kwh: aiState.detectedAppliance.kwh
+                kwh: aiState.detectedAppliance.kwh,
+                ai_metadata: {
+                    model_used: aiState.currentModel,
+                    preset: aiState.currentPreset
+                }
             };
             householdLoadList.push(item);
             renderHouseholdLoadList();
-            alert(`Added '${item.name}' (${item.watts}W) to your Household Load List!`);
+            showToast("AI Appliance Saved", `Added "${item.name}" (${item.watts}W) to your Household Load List!`, "success");
         }
 
         function switchAiTab(tabName) {
@@ -2390,9 +3119,9 @@
                 localStorage.setItem('powerforecast_gemini_key', aiState.savedApiKey);
                 checkAiHealth();
                 closeAiSettingsModal();
-                alert("Custom Gemini API Key saved successfully!");
+                showToast("API Key Saved", "Custom Gemini API Key saved to LocalStorage.", "success");
             } else {
-                alert("Please enter a valid Gemini API Key.");
+                showToast("Key Required", "Please enter a valid Gemini API Key.", "warning");
             }
         }
 
@@ -2402,7 +3131,7 @@
             const input = document.getElementById('aiApiKeyInput');
             if (input) input.value = '';
             checkAiHealth();
-            alert("Custom API Key cleared.");
+            showToast("API Key Cleared", "Custom Gemini API Key has been removed.", "info");
         }
 
         function toggleAiHistoryDrawer() {
@@ -2488,7 +3217,7 @@
             const text = document.getElementById('aiOutputContent')?.innerText;
             if (text) {
                 navigator.clipboard.writeText(text);
-                alert("Spec sheet copied to clipboard!");
+                showToast("Copied", "Technical spec sheet copied to clipboard!", "success");
             }
         }
 
@@ -2500,6 +3229,523 @@
             link.href = URL.createObjectURL(blob);
             link.download = `Appliance_Spec_Sheet_${Date.now()}.txt`;
             link.click();
+            showToast("Report Exported", "Downloaded technical spec sheet.", "success");
+        }
+
+        // ===== Toast Notification System =====
+        function showToast(title, message, type = 'success') {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'fixed top-20 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto flex items-start gap-3 p-4 rounded-2xl text-xs text-white shadow-2xl backdrop-blur-xl border transition-all transform translate-y-2 opacity-0';
+
+            let icon = '⚡';
+            let bgClass = 'bg-slate-900/90 border-indigo-500/40 text-indigo-100';
+            if (type === 'success') {
+                icon = '✅';
+                bgClass = 'bg-slate-900/90 border-emerald-500/50 text-emerald-100';
+            } else if (type === 'warning') {
+                icon = '⚠️';
+                bgClass = 'bg-slate-900/90 border-amber-500/50 text-amber-100';
+            } else if (type === 'info') {
+                icon = 'ℹ️';
+                bgClass = 'bg-slate-900/90 border-blue-500/50 text-blue-100';
+            }
+
+            toast.style.cssText = 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);';
+            toast.className += ` ${bgClass}`;
+            toast.innerHTML = `
+                <span class="text-base">${icon}</span>
+                <div class="flex-1 flex flex-col gap-0.5">
+                    <span class="font-bold text-white text-xs">${title}</span>
+                    <span class="text-[11px] text-slate-300">${message}</span>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            });
+
+            // Animate out & remove after 3.5s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ===== Appliance View 3-Way Mode Switcher =====
+        function switchApplianceMode(mode) {
+            const btnVision = document.getElementById('applianceModeBtn-vision');
+            const btnPelp = document.getElementById('applianceModeBtn-pelp');
+            const btnManual = document.getElementById('applianceModeBtn-manual');
+
+            const modeVision = document.getElementById('applianceMode-vision');
+            const modePelp = document.getElementById('applianceMode-pelp');
+            const modeManual = document.getElementById('applianceMode-manual');
+
+            const activeBtnClass = "px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+            const inactiveBtnClass = "px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white";
+
+            if (btnVision) btnVision.className = (mode === 'vision') ? activeBtnClass : inactiveBtnClass;
+            if (btnPelp) btnPelp.className = (mode === 'pelp') ? activeBtnClass : inactiveBtnClass;
+            if (btnManual) btnManual.className = (mode === 'manual') ? activeBtnClass : inactiveBtnClass;
+
+            if (modeVision) modeVision.classList.toggle('hidden', mode !== 'vision');
+            if (modePelp) modePelp.classList.toggle('hidden', mode !== 'pelp');
+            if (modeManual) modeManual.classList.toggle('hidden', mode !== 'manual');
+
+            if (mode === 'pelp' && !pelpState.isLoaded) {
+                initPelpModule();
+            } else if (mode === 'manual') {
+                recalcManualConfig();
+            }
+        }
+
+        // ===== DOE PELP Appliance Database Controller =====
+        const pelpState = {
+            currentCategory: 'all',
+            searchQuery: '',
+            searchTimeout: null,
+            results: [],
+            selectedProduct: null,
+            totalProducts: 6819,
+            isLoaded: false
+        };
+
+        async function initPelpModule() {
+            try {
+                pelpState.isLoaded = true;
+                fetchPelpHealth();
+                executePelpSearch();
+            } catch (err) {
+                console.warn('Failed to initialize PELP module:', err);
+            }
+        }
+
+        async function fetchPelpHealth() {
+            try {
+                const res = await fetch('/api/pelp/health');
+                if (res.ok) {
+                    const data = await res.json();
+                    pelpState.totalProducts = data.total_products || 6819;
+                    const badge = document.getElementById('pelpTotalProductsBadge');
+                    if (badge) badge.textContent = `${pelpState.totalProducts.toLocaleString()} Certified Appliances`;
+                }
+            } catch (e) {
+                console.warn('PELP health check failed:', e);
+            }
+        }
+
+        function selectPelpCategory(catSlug) {
+            document.querySelectorAll('#pelpCategoryButtons .pelp-cat-btn').forEach(btn => {
+                if (btn.getAttribute('data-cat') === catSlug) {
+                    btn.classList.add('active', 'bg-indigo-600', 'text-white', 'shadow');
+                    btn.classList.remove('btn-secondary', 'text-slate-400');
+                } else {
+                    btn.classList.remove('active', 'bg-indigo-600', 'text-white', 'shadow');
+                    btn.classList.add('btn-secondary');
+                }
+            });
+
+            pelpState.currentCategory = catSlug;
+            executePelpSearch();
+        }
+
+        function debouncedPelpSearch() {
+            const input = document.getElementById('pelpSearchInput');
+            const clearBtn = document.getElementById('pelpClearSearchBtn');
+            const query = input ? input.value.trim() : '';
+
+            if (clearBtn) clearBtn.classList.toggle('hidden', !query);
+
+            if (pelpState.searchTimeout) clearTimeout(pelpState.searchTimeout);
+            pelpState.searchTimeout = setTimeout(() => {
+                pelpState.searchQuery = query;
+                executePelpSearch();
+            }, 250);
+        }
+
+        function setPelpBrandSearch(brand) {
+            const input = document.getElementById('pelpSearchInput');
+            if (input) {
+                input.value = brand;
+                pelpState.searchQuery = brand;
+                const clearBtn = document.getElementById('pelpClearSearchBtn');
+                if (clearBtn) clearBtn.classList.remove('hidden');
+                executePelpSearch();
+            }
+        }
+
+        function clearPelpSearch() {
+            const input = document.getElementById('pelpSearchInput');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('pelpClearSearchBtn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            pelpState.searchQuery = '';
+            executePelpSearch();
+        }
+
+        async function executePelpSearch() {
+            const listEl = document.getElementById('pelpResultsList');
+            const countEl = document.getElementById('pelpResultsCount');
+            if (listEl) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-8 text-center gap-2">
+                        <div class="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                        <span class="text-xs t-muted">Searching certified DOE PELP registry...</span>
+                    </div>
+                `;
+            }
+
+            const catParam = (pelpState.currentCategory && pelpState.currentCategory !== 'all')
+                ? `&category=${encodeURIComponent(pelpState.currentCategory)}`
+                : '';
+            const qParam = pelpState.searchQuery ? `&q=${encodeURIComponent(pelpState.searchQuery)}` : '';
+
+            try {
+                const res = await fetch(`/api/pelp/search?limit=60${catParam}${qParam}`);
+                if (!res.ok) throw new Error('Search failed');
+                const data = await res.json();
+                pelpState.results = data.results || [];
+
+                if (countEl) {
+                    countEl.textContent = `Found ${pelpState.results.length} Certified Appliance${pelpState.results.length === 1 ? '' : 's'}`;
+                }
+
+                renderPelpResults();
+            } catch (err) {
+                if (listEl) {
+                    listEl.innerHTML = `
+                        <div class="p-6 rounded-xl bg-red-950/20 border border-red-500/30 text-center text-xs text-red-300">
+                            Failed to load certified appliance registry. Please ensure backend server is running.
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderPelpResults() {
+            const listEl = document.getElementById('pelpResultsList');
+            if (!listEl) return;
+
+            if (pelpState.results.length === 0) {
+                const query = pelpState.searchQuery ? pelpState.searchQuery.replace(/"/g, '&quot;') : '';
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-8 text-center gap-3 bg-indigo-950/20 rounded-2xl border border-indigo-500/20">
+                        <span class="text-3xl">🔍</span>
+                        <div>
+                            <p class="text-xs font-bold t-primary">${query ? `No certified models found for "${query}"` : 'No certified appliances found'}</p>
+                            <p class="text-[11px] t-muted mt-1 max-w-sm">Many common household devices (gaming PCs, microwaves, rice cookers, kettles) are not registered under the DOE PELP label. You can add it directly in the Custom / Manual Entry Studio.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-2">
+                            ${query ? `
+                                <button type="button" onclick="startManualEntryFromSearch('${query.replace(/'/g, "\\'")}')" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all">
+                                    <span>✏️</span> Add "${query}" as Custom Appliance
+                                </button>
+                            ` : `
+                                <button type="button" onclick="switchApplianceMode('manual')" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all">
+                                    <span>✏️</span> Open Custom Appliance Studio
+                                </button>
+                            `}
+                            <button type="button" onclick="clearPelpSearch(); selectPelpCategory('all')" class="px-3 py-2 btn-secondary rounded-xl text-xs font-semibold">
+                                Reset Search
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = '';
+            pelpState.results.forEach((prod, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'p-3.5 rounded-xl bg-slate-900/60 border border-indigo-500/20 hover:border-indigo-400 hover:bg-slate-900 transition-all cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow';
+                itemDiv.onclick = () => selectPelpProduct(index);
+
+                let ratingBadge = '';
+                if (prod.energy_rating_type && prod.energy_rating_value) {
+                    ratingBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">⭐ ${prod.energy_rating_type}: ${prod.energy_rating_value}</span>`;
+                } else if (prod.star_rating) {
+                    ratingBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">⭐ ${prod.star_rating} Stars</span>`;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="flex flex-col gap-1 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-extrabold t-primary text-xs">${prod.brand}</span>
+                            <span class="text-xs text-slate-300 font-semibold">${prod.model || prod.product_name}</span>
+                            ${ratingBadge}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-[10px] t-muted">
+                            <span class="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 font-semibold border border-indigo-800/40">${prod.category_name}</span>
+                            <span>•</span>
+                            <span>⚡ <strong>${prod.power_watts > 0 ? prod.power_watts + ' W' : 'Standard Wattage'}</strong></span>
+                            ${prod.monthly_kwh > 0 ? `<span>• 📊 <strong>${prod.monthly_kwh} kWh/mo (PELP Standard)</strong></span>` : ''}
+                            ${prod.control_no ? `<span>• 🏷️ ${prod.control_no}</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="px-3 py-1.5 rounded-lg btn-secondary text-xs font-semibold flex items-center gap-1 hover:bg-indigo-600 hover:text-white transition-all">
+                        <span>Select</span> ➔
+                    </button>
+                `;
+                listEl.appendChild(itemDiv);
+            });
+
+            // Auto-select first item if no product is currently active
+            if (!pelpState.selectedProduct && pelpState.results.length > 0) {
+                selectPelpProduct(0);
+            }
+        }
+
+        function selectPelpProduct(index) {
+            const prod = pelpState.results[index];
+            if (!prod) return;
+
+            pelpState.selectedProduct = prod;
+
+            const titleEl = document.getElementById('pelpConfigTitle');
+            const subtitleEl = document.getElementById('pelpConfigSubtitle');
+            const categoryBadge = document.getElementById('pelpConfigCategoryBadge');
+            const ratingBadge = document.getElementById('pelpConfigRatingBadge');
+            const wattsInput = document.getElementById('pelpWattsInput');
+
+            if (titleEl) titleEl.textContent = `${prod.brand} ${prod.model || prod.product_name}`;
+            if (subtitleEl) subtitleEl.textContent = `DOE Control No: ${prod.control_no || 'PELP Certified'} • ${prod.category_name}`;
+            if (categoryBadge) categoryBadge.textContent = prod.category_name;
+
+            if (ratingBadge) {
+                if (prod.energy_rating_type && prod.energy_rating_value) {
+                    ratingBadge.textContent = `⭐ ${prod.energy_rating_type}: ${prod.energy_rating_value}`;
+                    ratingBadge.classList.remove('hidden');
+                } else if (prod.star_rating) {
+                    ratingBadge.textContent = `⭐ ${prod.star_rating} Stars`;
+                    ratingBadge.classList.remove('hidden');
+                } else {
+                    ratingBadge.textContent = `⭐ PELP Certified`;
+                    ratingBadge.classList.remove('hidden');
+                }
+            }
+
+            if (wattsInput) {
+                wattsInput.value = prod.power_watts > 0 ? prod.power_watts : 500;
+            }
+
+            recalcPelpConfig();
+        }
+
+        function recalcPelpConfig() {
+            const watts = parseFloat(document.getElementById('pelpWattsInput')?.value || 0);
+            const qty = parseInt(document.getElementById('pelpQtyInput')?.value || 1, 10) || 1;
+            const hours = parseFloat(document.getElementById('pelpHoursSlider')?.value || 8);
+            const days = parseInt(document.getElementById('pelpDaysSlider')?.value || 30, 10);
+
+            const lblHours = document.getElementById('lblPelpHours');
+            const lblDays = document.getElementById('lblPelpDays');
+            if (lblHours) lblHours.textContent = hours.toFixed(1);
+            if (lblDays) lblDays.textContent = days;
+
+            const monthlyKwh = (watts * hours * days * qty) / 1000.0;
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+
+            // Marginal cost computation based on variable residential rate
+            const estCost = monthlyKwh * (genRate + 3.5);
+
+            const kwhEl = document.getElementById('pelpMonthlyKwh');
+            const costEl = document.getElementById('pelpMonthlyCost');
+            if (kwhEl) kwhEl.textContent = `${monthlyKwh.toFixed(2)} kWh`;
+            if (costEl) costEl.textContent = `₱${estCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
+
+            return { watts, qty, hours, days, monthlyKwh, estCost };
+        }
+
+        function savePelpToLoadList() {
+            const config = recalcPelpConfig();
+            if (config.watts <= 0) {
+                showToast("Invalid Wattage", "Please enter a valid power rating in Watts.", "warning");
+                return;
+            }
+
+            const prod = pelpState.selectedProduct;
+            const appName = prod ? `${prod.brand} ${prod.model || prod.product_name}`.trim() : 'Certified Appliance';
+            const brand = prod ? prod.brand : 'Certified';
+            const model = prod ? prod.model : '';
+            const categoryName = prod ? prod.category_name : 'Certified';
+            const controlNo = prod ? prod.control_no : '';
+            const energyRating = prod ? (prod.energy_rating_type ? `${prod.energy_rating_type}: ${prod.energy_rating_value}` : (prod.star_rating ? `${prod.star_rating} Stars` : '')) : '';
+
+            const item = {
+                id: Date.now(),
+                source: 'pelp_db',
+                name: appName,
+                category: categoryName,
+                brand: brand,
+                model: model,
+                control_no: controlNo,
+                watts: config.watts,
+                qty: config.qty,
+                hours: config.hours,
+                days: config.days,
+                kwh: config.monthlyKwh,
+                estCost: config.estCost,
+                energy_rating: energyRating
+            };
+
+            householdLoadList.push(item);
+            renderHouseholdLoadList();
+            showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Load List!`, "success");
+        }
+
+        function applyPelpAsBillKwh() {
+            const config = recalcPelpConfig();
+            syncKwhInput(Math.round(config.monthlyKwh));
+            switchView('calculator');
+            showToast("Applied to Calculator", `Applied ${Math.round(config.monthlyKwh)} kWh to your bill calculator.`, "success");
+        }
+
+        // ===== Custom & Non-DOE Household Appliances Studio Controller =====
+        function selectManualPreset(name, watts, defaultHours, category, icon) {
+            // Highlight active preset card
+            document.querySelectorAll('#manualPresetsGrid .manual-preset-card').forEach(card => {
+                card.classList.remove('border-amber-400', 'bg-slate-900', 'ring-2', 'ring-amber-400/40');
+            });
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('border-amber-400', 'bg-slate-900', 'ring-2', 'ring-amber-400/40');
+            }
+
+            const nameInput = document.getElementById('manualNameInput');
+            const catSelect = document.getElementById('manualCategorySelect');
+            const wattsInput = document.getElementById('manualWattsInput');
+            const hoursSlider = document.getElementById('manualHoursSlider');
+            const titleEl = document.getElementById('manualConfigTitle');
+            const subtitleEl = document.getElementById('manualConfigSubtitle');
+            const categoryBadge = document.getElementById('manualConfigCategoryBadge');
+
+            if (nameInput) nameInput.value = name;
+            if (catSelect) catSelect.value = category;
+            if (wattsInput) wattsInput.value = watts;
+            if (hoursSlider) hoursSlider.value = defaultHours;
+
+            if (titleEl) titleEl.textContent = `${icon} ${name}`;
+            if (subtitleEl) subtitleEl.textContent = `Custom ${category} Appliance • ${watts}W Rating`;
+            if (categoryBadge) categoryBadge.textContent = `${category} Load`;
+
+            recalcManualConfig();
+            showToast("Preset Loaded", `Loaded "${name}" (${watts}W, ${defaultHours}h/day)`, "info");
+        }
+
+        function calcWattsFromVoltsAmps(apply = false) {
+            const v = parseFloat(document.getElementById('helperVoltageInput')?.value || 230);
+            const a = parseFloat(document.getElementById('helperAmpsInput')?.value || 0);
+            const outputDiv = document.getElementById('helperCalcOutput');
+            const formulaSpan = document.getElementById('helperCalcFormula');
+
+            if (a > 0) {
+                const watts = Math.round(v * a);
+                if (formulaSpan) formulaSpan.textContent = `${v}V × ${a}A = ${watts} Watts`;
+                if (outputDiv) outputDiv.classList.remove('hidden');
+
+                if (apply) {
+                    const wattsInput = document.getElementById('manualWattsInput');
+                    if (wattsInput) wattsInput.value = watts;
+                    recalcManualConfig();
+                    showToast("Power Applied", `Calculated ${watts}W (${v}V × ${a}A) applied!`, "success");
+                }
+            } else {
+                if (outputDiv) outputDiv.classList.add('hidden');
+                if (apply) {
+                    showToast("Input Required", "Please enter current in Amperes first.", "warning");
+                }
+            }
+        }
+
+        function startManualEntryFromSearch(query) {
+            switchApplianceMode('manual');
+            const nameInput = document.getElementById('manualNameInput');
+            const titleEl = document.getElementById('manualConfigTitle');
+            if (nameInput) nameInput.value = query;
+            if (titleEl) titleEl.textContent = `✏️ ${query}`;
+            recalcManualConfig();
+            showToast("Custom Appliance", `Ready to configure "${query}"`, "info");
+        }
+
+        function recalcManualConfig() {
+            const watts = parseFloat(document.getElementById('manualWattsInput')?.value || 0);
+            const qty = parseInt(document.getElementById('manualQtyInput')?.value || 1, 10) || 1;
+            const hours = parseFloat(document.getElementById('manualHoursSlider')?.value || 4);
+            const days = parseInt(document.getElementById('manualDaysSlider')?.value || 30, 10);
+
+            const lblHours = document.getElementById('lblManualHours');
+            const lblDays = document.getElementById('lblManualDays');
+            if (lblHours) lblHours.textContent = hours.toFixed(1);
+            if (lblDays) lblDays.textContent = days;
+
+            const monthlyKwh = (watts * hours * days * qty) / 1000.0;
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+
+            const estCost = monthlyKwh * (genRate + 3.5);
+
+            const kwhEl = document.getElementById('manualMonthlyKwh');
+            const costEl = document.getElementById('manualMonthlyCost');
+            if (kwhEl) kwhEl.textContent = `${monthlyKwh.toFixed(2)} kWh`;
+            if (costEl) costEl.textContent = `₱${estCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
+
+            return { watts, qty, hours, days, monthlyKwh, estCost };
+        }
+
+        function saveManualToLoadList() {
+            const config = recalcManualConfig();
+            if (config.watts <= 0) {
+                showToast("Invalid Wattage", "Please enter a valid power rating in Watts.", "warning");
+                return;
+            }
+
+            const manualInput = document.getElementById('manualNameInput');
+            const catSelect = document.getElementById('manualCategorySelect');
+            const brandInput = document.getElementById('manualBrandInput');
+
+            const appName = (manualInput ? manualInput.value.trim() : '') || 'Custom Appliance';
+            const categoryName = catSelect ? catSelect.value : 'Custom';
+            const brand = (brandInput ? brandInput.value.trim() : '') || 'Custom';
+
+            const item = {
+                id: Date.now(),
+                source: 'manual_entry',
+                name: appName,
+                category: categoryName,
+                brand: brand,
+                model: '',
+                control_no: '',
+                watts: config.watts,
+                qty: config.qty,
+                hours: config.hours,
+                days: config.days,
+                kwh: config.monthlyKwh,
+                estCost: config.estCost,
+                energy_rating: ''
+            };
+
+            householdLoadList.push(item);
+            renderHouseholdLoadList();
+            showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Load List!`, "success");
+        }
+
+        function applyManualAsBillKwh() {
+            const config = recalcManualConfig();
+            syncKwhInput(Math.round(config.monthlyKwh));
+            switchView('calculator');
+            showToast("Applied to Calculator", `Applied ${Math.round(config.monthlyKwh)} kWh to your bill calculator.`, "success");
         }
 
         // Initialize AI module health check
@@ -2510,6 +3756,7 @@
         fetchRates();
         fetchApplianceCatalog();
         calculateBill();
+        renderHouseholdLoadList();
     </script>
 </body>
 </html>

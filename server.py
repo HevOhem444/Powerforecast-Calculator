@@ -11,6 +11,7 @@ if PROJECT_DIR not in sys.path:
 
 import meralco_parser
 from api.calculate import perform_calculation
+import api.pelp as pelp_engine
 
 PORT = 8000
 
@@ -41,6 +42,8 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
             self.handle_api_rates()
         elif path in ['/api/appliances', '/api/appliances.py']:
             self.handle_api_appliances()
+        elif path.startswith('/api/pelp'):
+            self.handle_api_pelp(parsed)
         elif path in ['/api/calculate', '/api/calculate.py']:
             params = parse_qs(parsed.query)
             kwh = float(params.get('kwh', [0])[0])
@@ -213,6 +216,52 @@ class PowerForecastServerHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(f.read().encode('utf-8'))
         else:
             self.wfile.write(json.dumps({"appliances": []}).encode('utf-8'))
+
+    def handle_api_pelp(self, parsed_url):
+        path = parsed_url.path.rstrip('/')
+        params = parse_qs(parsed_url.query)
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self._send_cors_headers()
+        self.end_headers()
+
+        try:
+            if path in ['/api/pelp', '/api/pelp/health']:
+                res = pelp_engine.get_pelp_health()
+            elif path == '/api/pelp/categories':
+                res = {"categories": pelp_engine.get_pelp_categories()}
+            elif path in ['/api/pelp/search', '/api/pelp/appliances/search']:
+                q = params.get('q', params.get('search_query', [None]))[0]
+                brand = params.get('brand', [None])[0]
+                model = params.get('model', [None])[0]
+                category = params.get('category', [None])[0]
+                try:
+                    limit = int(params.get('limit', [50])[0])
+                except ValueError:
+                    limit = 50
+                res = pelp_engine.search_pelp_appliances(
+                    query_str=q,
+                    brand=brand,
+                    model=model,
+                    category=category,
+                    limit=limit
+                )
+            elif path.startswith('/api/pelp/category/') or path.startswith('/api/pelp/appliances/'):
+                parts = path.split('/')
+                slug = parts[-1]
+                try:
+                    limit = int(params.get('limit', [100])[0])
+                except ValueError:
+                    limit = 100
+                res = pelp_engine.get_pelp_category_products(slug, limit=limit)
+            else:
+                res = pelp_engine.get_pelp_health()
+
+            self.wfile.write(json.dumps(res, ensure_ascii=False).encode('utf-8'))
+        except Exception as e:
+            err_res = {"error": "Internal PELP API Error", "message": str(e)}
+            self.wfile.write(json.dumps(err_res).encode('utf-8'))
 
     def handle_api_calculate(self, kwh, gen_rate, other_charges):
         res = perform_calculation(kwh, gen_rate, other_charges)

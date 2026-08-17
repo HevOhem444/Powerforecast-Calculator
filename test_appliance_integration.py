@@ -75,5 +75,23 @@ class TestMeralcoApplianceIntegration(unittest.TestCase):
         self.assertNotIn("appliancecalculator.meralco.com.ph", source)
         self.assertNotIn("fetch_external_rate", source)
 
+    def test_pelp_api_integration(self):
+        """Verify that PELP API loads categories, handles search, and formats normalized products."""
+        import api.pelp as pelp
+        health = pelp.get_pelp_health()
+        self.assertEqual(health["status"], "ok")
+        self.assertGreater(health["total_products"], 5000)
+        self.assertEqual(len(health["categories_available"]), 6)
+
+        # Test search
+        res = pelp.search_pelp_appliances("sharp", limit=5)
+        self.assertTrue(res["success"])
+        self.assertGreater(res["total_results"], 0)
+        first = res["results"][0]
+        self.assertIn("power_watts", first)
+        self.assertIn("brand", first)
+        self.assertIn("model", first)
+        self.assertIn("category", first)
+
 if __name__ == '__main__':
     unittest.main()

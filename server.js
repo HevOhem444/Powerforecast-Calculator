@@ -130,6 +130,233 @@ function sendCorsHeaders(res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
 }
 
+const PELP_CATEGORIES = {
+    'Air Conditioners': 'air-conditioners',
+    'Lighting Products': 'lighting-products',
+    'Refrigerating Appliances': 'refrigerating-appliances',
+    'Television Sets': 'television-sets',
+    'Electric Fans': 'electric-fans',
+    'Clothes Washing Machines': 'clothes-washing-machines'
+};
+
+const PELP_SLUG_TO_NAME = {};
+for (const [k, v] of Object.entries(PELP_CATEGORIES)) {
+    PELP_SLUG_TO_NAME[v] = k;
+}
+
+let pelpDataCache = null;
+
+function getPelpJsonDir() {
+    const candidates = [
+        path.join(PROJECT_DIR, 'pelp_data', 'parsed_json'),
+        path.join(PROJECT_DIR, 'data', 'parsed_json'),
+        path.join(PROJECT_DIR, 'Appliances_PELP', 'data', 'parsed_json'),
+        path.join(PROJECT_DIR, '..', 'Appliances_PELP', 'data', 'parsed_json')
+    ];
+    for (const c of candidates) {
+        if (fs.existsSync(c)) return c;
+    }
+    return candidates[0];
+}
+
+function loadPelpData() {
+    if (pelpDataCache) return pelpDataCache;
+    const jsonDir = getPelpJsonDir();
+    pelpDataCache = {};
+    for (const slug of Object.values(PELP_CATEGORIES)) {
+        const filePath = path.join(jsonDir, `${slug}.json`);
+        if (fs.existsSync(filePath)) {
+            try {
+                const content = fs.readFileSync(filePath, 'utf-8');
+                const parsed = JSON.parse(content);
+                pelpDataCache[slug] = parsed.products || [];
+            } catch (e) {
+                pelpDataCache[slug] = [];
+            }
+        } else {
+            pelpDataCache[slug] = [];
+        }
+    }
+    return pelpDataCache;
+}
+
+function extractNormalizedProduct(row, categorySlug) {
+    let brand = '', model = '', powerWatts = 0, monthlyKwh = 0;
+    let energyRatingType = '', energyRatingValue = '', starRating = '', controlNo = '', productName = '', doeLink = '';
+
+    for (const [k, v] of Object.entries(row)) {
+        const kl = k.toLowerCase();
+        const valStr = String(v || '').trim();
+
+        if ((kl.includes('brand') || kl.includes('manufacturer')) && !brand && valStr) brand = valStr;
+        else if ((kl.includes('model') || kl.includes('designation')) && !model && valStr) model = valStr;
+        else if (kl.includes('product name') && !productName && valStr) productName = valStr;
+        else if (kl.includes('control no') && !controlNo && valStr) controlNo = valStr;
+        else if (kl.includes('public product link') && !doeLink && valStr) doeLink = valStr;
+
+        if ((kl.includes('power rating') || kl.includes('rated power') || kl.includes('power (watts)')) && valStr) {
+            const clean = valStr.replace(/[^0-9.]/g, '');
+            if (clean && !isNaN(parseFloat(clean))) powerWatts = parseFloat(clean);
+        }
+
+        if ((kl.includes('monthly') && kl.includes('kwh')) || (kl.includes('monthly') && kl.includes('consumption'))) {
+            const clean = valStr.replace(/[^0-9.]/g, '');
+            if (clean && !isNaN(parseFloat(clean))) monthlyKwh = parseFloat(clean);
+        }
+
+        if (kl.includes('energy efficiency rating') || kl.includes('energy efficiency factor') || kl.includes('cspf') || kl.includes('eef') || kl.includes('eer')) {
+            if (!energyRatingValue && valStr) {
+                energyRatingValue = valStr;
+                if (kl.includes('cspf')) energyRatingType = 'CSPF';
+                else if (kl.includes('eef')) energyRatingType = 'EEF';
+                else energyRatingType = 'EER';
+            }
+        }
+
+        if ((kl.includes('performance rating') || kl.includes('star')) && !starRating && valStr) {
+            starRating = valStr;
+        }
+    }
+
+    if (powerWatts <= 0 && monthlyKwh > 0) {
+        powerWatts = Math.round((monthlyKwh / 30 / 8) * 1000 * 10) / 10;
+    }
+
+    const rawFields = {};
+    for (const [k, v] of Object.entries(row)) {
+        if (!k.startsWith('_')) rawFields[k] = v;
+    }
+
+    return {
+        category: categorySlug,
+        category_name: PELP_SLUG_TO_NAME[categorySlug] || categorySlug,
+        brand: brand || row.COMPANY || 'Unknown Brand',
+        model: model || row['MODEL NO./CODE'] || '',
+        product_name: productName || row['PRODUCT NAME'] || '',
+        control_no: controlNo,
+        power_watts: powerWatts,
+        monthly_kwh: monthlyKwh,
+        energy_rating_type: energyRatingType,
+        energy_rating_value: energyRatingValue,
+        star_rating: starRating,
+        doe_link: doeLink,
+        raw_fields: rawFields
+    };
+}
+
+function handlePelpApi(req, res, parsedUrl) {
+    const pathname = parsedUrl.pathname.replace(/\/$/, '');
+    const query = parsedUrl.query || {};
+    const data = loadPelpData();
+
+    if (pathname === '/api/pelp' || pathname === '/api/pelp/health') {
+        const summaries = [];
+        let total = 0;
+        for (const slug of Object.values(PELP_CATEGORIES)) {
+            const count = (data[slug] || []).length;
+            total += count;
+            summaries.push({
+                category: slug,
+                display_name: PELP_SLUG_TO_NAME[slug] || slug,
+                count
+            });
+        }
+        res.end(JSON.stringify({
+            status: 'ok',
+            service: 'DOE PELP Appliance Data API',
+            categories_available: summaries,
+            total_products: total
+        }));
+        return;
+    }
+
+    if (pathname === '/api/pelp/categories') {
+        const categories = Object.values(PELP_CATEGORIES).map(slug => ({
+            category: slug,
+            display_name: PELP_SLUG_TO_NAME[slug] || slug,
+            count: (data[slug] || []).length
+        }));
+        res.end(JSON.stringify({ categories }));
+        return;
+    }
+
+    if (pathname === '/api/pelp/search' || pathname === '/api/pelp/appliances/search') {
+        const qStr = (query.q || query.search_query || '').trim().toLowerCase();
+        const brand = (query.brand || '').trim().toLowerCase();
+        const model = (query.model || '').trim().toLowerCase();
+        const category = (query.category || '').trim();
+        const limit = parseInt(query.limit || 50, 10);
+
+        const tokens = qStr ? qStr.split(/\s+/) : [];
+        const slugs = category && PELP_SLUG_TO_NAME[category] ? [category] : Object.values(PELP_CATEGORIES);
+        const results = [];
+
+        for (const slug of slugs) {
+            const rows = data[slug] || [];
+            const dispName = (PELP_SLUG_TO_NAME[slug] || slug).toLowerCase();
+
+            for (const row of rows) {
+                const prod = extractNormalizedProduct(row, slug);
+
+                if (brand && !prod.brand.toLowerCase().includes(brand)) continue;
+                if (model && !prod.model.toLowerCase().includes(model)) continue;
+
+                if (tokens.length > 0) {
+                    const fullText = [
+                        prod.brand.toLowerCase(),
+                        prod.model.toLowerCase(),
+                        prod.product_name.toLowerCase(),
+                        prod.category.toLowerCase(),
+                        dispName,
+                        prod.control_no.toLowerCase(),
+                        ...Object.values(prod.raw_fields).map(v => String(v || '').toLowerCase())
+                    ].join(' ');
+
+                    const matchesAll = tokens.every(t => fullText.includes(t));
+                    if (!matchesAll) continue;
+                }
+
+                results.push(prod);
+                if (results.length >= limit) break;
+            }
+            if (results.length >= limit) break;
+        }
+
+        res.end(JSON.stringify({
+            success: true,
+            query: { search_query: query.q || query.search_query, brand: query.brand, model: query.model, category: query.category },
+            total_results: results.length,
+            results
+        }));
+        return;
+    }
+
+    if (pathname.startsWith('/api/pelp/category/') || pathname.startsWith('/api/pelp/appliances/')) {
+        const parts = pathname.split('/');
+        const slug = parts[parts.length - 1];
+        const limit = parseInt(query.limit || 100, 10);
+
+        if (!PELP_SLUG_TO_NAME[slug]) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: `Unknown category '${slug}'` }));
+            return;
+        }
+
+        const rows = (data[slug] || []).slice(0, limit);
+        const prods = rows.map(r => extractNormalizedProduct(r, slug));
+        res.end(JSON.stringify({
+            category: slug,
+            display_name: PELP_SLUG_TO_NAME[slug],
+            total_count: (data[slug] || []).length,
+            limit,
+            products: prods
+        }));
+        return;
+    }
+
+    res.end(JSON.stringify({ status: 'ok', service: 'DOE PELP Appliance Data API' }));
+}
+
 const server = http.createServer((req, res) => {
     sendCorsHeaders(res);
 
@@ -179,6 +406,12 @@ const server = http.createServer((req, res) => {
         } else {
             res.end(JSON.stringify({ appliances: [] }));
         }
+        return;
+    }
+
+    if (pathname.startsWith('/api/pelp')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        handlePelpApi(req, res, parsedUrl);
         return;
     }
 
