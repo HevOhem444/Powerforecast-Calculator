@@ -8,6 +8,7 @@
     { "src": "api/calculate.py", "use": "@vercel/python" },
     { "src": "api/health.py", "use": "@vercel/python" },
     { "src": "api/analyze.py", "use": "@vercel/python" },
+    { "src": "api/pelp.py", "use": "@vercel/python" },
     { "src": "Assets/**", "use": "@vercel/static" },
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.json", "use": "@vercel/static" },
@@ -41,6 +42,7 @@
     { "src": "/api/calculate", "dest": "/api/calculate.py" },
     { "src": "/api/health", "dest": "/api/health.py" },
     { "src": "/api/analyze", "dest": "/api/analyze.py" },
+    { "src": "/api/pelp(.*)", "dest": "/api/pelp.py" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }

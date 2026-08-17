@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOE PELP Appliance Energy Label Search</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Modern Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Top Navigation Header -->
+    <header>
+        <a href="#" class="brand-badge">
+            <div class="brand-logo">⚡</div>
+            <span>DOE PELP Search</span>
+        </a>
+        <div class="nav-actions">
+            <div class="status-pill">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting API...</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Theme">☀️</button>
+        </div>
+    </header>
+
+    <!-- Main Hero Search Section -->
+    <main class="hero-container">
+        <h1 class="hero-title">DOE PELP Energy Label Search</h1>
+        <p class="hero-subtitle">Instant search across 6,800+ registered appliances in the Philippines</p>
+
+        <!-- Search Input Bar & Real-Time Suggestions -->
+        <div class="search-wrapper">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search Appliances (e.g., Samsung AC, LG TV)"
+                    autocomplete="off"
+                    autofocus
+                >
+                <button type="button" class="clear-btn" id="clearBtn" title="Clear input">✕</button>
+                <button type="button" class="search-btn" id="searchBtn">Search</button>
+            </div>
+
+            <!-- Real-Time Autocomplete Dropdown -->
+            <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+        </div>
+
+        <!-- Quick Category Filter Pills -->
+        <div class="category-pills">
+            <button class="pill active" data-category="">All Categories</button>
+            <button class="pill" data-category="air-conditioners">Air Conditioners</button>
+            <button class="pill" data-category="refrigerating-appliances">Refrigerators</button>
+            <button class="pill" data-category="television-sets">TV Sets</button>
+            <button class="pill" data-category="lighting-products">Lighting</button>
+            <button class="pill" data-category="electric-fans">Electric Fans</button>
+            <button class="pill" data-category="clothes-washing-machines">Washing Machines</button>
+        </div>
+    </main>
+
+    <!-- Search Results Grid Section -->
+    <section class="results-container" id="resultsContainer">
+        <div class="results-header">
+            <h2 style="font-size: 1.2rem; font-weight: 700;">Search Results</h2>
+            <div class="results-count" id="resultsCount">Showing 0 results</div>
+        </div>
+        <div class="results-grid" id="resultsGrid"></div>
+    </section>
+
+    <!-- Product Spec Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">✕</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Department of Energy Philippines — Philippine Energy Labeling Program (PELP) Dataset</p>
+    </footer>
+
+    <!-- Application Script -->
+    <script src="script.js"></script>
+</body>
+</html>
