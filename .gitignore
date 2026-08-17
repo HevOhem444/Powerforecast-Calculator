@@ -11,3 +11,4 @@ package.json
 package-lock.json
 .vercel
 .env*
+pelp_data/raw_pdfs/

@@ -16,10 +16,20 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
-        api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+        # Check standard Gemini / Google API key environment variable names
+        gemini_key = os.environ.get('GEMINI_API_KEY', '').strip()
+        google_key = os.environ.get('GOOGLE_API_KEY', '').strip()
+        google_gemini_key = os.environ.get('GOOGLE_GEMINI_API_KEY', '').strip()
+
+        api_key = gemini_key or google_key or google_gemini_key
+        server_has_key = bool(api_key)
+
+        key_name = 'GEMINI_API_KEY' if gemini_key else ('GOOGLE_API_KEY' if google_key else ('GOOGLE_GEMINI_API_KEY' if google_gemini_key else None))
+
         res = {
             "status": "ok",
-            "serverHasKey": bool(api_key),
+            "serverHasKey": server_has_key,
+            "keyNameDetected": key_name,
             "maxImagesSupported": 3,
             "defaultModel": "gemini-3.7-flash",
             "supportedModels": ["gemini-3.7-flash", "gemini-2.5-flash", "gemini-flash-latest"]

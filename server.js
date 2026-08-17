@@ -2,26 +2,30 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const PORT = process.env.PORT || 8000;
 const PROJECT_DIR = __dirname;
 
 // Simple .env parser to load environment variables if present
-const envPath = path.join(PROJECT_DIR, '.env');
-if (fs.existsSync(envPath)) {
-    try {
-        const envContent = fs.readFileSync(envPath, 'utf-8');
-        envContent.split(/\r?\n/).forEach(line => {
-            const parts = line.split('=');
-            if (parts.length >= 2 && parts[0].trim()) {
-                const key = parts[0].trim();
-                const val = parts.slice(1).join('=').trim();
-                if (!process.env[key]) process.env[key] = val;
-            }
-        });
-    } catch (e) {
-        console.warn('Could not parse .env file:', e);
+// Loads .env.local first (higher priority), then .env as fallback
+for (const envFile of ['.env.local', '.env']) {
+    const envFilePath = path.join(PROJECT_DIR, envFile);
+    if (fs.existsSync(envFilePath)) {
+        try {
+            const envContent = fs.readFileSync(envFilePath, 'utf-8');
+            envContent.split(/\r?\n/).forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) return;
+                const parts = trimmed.split('=');
+                if (parts.length >= 2 && parts[0].trim()) {
+                    const key = parts[0].trim();
+                    const val = parts.slice(1).join('=').trim();
+                    if (!process.env[key]) process.env[key] = val;
+                }
+            });
+        } catch (e) {
+            console.warn(`Could not parse ${envFile}:`, e);
+        }
     }
 }
 
@@ -370,7 +374,11 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    const parsedUrl = url.parse(req.url, true);
+    const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const parsedUrl = {
+        pathname: reqUrl.pathname,
+        query: Object.fromEntries(reqUrl.searchParams.entries())
+    };
     let pathname = parsedUrl.pathname;
 
     if (pathname === '/') {
@@ -380,10 +388,17 @@ const server = http.createServer((req, res) => {
     // API Routes
     if (pathname === '/api/health' || pathname === '/api/health.py') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        const serverHasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '');
+        const geminiKey = process.env.GEMINI_API_KEY?.trim();
+        const googleKey = process.env.GOOGLE_API_KEY?.trim();
+        const googleGeminiKey = process.env.GOOGLE_GEMINI_API_KEY?.trim();
+        const apiKey = geminiKey || googleKey || googleGeminiKey || '';
+        const serverHasKey = Boolean(apiKey);
+        const keyName = geminiKey ? 'GEMINI_API_KEY' : (googleKey ? 'GOOGLE_API_KEY' : (googleGeminiKey ? 'GOOGLE_GEMINI_API_KEY' : null));
+
         res.end(JSON.stringify({
             status: 'ok',
             serverHasKey,
+            keyNameDetected: keyName,
             maxImagesSupported: 3,
             defaultModel: 'gemini-3.7-flash',
             supportedModels: ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-flash-latest']
@@ -459,12 +474,12 @@ const server = http.createServer((req, res) => {
                 try { payload = JSON.parse(body); } catch (e) {}
                 const { images = [], imageBase64, mimeType = 'image/jpeg', prompt, preset = 'specs', model = 'gemini-3.7-flash' } = payload;
 
-                const apiKey = process.env.GEMINI_API_KEY?.trim();
+                const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GEMINI_API_KEY || '').trim();
                 if (!apiKey) {
                     res.writeHead(401, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         error: 'Missing Gemini API Key',
-                        message: 'No GEMINI_API_KEY configured in server environment variables.'
+                        message: 'No GEMINI_API_KEY (or GOOGLE_API_KEY) configured in server environment variables.'
                     }));
                     return;
                 }

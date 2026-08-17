@@ -28,7 +28,12 @@ class handler(BaseHTTPRequestHandler):
         preset = payload.get('preset', 'specs')
         model = payload.get('model', 'gemini-3.7-flash')
 
-        api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+        api_key = (
+            os.environ.get('GEMINI_API_KEY', '') or
+            os.environ.get('GOOGLE_API_KEY', '') or
+            os.environ.get('GOOGLE_GEMINI_API_KEY', '')
+        ).strip()
+
         if not api_key:
             self.send_response(401)
             self.send_header('Content-Type', 'application/json')
@@ -36,7 +41,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "error": "Missing Gemini API Key",
-                "message": "GEMINI_API_KEY is not configured in Vercel Environment Variables."
+                "message": "No GEMINI_API_KEY (or GOOGLE_API_KEY) configured in Vercel Environment Variables."
             }).encode('utf-8'))
             return
 
