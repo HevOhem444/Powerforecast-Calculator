@@ -1377,21 +1377,23 @@
                                         class="flex-1 py-2 btn-primary rounded-lg text-xs font-semibold shadow-md">
                                         Set as Bill kWh
                                     </button>
-                                    <button onclick="addApplianceToLoadList()"
+                                    <button onclick="addApplianceToCalculationList()"
                                         class="flex-1 py-2 btn-secondary rounded-lg text-xs font-semibold">
-                                        + Add to Load List
+                                        + Add to Calculation List
                                     </button>
                                 </div>
                             </div>
 
-                            <div id="householdLoadPanel" class="flex flex-col gap-2">
+                            <div id="calculationLoadPanel" class="flex flex-col gap-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs font-semibold t-secondary uppercase tracking-wider">Household
-                                        Load List</span>
-                                    <span class="text-xs font-bold t-accent" id="totalLoadKwh">0.00 kWh</span>
+                                    <span class="text-xs font-semibold t-secondary uppercase tracking-wider">Calculation Load List</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold t-accent" id="calcLoadTotalKwh">0.00 kWh</span>
+                                        <button onclick="clearCalculationLoadList()" class="text-[10px] text-slate-400 hover:text-rose-400 font-bold underline" title="Clear calculation items">Clear</button>
+                                    </div>
                                 </div>
-                                <div id="householdLoadItems" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                                    <p class="text-xs t-muted italic">No appliances added yet.</p>
+                                <div id="calculationLoadItems" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                                    <p class="text-xs t-muted italic">No items in calculation list.</p>
                                 </div>
                             </div>
                         </div>
@@ -4127,8 +4129,8 @@
 
             if (typeof calculatorMode !== 'undefined' && calculatorMode === 'estimator') {
                 let loadTotal = 0;
-                if (typeof householdLoadList !== 'undefined' && householdLoadList.length > 0) {
-                    householdLoadList.forEach(item => loadTotal += item.kwh);
+                if (typeof calculatorLoadList !== 'undefined' && calculatorLoadList.length > 0) {
+                    calculatorLoadList.forEach(item => loadTotal += (item.kwh || 0));
                 } else if (typeof updateApplianceKwhCalculation === 'function') {
                     loadTotal = updateApplianceKwhCalculation();
                 }
@@ -4272,7 +4274,10 @@
         function populateCategoryFilter(categories) {
             const catSelect = document.getElementById('applianceCategorySelect');
             if (!catSelect) return;
-            catSelect.innerHTML = '<option value="ALL">All Categories</option>';
+            catSelect.innerHTML = `
+                <option value="ALL">All Categories</option>
+                <option value="MY_INVENTORY" class="font-bold text-indigo-400">⚡ My Saved Appliances (From Inventory)</option>
+            `;
             const catList = categories || [...new Set(applianceCatalog.map(a => a.category))];
             catList.forEach(cat => {
                 const opt = document.createElement('option');
@@ -4294,21 +4299,37 @@
             const selectedCat = catSelect ? catSelect.value : 'ALL';
             appSelect.innerHTML = '<option value="">-- Choose an appliance --</option>';
 
-            const filtered = selectedCat === 'ALL'
-                ? applianceCatalog
-                : applianceCatalog.filter(a => a.category === selectedCat);
+            if (selectedCat === 'MY_INVENTORY') {
+                if (householdLoadList.length === 0) {
+                    appSelect.innerHTML = '<option value="">-- No appliances saved in inventory yet --</option>';
+                    return;
+                }
+                householdLoadList.forEach(app => {
+                    const opt = document.createElement('option');
+                    opt.value = app.id || app.name;
+                    opt.textContent = `⚡ [My Inventory] ${app.name} (${app.watts}W)`;
+                    opt.dataset.wattage = app.watts;
+                    opt.dataset.hours = app.hours || 8;
+                    opt.dataset.days = app.days || 30;
+                    appSelect.appendChild(opt);
+                });
+            } else {
+                const filtered = selectedCat === 'ALL'
+                    ? applianceCatalog
+                    : applianceCatalog.filter(a => a.category === selectedCat);
 
-            filtered.forEach(app => {
-                const opt = document.createElement('option');
-                opt.value = app.id || app.name;
-                opt.textContent = `${app.name} (${app.average_wattage}W)`;
-                opt.dataset.wattage = app.average_wattage;
-                opt.dataset.hours = app.default_hours_per_day || 8;
-                opt.dataset.days = app.default_days_per_month || 30;
-                appSelect.appendChild(opt);
-            });
+                filtered.forEach(app => {
+                    const opt = document.createElement('option');
+                    opt.value = app.id || app.name;
+                    opt.textContent = `${app.name} (${app.average_wattage}W)`;
+                    opt.dataset.wattage = app.average_wattage;
+                    opt.dataset.hours = app.default_hours_per_day || 8;
+                    opt.dataset.days = app.default_days_per_month || 30;
+                    appSelect.appendChild(opt);
+                });
+            }
 
-            if (filtered.length > 0) {
+            if (appSelect.options.length > 1) {
                 appSelect.selectedIndex = 1;
                 onApplianceSelected();
             } else {
@@ -4513,48 +4534,92 @@
             }
         }
 
-        function addApplianceToLoadList() {
+        // ===== PURE FRONTEND CALCULATOR ESTIMATOR ENGINE (SESSION-ONLY / NO BACKEND) =====
+        let calculatorLoadList = [];
+
+        function addApplianceToCalculationList() {
             const appSelect = document.getElementById('applianceSelect');
             if (!appSelect || appSelect.selectedIndex <= 0) {
-                showToast("Select Appliance", "Please choose an appliance from the catalog first.", "warning");
+                showToast("Select Appliance", "Please choose an appliance from the catalog or your saved inventory first.", "warning");
                 return;
             }
 
-            const appName = appSelect.options[appSelect.selectedIndex].text.split(' (')[0];
+            const appName = appSelect.options[appSelect.selectedIndex].text.replace(/^⚡ \[My Inventory\] /, '').split(' (')[0];
             const watts = parseFloat(document.getElementById('applianceWattsInput')?.value || 0);
             const hours = parseFloat(document.getElementById('applianceHoursSlider')?.value || 0);
             const days = parseFloat(document.getElementById('applianceDaysSlider')?.value || 0);
 
-            const kwh = (watts * hours * days) / 1000;
+            const kwh = (watts * hours * days) / 1000.0;
 
             const item = {
-                id: 'app_' + Date.now(),
-                source: 'catalog',
+                id: 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                 name: appName,
-                category: document.getElementById('applianceCategorySelect')?.value || 'Catalog',
-                brand: '',
-                model: '',
-                control_no: '',
+                category: document.getElementById('applianceCategorySelect')?.value || 'General',
                 watts: watts,
-                voltage: 230,
-                qty: 1,
                 hours: hours,
                 days: days,
-                kwh: kwh,
-                estCost: 0,
-                energy_rating: '',
-                room_location: 'General',
-                is_active: true,
-                is_currently_on: false,
-                last_turned_on_at: null,
-                ai_metadata: {}
+                kwh: kwh
             };
 
-            householdLoadList.push(item);
-            renderHouseholdLoadList();
-            renderCalendarApplianceSwitches();
-            dbInsertAppliance(item);
-            showToast("Appliance Added", `Added "${item.name}" (${item.watts}W) to your Household Inventory!`, "success");
+            calculatorLoadList.push(item);
+            renderCalculationLoadList();
+            calculateBill();
+            showToast("Added to Calculation", `Added "${item.name}" (${item.kwh.toFixed(2)} kWh) to active bill calculation.`, "success");
+        }
+
+        function removeCalculationLoadItem(id) {
+            calculatorLoadList = calculatorLoadList.filter(item => item.id !== id);
+            renderCalculationLoadList();
+            calculateBill();
+            showToast("Calculation Updated", "Removed appliance from calculation list.", "info");
+        }
+
+        function clearCalculationLoadList() {
+            if (calculatorLoadList.length === 0) return;
+            calculatorLoadList = [];
+            renderCalculationLoadList();
+            calculateBill();
+            showToast("Calculation Reset", "Cleared all items from calculation list.", "info");
+        }
+
+        function renderCalculationLoadList() {
+            const calcContainer = document.getElementById('calculationLoadItems');
+            const totalLbl = document.getElementById('calcLoadTotalKwh');
+
+            if (!calcContainer) return;
+
+            if (calculatorLoadList.length === 0) {
+                calcContainer.innerHTML = '<p class="text-xs t-muted italic">No items in calculation list.</p>';
+                if (totalLbl) totalLbl.textContent = '0.00 kWh';
+                return;
+            }
+
+            calcContainer.innerHTML = '';
+            let totalKwh = 0;
+
+            calculatorLoadList.forEach(item => {
+                totalKwh += (item.kwh || 0);
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-2.5 rounded-xl text-xs transition-all';
+                div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--input-border);';
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-bold t-primary">${item.name}</span>
+                        </div>
+                        <span class="text-[10px] t-muted">${item.watts}W • ${item.hours}h/day • ${item.days}d/mo</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold t-accent">${item.kwh.toFixed(2)} kWh</span>
+                        <button onclick="removeCalculationLoadItem('${item.id}')" class="t-muted hover:text-red-400 p-1 transition-colors" title="Remove from calculation">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                `;
+                calcContainer.appendChild(div);
+            });
+
+            if (totalLbl) totalLbl.textContent = `${totalKwh.toFixed(2)} kWh`;
         }
 
         function removeHouseholdLoadItem(id) {
@@ -4607,13 +4672,11 @@
                 localStorage.setItem('powerforecast_household_loads_v1', JSON.stringify(householdLoadList));
             } catch (e) { }
 
-            const calcContainer = document.getElementById('householdLoadItems');
             const appContainers = [
                 document.getElementById('appliancesModuleLoadItems'),
                 ...document.querySelectorAll('.appliancesModuleLoadItems')
             ].filter(Boolean);
 
-            const totalLbl = document.getElementById('totalLoadKwh');
             const countBadges = [
                 document.getElementById('householdLoadCountBadge'),
                 ...document.querySelectorAll('.householdLoadCountBadge')
@@ -4633,12 +4696,16 @@
                 b.textContent = `${householdLoadList.length} appliance${householdLoadList.length === 1 ? '' : 's'}`;
             });
 
+            // If category filter in calculator is set to My Saved Appliances, refresh the dropdown
+            const catSelect = document.getElementById('applianceCategorySelect');
+            if (catSelect && catSelect.value === 'MY_INVENTORY') {
+                populateApplianceDropdown();
+            }
+
             if (householdLoadList.length === 0) {
-                if (calcContainer) calcContainer.innerHTML = '<p class="text-xs t-muted italic">No appliances in inventory.</p>';
                 appContainers.forEach(c => {
                     c.innerHTML = '<p class="text-xs t-muted italic">No appliances saved yet. Add from PELP or Custom Presets above.</p>';
                 });
-                if (totalLbl) totalLbl.textContent = '0.00 kWh';
                 totalKwhLabels.forEach(l => l.textContent = '0 W');
                 totalCostLabels.forEach(l => l.textContent = '0 Devices');
                 return;
@@ -4646,7 +4713,6 @@
 
             let totalConnectedWatts = 0;
             let totalActiveCount = 0;
-            if (calcContainer) calcContainer.innerHTML = '';
             appContainers.forEach(c => c.innerHTML = '');
 
             householdLoadList.forEach(item => {
@@ -4654,30 +4720,7 @@
                 totalConnectedWatts += itemWatts;
                 if (item.is_currently_on) totalActiveCount++;
 
-                // 1. Render in Calculator Sidebar Load List
-                if (calcContainer) {
-                    const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center p-2.5 rounded-xl text-xs transition-all';
-                    div.style.cssText = 'background: var(--input-bg); border: 1px solid var(--input-border);';
-                    div.innerHTML = `
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5">
-                                <span class="font-bold t-primary">${item.name}</span>
-                                ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1 rounded bg-indigo-500/20 text-indigo-300 font-bold">×${item.qty}</span>` : ''}
-                            </div>
-                            <span class="text-[10px] t-muted">${item.watts}W • ${item.category || 'General'}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold t-accent">${itemWatts.toLocaleString()} W</span>
-                            <button onclick="removeHouseholdLoadItem('${item.id}')" class="t-muted hover:text-red-400 p-1 transition-colors" title="Remove">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                    `;
-                    calcContainer.appendChild(div);
-                }
-
-                // 2. Render in Appliances Module Rich Load Lists
+                // Render in Appliances Module Rich Load Lists
                 appContainers.forEach(container => {
                     const appDiv = document.createElement('div');
                     appDiv.className = 'flex justify-between items-center p-3 rounded-2xl text-xs bento-sub-card transition-all shadow-sm';
@@ -4728,6 +4771,7 @@
                 l.textContent = `${householdLoadList.length} Registered Device${householdLoadList.length === 1 ? '' : 's'}`;
             });
         }
+
 
         // Clear any old local manual API key
         try { localStorage.removeItem('powerforecast_gemini_key'); } catch (e) { }
