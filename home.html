@@ -7112,10 +7112,12 @@
             });
         }
 
-        // Delete Scheduled Timeline Block or Entire Recurring Series
+        // Delete Scheduled Timeline Block or Entire Recurring Series (and power off appliance completely)
         function deleteCalendarBlock(blockId, deleteAllSeries = false) {
             const block = calendarScheduledBlocks.find(b => b.id === blockId);
             if (!block) return;
+
+            const targetApplianceId = block.applianceId;
 
             if (deleteAllSeries && block.seriesId) {
                 const toDelete = calendarScheduledBlocks.filter(b => b.seriesId === block.seriesId);
@@ -7131,6 +7133,13 @@
                 calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
                 dbDeleteCalendarEvent(blockId);
                 showToast("Block Removed", "Removed schedule block from timeline.", "info");
+            }
+
+            // Power OFF appliance completely if it was currently running
+            const appItem = householdLoadList.find(a => String(a.id) === String(targetApplianceId));
+            if (appItem && appItem.is_currently_on) {
+                delete applianceSwitchCooldowns[targetApplianceId];
+                toggleApplianceState(targetApplianceId, true);
             }
 
             saveCalendarBlocks();
