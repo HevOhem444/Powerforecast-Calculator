@@ -7040,6 +7040,13 @@
         };
 
         function setCalendarTimelineZoom(mode) {
+            const container = document.getElementById('mainScheduleTimelineContainer');
+            const canvas = document.getElementById('timelineCanvasWrapper');
+            let currentCenterRatio = 0.5;
+            if (container && canvas && canvas.scrollWidth > 0) {
+                currentCenterRatio = (container.scrollLeft + (container.clientWidth / 2)) / canvas.scrollWidth;
+            }
+
             calendarZoomState.mode = mode;
             
             // Update zoom pill button states
@@ -7055,7 +7062,6 @@
             });
 
             const badge = document.getElementById('timelineZoomIndicatorBadge');
-            const canvas = document.getElementById('timelineCanvasWrapper');
 
             if (mode === '24h') {
                 calendarZoomState.multiplier = 1;
@@ -7077,7 +7083,14 @@
 
             renderTimelineHeaderRuler();
             renderCalendarBlocks();
-            scrollTimelineToCurrentTime();
+
+            if (container && canvas) {
+                const newScrollLeft = Math.max(0, (canvas.scrollWidth * currentCenterRatio) - (container.clientWidth / 2));
+                container.scrollTo({
+                    left: newScrollLeft,
+                    behavior: 'smooth'
+                });
+            }
         }
 
         function renderTimelineHeaderRuler() {
@@ -7349,6 +7362,27 @@
 
             const totalRate = getEffectiveCalendarRate();
 
+            // Zoom-Adaptive Footprint & Collision Calibration
+            const zoomMultipliers = { '24h': 1, '12h': 2, '6h': 4, '1h': 12 };
+            const currentZoomMode = calendarZoomState ? (calendarZoomState.mode || '24h') : '24h';
+            const zoomMult = zoomMultipliers[currentZoomMode] || 1;
+
+            // In 24h (1x), min visual width is 2.5% (~36 mins).
+            // In 12h (2x), min visual width is 1.25% (~18 mins).
+            // In 6h (4x), min visual width is 0.625% (~9 mins).
+            // In 1h (12x), min visual width is 0.21% (~3 mins).
+            const minVisualWidthPercent = Math.max(0.18, 2.5 / zoomMult);
+            const minVisualDurationHours = (minVisualWidthPercent / 100.0) * 24.0;
+            const visualGapHours = 0.05 / zoomMult; // visual safety gap
+
+            // Dynamic background vertical guidelines matching zoom resolution
+            const gridDivisions = currentZoomMode === '1h' ? 96 : (currentZoomMode === '6h' ? 48 : (currentZoomMode === '12h' ? 24 : 12));
+            let gridLinesHtml = '';
+            for (let g = 1; g < gridDivisions; g++) {
+                const leftP = (g / gridDivisions) * 100;
+                gridLinesHtml += `<div class="absolute top-0 bottom-0 border-r border-slate-700/20 pointer-events-none" style="left: ${leftP}%;"></div>`;
+            }
+
             // Render one unified timeline track per appliance
             appIds.forEach(appId => {
                 const item = householdLoadList.find(a => String(a.id) === String(appId));
@@ -7373,9 +7407,9 @@
                 const row = document.createElement('div');
                 row.className = `flex items-center gap-3 p-2 rounded-2xl border transition-all ${hasActiveRunning ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'}`;
 
-                // Build Left Appliance Info Card
+                // Build Left Appliance Info Card (Sticky for Smooth Horizontal Scrolling)
                 const leftCardHtml = `
-                    <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 cursor-pointer hover:border-slate-600 transition-all" onclick="openNewScheduleForAppliance('${appId}')" title="Click to add another schedule for this appliance">
+                    <div class="w-44 shrink-0 sticky left-0 z-30 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/95 backdrop-blur border border-slate-800 shadow-md cursor-pointer hover:border-slate-600 transition-all" onclick="openNewScheduleForAppliance('${appId}')" title="Click to add another schedule for this appliance">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="text-base shrink-0">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
@@ -7391,7 +7425,7 @@
                     </div>
                 `;
 
-                // Build Right 24-hour Track using Sub-Lane Waterfall Stacking
+                // Build Right 24-hour Track using Visual-Footprint Sub-Lane Waterfall Stacking
                 let barsHtml = '';
 
                 // Combine and prepare all blocks relevant to this appliance today
@@ -7401,11 +7435,13 @@
                 appRolloverBlocks.forEach(block => {
                     const totalEnd = block.startHour + block.durationHours;
                     const rolloverHours = Math.min(24.0, totalEnd - 24.0);
+                    const visualEnd = 0 + Math.max(rolloverHours, minVisualDurationHours) + visualGapHours;
                     allAppSessions.push({
                         block: block,
                         isRollover: true,
                         start: 0,
                         end: rolloverHours,
+                        visualEnd: visualEnd,
                         durationHours: rolloverHours,
                         isOvernight: false,
                         totalEnd: totalEnd
@@ -7414,35 +7450,37 @@
 
                 // 2. Starting blocks
                 appStartingBlocks.forEach(block => {
+                    const visualEnd = block.startHour + Math.max(block.durationHours, minVisualDurationHours) + visualGapHours;
                     allAppSessions.push({
                         block: block,
                         isRollover: false,
                         start: block.startHour,
                         end: block.startHour + block.durationHours,
+                        visualEnd: visualEnd,
                         durationHours: block.durationHours,
                         isOvernight: (block.startHour + block.durationHours) > 24.0,
                         totalEnd: block.startHour + block.durationHours
                     });
                 });
 
-                // Sort sessions chronologically (and wider/longer sessions first if same start)
+                // Sort sessions chronologically
                 allAppSessions.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
 
-                // Assign each session to the first non-overlapping sub-lane
+                // Assign each session to the first non-overlapping sub-lane based on VISUAL FOOTPRINT
                 const laneEndTimes = [];
                 allAppSessions.forEach(session => {
                     let assignedLane = -1;
                     for (let l = 0; l < laneEndTimes.length; l++) {
-                        // Allow stacking in same lane if previous session in lane finished at or before start
-                        if (laneEndTimes[l] <= session.start + 0.001) {
+                        // Only stack in same lane if the previous pill's visual footprint has ended
+                        if (laneEndTimes[l] <= session.start + 0.0001) {
                             assignedLane = l;
-                            laneEndTimes[l] = session.end;
+                            laneEndTimes[l] = session.visualEnd;
                             break;
                         }
                     }
                     if (assignedLane === -1) {
                         assignedLane = laneEndTimes.length;
-                        laneEndTimes.push(session.end);
+                        laneEndTimes.push(session.visualEnd);
                     }
                     session.laneIndex = assignedLane;
                 });
@@ -7478,8 +7516,8 @@
 
                     const leftPercent = Math.max(0, Math.min(100, (session.start / 24.0) * 100));
                     const widthPercent = isOvernight
-                        ? Math.max(2.5, 100 - leftPercent)
-                        : Math.max(2.5, Math.min(100 - leftPercent, (session.durationHours / 24.0) * 100));
+                        ? Math.max(minVisualWidthPercent, 100 - leftPercent)
+                        : Math.max(minVisualWidthPercent, Math.min(100 - leftPercent, (session.durationHours / 24.0) * 100));
 
                     const topOffset = (session.laneIndex * (laneHeight + laneGap)) + trackPadding;
 
@@ -7495,9 +7533,9 @@
                         barClass = 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110 shadow-md';
                     }
 
-                    // Adaptive Content Density
-                    const isUltraCompact = widthPercent < 5.5;
-                    const isCompact = widthPercent < 11;
+                    // Adaptive Content Density based on visual width
+                    const isUltraCompact = widthPercent < 5.0;
+                    const isCompact = widthPercent < 10.0;
 
                     barsHtml += `
                         <div class="absolute rounded-lg flex items-center justify-between px-2 cursor-pointer transition-all ${zIndex} ${barClass}"
@@ -7526,19 +7564,9 @@
                 row.innerHTML = `
                     ${leftCardHtml}
                     <div class="flex-1 relative bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center select-none overflow-hidden" style="min-height: ${containerHeight}px;">
-                        <div class="absolute inset-0 grid grid-cols-12 pointer-events-none opacity-15 h-full">
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="border-r border-slate-400 h-full"></div>
-                            <div class="h-full"></div>
+                        <!-- Dynamic Grid Lines -->
+                        <div class="absolute inset-0 pointer-events-none opacity-25 h-full">
+                            ${gridLinesHtml}
                         </div>
 
                         <!-- Peak Overlays -->
