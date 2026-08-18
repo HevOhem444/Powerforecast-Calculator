@@ -4642,8 +4642,11 @@
 
         function removeHouseholdLoadItem(id) {
             householdLoadList = householdLoadList.filter(item => item.id !== id);
+            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.applianceId !== id);
+            saveCalendarBlocks();
             renderHouseholdLoadList();
             renderCalendarApplianceSwitches();
+            renderCalendarBlocks();
             updateLiveEnergyMonitor();
             dbDeleteAppliance(id);
             showToast("Item Removed", "Removed appliance from your Household Inventory.", "info");
@@ -4653,8 +4656,11 @@
             if (householdLoadList.length === 0) return;
             if (!confirm("Are you sure you want to clear all appliances from your Household Load List?")) return;
             householdLoadList = [];
+            calendarScheduledBlocks = [];
+            saveCalendarBlocks();
             renderHouseholdLoadList();
             renderCalendarApplianceSwitches();
+            renderCalendarBlocks();
             updateLiveEnergyMonitor();
             dbClearAllAppliances();
             showToast("Inventory Cleared", "All household appliance loads have been cleared.", "info");
@@ -6252,6 +6258,93 @@
             });
         }
 
+        // Live Energy Monitor Ticker (Runs Every Second)
+        function updateLiveEnergyMonitor() {
+            let totalActiveWatts = 0;
+            let activeCount = 0;
+
+            householdLoadList.forEach(item => {
+                if (item.is_currently_on) {
+                    totalActiveWatts += (item.watts || 0) * (item.qty || 1);
+                    activeCount++;
+                }
+            });
+
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            const liveHourlyCost = (totalActiveWatts / 1000) * (genRate + 3.5);
+
+            const wattsEl = document.getElementById('calLiveActiveWatts');
+            const costEl = document.getElementById('calLiveHourlyCost');
+            const countEl = document.getElementById('calLiveActiveCount');
+
+            if (wattsEl) wattsEl.textContent = `${totalActiveWatts.toLocaleString()} Watts`;
+            if (costEl) costEl.textContent = `₱${liveHourlyCost.toFixed(2)} / hr`;
+            if (countEl) countEl.textContent = `${activeCount} Running`;
+
+            const calView = document.getElementById('view-calendar');
+            if (calView && !calView.classList.contains('hidden')) {
+                if (activeCount > 0) {
+                    renderCalendarApplianceSwitches();
+                }
+            }
+        }
+
+        setInterval(updateLiveEnergyMonitor, 1000);
+
+        // Appliance State Toggle Controller (with Surge Cooldown, Safety Modals & Supabase Logging)
+        async function toggleApplianceState(id, bypassConfirm = false) {
+            const item = householdLoadList.find(a => String(a.id) === String(id));
+            if (!item) return;
+
+            const now = Date.now();
+            if (applianceSwitchCooldowns[id] && applianceSwitchCooldowns[id] > now) {
+                const remaining = Math.ceil((applianceSwitchCooldowns[id] - now) / 1000);
+                showToast("Switch Cooldown", `Surge protection: please wait ${remaining}s before toggling again.`, "warning");
+                renderCalendarApplianceSwitches();
+                renderCalendarBlocks();
+                return;
+            }
+
+            const isCurrentlyOn = Boolean(item.is_currently_on);
+            const willTurnOn = !isCurrentlyOn;
+
+            // Apply Toggle State
+            item.is_currently_on = willTurnOn;
+            item.manual_override_until = now + 60000; // 1-minute automation debounce
+            const turnTime = new Date().toISOString();
+            if (willTurnOn) {
+                item.last_turned_on_at = turnTime;
+            }
+
+            // Set 5-second surge cooldown
+            applianceSwitchCooldowns[id] = now + 5000;
+
+            renderCalendarApplianceSwitches();
+            if (typeof renderHouseholdLoadList === 'function') renderHouseholdLoadList();
+            renderCalendarBlocks();
+            updateLiveEnergyMonitor();
+
+            // Record Runtime Session in Supabase
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+
+                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_')) {
+                    await client
+                        .from('user_appliances')
+                        .update({
+                            is_currently_on: willTurnOn,
+                            last_turned_on_at: willTurnOn ? turnTime : item.last_turned_on_at
+                        })
+                        .eq('id', item.id)
+                        .eq('user_id', session.user.id);
+                }
+            } catch (e) {
+                console.warn('Usage log session sync error:', e);
+            }
+        }
+
         // Toggle handler from inventory
         function handleInventoryToggleClick(e, applianceId) {
             e.stopPropagation();
@@ -6310,10 +6403,29 @@
             return `${hNum - 12}${minStr} pm`;
         }
 
+        // Check if an hour falls within a scheduled window (supports midnight crossing)
+        function isTimeInScheduleWindow(currentHour, startHour, durationHours) {
+            const endHour = startHour + durationHours;
+            if (endHour <= 24) {
+                return currentHour >= startHour && currentHour < endHour;
+            } else {
+                // Spans past midnight (e.g. 22:00 to 02:00 -> [22..24) or [0..2))
+                const wrappedEnd = endHour % 24;
+                return currentHour >= startHour || currentHour < wrappedEnd;
+            }
+        }
+
         // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance)
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineRoadmapRowsLayer');
             if (!layer) return;
+
+            // Auto-clean orphaned schedule blocks whose appliance has been deleted from household inventory
+            const prevCount = calendarScheduledBlocks.length;
+            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => householdLoadList.some(item => String(item.id) === String(b.applianceId)));
+            if (calendarScheduledBlocks.length !== prevCount) {
+                saveCalendarBlocks();
+            }
 
             layer.innerHTML = '';
             const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
@@ -6347,7 +6459,7 @@
                 else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
 
                 const endHour = block.startHour + block.durationHours;
-                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)} (${block.durationHours.toFixed(1)} hrs)`;
+                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour % 24)} (${block.durationHours.toFixed(1)} hrs)`;
 
                 const genInput = document.getElementById('genRateInput');
                 const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
@@ -6356,7 +6468,7 @@
                 const isAuto = Boolean(block.autoPower);
                 const repeatMode = block.repeat || 'once';
 
-                // Calculate horizontal percentage on exact 24-hour axis
+                // Calculate horizontal percentage on exact 24-hour axis (clamped to 100%)
                 const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
                 const widthPercent = Math.max(3, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
 
@@ -6547,11 +6659,11 @@
             const repeatMode = repeatSelect ? repeatSelect.value : 'once';
             block.repeat = repeatMode;
 
-            // Handle Repeat Replication across other days
-            const allDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            // Handle Repeat Replication across other days with correct dynamic day numbers
+            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
             if (repeatMode === 'daily') {
-                targetDays = allDays;
+                targetDays = weekDayKeys;
             } else if (repeatMode === 'weekdays') {
                 targetDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
             } else if (repeatMode === 'weekends') {
@@ -6559,20 +6671,32 @@
             }
 
             if (targetDays.length > 0) {
+                const now = new Date();
+                const currentDayOfWeek = now.getDay();
+                const diffToMon = (currentDayOfWeek + 6) % 7;
+                const monDate = new Date(now);
+                monDate.setDate(now.getDate() - diffToMon);
+
                 targetDays.forEach(day => {
                     if (day !== block.dayKey) {
-                        const existingIdx = calendarScheduledBlocks.findIndex(b => b.applianceId === block.applianceId && b.dayKey === day);
+                        const dayIdx = weekDayKeys.indexOf(day);
+                        const targetDate = new Date(monDate);
+                        targetDate.setDate(monDate.getDate() + dayIdx);
+                        const targetDayNum = targetDate.getDate();
+
+                        const existingIdx = calendarScheduledBlocks.findIndex(b => String(b.applianceId) === String(block.applianceId) && b.dayKey === day);
                         if (existingIdx !== -1) {
                             calendarScheduledBlocks[existingIdx].startHour = block.startHour;
                             calendarScheduledBlocks[existingIdx].durationHours = block.durationHours;
                             calendarScheduledBlocks[existingIdx].autoPower = block.autoPower;
                             calendarScheduledBlocks[existingIdx].repeat = repeatMode;
+                            calendarScheduledBlocks[existingIdx].dayNum = targetDayNum;
                         } else {
                             calendarScheduledBlocks.push({
                                 id: 'blk_' + Date.now() + '_' + day,
                                 applianceId: block.applianceId,
                                 dayKey: day,
-                                dayNum: 17,
+                                dayNum: targetDayNum,
                                 startHour: block.startHour,
                                 durationHours: block.durationHours,
                                 autoPower: block.autoPower,
@@ -6601,21 +6725,30 @@
             const currentHour = now.getHours() + (now.getMinutes() / 60.0);
             const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             const todayKey = dayMap[now.getDay()];
+            const nowMs = Date.now();
 
             calendarScheduledBlocks.forEach(block => {
                 if (block.autoPower && block.dayKey === todayKey) {
                     const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                     if (!item) return;
 
-                    const endHour = block.startHour + block.durationHours;
-                    const inWindow = (currentHour >= block.startHour && currentHour < endHour);
+                    // Respect manual override debounce (prevents toggling back immediately after manual switch)
+                    if (item.manual_override_until && item.manual_override_until > nowMs) {
+                        return;
+                    }
+
+                    const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
 
                     if (inWindow && !item.is_currently_on) {
                         toggleApplianceState(item.id, true);
                         showToast("Smart Automation", `Auto-turned ON "${item.name}" per schedule!`, "info");
                     } else if (!inWindow && item.is_currently_on) {
                         // Check if other active blocks exist for this appliance before turning off
-                        const otherActive = calendarScheduledBlocks.some(b => b.applianceId === item.id && b.dayKey === todayKey && currentHour >= b.startHour && currentHour < (b.startHour + b.durationHours));
+                        const otherActive = calendarScheduledBlocks.some(b => 
+                            String(b.applianceId) === String(item.id) && 
+                            b.dayKey === todayKey && 
+                            isTimeInScheduleWindow(currentHour, b.startHour, b.durationHours)
+                        );
                         if (!otherActive) {
                             toggleApplianceState(item.id, true);
                             showToast("Smart Automation", `Auto-turned OFF "${item.name}" (session complete)!`, "info");
@@ -6644,7 +6777,12 @@
 
                 const stripBtn = document.getElementById(`dayStrip-${key}`);
                 if (stripBtn) {
-                    stripBtn.onclick = () => selectCalendarDay(key, dayNum);
+                    stripBtn.onclick = () => {
+                        calendarState.year = d.getFullYear();
+                        calendarState.month = d.getMonth();
+                        selectCalendarDay(key, dayNum);
+                        renderMiniCalendar();
+                    };
                 }
             });
         }
