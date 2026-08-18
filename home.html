@@ -2802,11 +2802,39 @@
                                 </div>
                             </div>
 
+                            <!-- DAILY PROJECTED CONSUMPTION & PEAK CONCURRENCY DIAGNOSTIC BANNER -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>⚡</span> Scheduled Energy
+                                    </span>
+                                    <span id="calDayTotalKwh" class="text-sm font-black text-amber-400">0.00 kWh</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>₱</span> Projected Day Cost
+                                    </span>
+                                    <span id="calDayTotalCost" class="text-sm font-black text-emerald-400">₱0.00</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>🔥</span> Peak Window Load
+                                    </span>
+                                    <span id="calDayPeakRatio" class="text-sm font-black text-indigo-300">0% Peak</span>
+                                </div>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>⚠️</span> Max Concurrent Load
+                                    </span>
+                                    <span id="calDayPeakConcurrency" class="text-xs sm:text-sm font-bold text-slate-300">0 W (Normal 🟢)</span>
+                                </div>
+                            </div>
+
                             <!-- Main Horizontal 24-Hour Roadmap Timeline Container (Gantt Style per Reference) -->
                             <div id="mainScheduleTimelineContainer" class="flex-1 overflow-x-auto relative border border-slate-800/60 rounded-2xl bg-slate-950/60 custom-scrollbar p-3">
                                 
                                 <div id="timelineCanvasWrapper" class="relative min-w-[780px] flex flex-col gap-2">
-                                    <!-- Horizontal 24-Hour Time Axis Header (12 AM to 10 PM) -->
+                                    <!-- Horizontal 24-Hour Time Axis Header & Peak Window Legend -->
                                     <div class="flex items-center gap-3 pb-2 border-b border-slate-800 text-[10px] font-bold text-slate-400 select-none">
                                         <div class="w-48 shrink-0 pl-2 uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                                             <span>🔌</span>
@@ -2819,11 +2847,11 @@
                                             <span>6 AM</span>
                                             <span>8 AM</span>
                                             <span>10 AM</span>
-                                            <span>12 PM</span>
-                                            <span>2 PM</span>
+                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 11 AM – 4 PM">12 PM 🔥</span>
+                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 11 AM – 4 PM">2 PM 🔥</span>
                                             <span>4 PM</span>
-                                            <span>6 PM</span>
-                                            <span>8 PM</span>
+                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 6 PM – 9 PM">6 PM 🔥</span>
+                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 6 PM – 9 PM">8 PM 🔥</span>
                                             <span>10 PM</span>
                                             <span>12 AM</span>
                                         </div>
@@ -6218,7 +6246,7 @@
             selectedDayKey: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()]
         };
 
-        // Scheduled Bento Blocks Array (persisted locally & synced)
+        // Scheduled Bento Blocks Array (persisted locally & synced to Supabase)
         let calendarScheduledBlocks = [];
         try {
             calendarScheduledBlocks = JSON.parse(localStorage.getItem('powerforecast_calendar_blocks_v2') || '[]');
@@ -6238,7 +6266,9 @@
                     dayKey: curDayKey,
                     dayNum: curDayNum,
                     startHour: 13, // 1:00 PM
-                    durationHours: 3.0 // 1:00 PM to 4:00 PM (3 hrs)
+                    durationHours: 3.0, // 1:00 PM to 4:00 PM (3 hrs)
+                    autoPower: true,
+                    repeat: 'once'
                 },
                 {
                     id: 'block_sample_2',
@@ -6246,7 +6276,9 @@
                     dayKey: curDayKey,
                     dayNum: curDayNum,
                     startHour: 18, // 6:00 PM
-                    durationHours: 1.5 // 6:00 PM to 7:30 PM (1.5 hrs)
+                    durationHours: 1.5, // 6:00 PM to 7:30 PM (1.5 hrs)
+                    autoPower: false,
+                    repeat: 'once'
                 }
             ];
         }
@@ -6255,6 +6287,245 @@
             try {
                 localStorage.setItem('powerforecast_calendar_blocks_v2', JSON.stringify(calendarScheduledBlocks));
             } catch (e) { }
+        }
+
+        // Supabase Cloud Sync for Calendar Events
+        async function syncUserCalendarEventsFromDb() {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                const { data, error } = await client
+                    .from('user_calendar_events')
+                    .select('*')
+                    .eq('user_id', session.user.id);
+
+                if (error) {
+                    console.warn('Supabase fetch calendar events error:', error);
+                    return;
+                }
+
+                if (data && Array.isArray(data) && data.length > 0) {
+                    calendarScheduledBlocks = data.map(row => ({
+                        id: row.id,
+                        applianceId: row.appliance_id,
+                        dayKey: (row.day || 'mon').toLowerCase(),
+                        dayNum: calendarState.selectedDay,
+                        startHour: parseFloat(row.hour) || 0,
+                        durationHours: parseFloat(row.duration_hours) || 1.0,
+                        autoPower: true,
+                        repeat: row.is_recurring ? 'daily' : 'once'
+                    }));
+                    saveCalendarBlocks();
+                    renderCalendarBlocks();
+                    renderCalendarApplianceSwitches();
+                }
+            } catch (e) {
+                console.warn('syncUserCalendarEventsFromDb exception:', e);
+            }
+        }
+
+        async function dbInsertCalendarEvent(block) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                const payload = {
+                    user_id: session.user.id,
+                    appliance_id: (typeof block.applianceId === 'string' && !block.applianceId.startsWith('app_') && !block.applianceId.startsWith('mock_')) ? block.applianceId : null,
+                    title: item ? item.name : 'Scheduled Appliance',
+                    category: 'appliance',
+                    day: block.dayKey,
+                    hour: Math.floor(block.startHour),
+                    duration_hours: block.durationHours,
+                    is_recurring: block.repeat !== 'once',
+                    notes: `Recurrence: ${block.repeat || 'once'}`
+                };
+
+                const { data, error } = await client
+                    .from('user_calendar_events')
+                    .insert(payload)
+                    .select('id')
+                    .single();
+
+                if (error) throw error;
+                if (data && data.id) {
+                    block.id = data.id;
+                    saveCalendarBlocks();
+                }
+            } catch (e) {
+                console.warn('dbInsertCalendarEvent error:', e);
+            }
+        }
+
+        async function dbUpdateCalendarEvent(block) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client || typeof block.id !== 'string' || block.id.startsWith('blk_') || block.id.startsWith('block_')) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                await client
+                    .from('user_calendar_events')
+                    .update({
+                        day: block.dayKey,
+                        hour: Math.floor(block.startHour),
+                        duration_hours: block.durationHours,
+                        is_recurring: block.repeat !== 'once',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', block.id)
+                    .eq('user_id', session.user.id);
+            } catch (e) {
+                console.warn('dbUpdateCalendarEvent error:', e);
+            }
+        }
+
+        async function dbDeleteCalendarEvent(blockId) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client || typeof blockId !== 'string' || blockId.startsWith('blk_') || blockId.startsWith('block_')) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                await client
+                    .from('user_calendar_events')
+                    .delete()
+                    .eq('id', blockId)
+                    .eq('user_id', session.user.id);
+            } catch (e) {
+                console.warn('dbDeleteCalendarEvent error:', e);
+            }
+        }
+
+        // Usage Session Completion Logger to Supabase appliance_usage_logs
+        async function dbLogApplianceUsageSession(applianceId, startedAt, endedAt, durationMinutes, kwh, isPeak, estCost) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                const validApplianceId = (typeof applianceId === 'string' && !applianceId.startsWith('app_') && !applianceId.startsWith('mock_')) ? applianceId : null;
+                if (!validApplianceId) return;
+
+                await client
+                    .from('appliance_usage_logs')
+                    .insert({
+                        user_id: session.user.id,
+                        appliance_id: validApplianceId,
+                        started_at: startedAt,
+                        ended_at: endedAt,
+                        duration_minutes: Math.round(durationMinutes * 10) / 10,
+                        kwh_consumed: Math.round(kwh * 1000) / 1000,
+                        is_peak_window: Boolean(isPeak),
+                        estimated_cost: Math.round(estCost * 100) / 100,
+                        source: 'calendar_toggle',
+                        notes: `Logged via PowerForecast Calendar Engine`
+                    });
+            } catch (e) {
+                console.warn('dbLogApplianceUsageSession error:', e);
+            }
+        }
+
+        // Check if an hour range overlaps Meralco Peak windows (11am-4pm & 6pm-9pm)
+        function checkSchedulePeakOverlap(startHour, durationHours) {
+            const endHour = startHour + durationHours;
+            const inWindow = (h) => {
+                const hr = h % 24;
+                return (hr >= 11 && hr < 16) || (hr >= 18 && hr < 21);
+            };
+
+            // Sample every 30 minutes in the schedule
+            let peakSteps = 0;
+            let totalSteps = 0;
+            for (let t = startHour; t < endHour; t += 0.5) {
+                totalSteps++;
+                if (inWindow(t)) peakSteps++;
+            }
+            return {
+                isPeak: peakSteps > 0,
+                peakFraction: totalSteps > 0 ? (peakSteps / totalSteps) : 0
+            };
+        }
+
+        // Daily Projected Consumption & Peak Concurrency Diagnostics Engine
+        function updateDailyCalendarSummary() {
+            const totalKwhEl = document.getElementById('calDayTotalKwh');
+            const totalCostEl = document.getElementById('calDayTotalCost');
+            const peakRatioEl = document.getElementById('calDayPeakRatio');
+            const concurrencyEl = document.getElementById('calDayPeakConcurrency');
+
+            if (!totalKwhEl) return;
+
+            const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+
+            let totalDayKwh = 0;
+            let totalDayCost = 0;
+            let peakKwh = 0;
+
+            // 24-hour hourly concurrency simulation array (0..23)
+            const hourlySimWatts = new Array(24).fill(0);
+
+            dayBlocks.forEach(block => {
+                const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                const watts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
+                const blockKwh = (watts * block.durationHours) / 1000.0;
+                const blockCost = blockKwh * (genRate + 3.5);
+
+                totalDayKwh += blockKwh;
+                totalDayCost += blockCost;
+
+                const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
+                peakKwh += blockKwh * overlap.peakFraction;
+
+                // Populate 24-hour concurrency track
+                const startInt = Math.floor(block.startHour);
+                const endInt = Math.ceil(block.startHour + block.durationHours);
+                for (let h = startInt; h < endInt; h++) {
+                    const simH = h % 24;
+                    hourlySimWatts[simH] += watts;
+                }
+            });
+
+            // Find peak simultaneous concurrency load
+            let maxConcurrentWatts = 0;
+            let peakHourIdx = 0;
+            hourlySimWatts.forEach((w, h) => {
+                if (w > maxConcurrentWatts) {
+                    maxConcurrentWatts = w;
+                    peakHourIdx = h;
+                }
+            });
+
+            totalKwhEl.textContent = `${totalDayKwh.toFixed(2)} kWh`;
+            totalCostEl.textContent = `₱${totalDayCost.toFixed(2)}`;
+
+            const peakPercentage = totalDayKwh > 0 ? Math.round((peakKwh / totalDayKwh) * 100) : 0;
+            if (peakRatioEl) {
+                peakRatioEl.textContent = `${peakPercentage}% Peak`;
+                peakRatioEl.className = peakPercentage > 50 ? 'text-sm font-black text-amber-400' : 'text-sm font-black text-indigo-300';
+            }
+
+            if (concurrencyEl) {
+                if (maxConcurrentWatts === 0) {
+                    concurrencyEl.textContent = '0 W (Standby ⚪)';
+                    concurrencyEl.className = 'text-xs sm:text-sm font-bold text-slate-400';
+                } else if (maxConcurrentWatts > 3500) {
+                    concurrencyEl.textContent = `${maxConcurrentWatts.toLocaleString()} W at ${formatHour(peakHourIdx)} (High ⚠️)`;
+                    concurrencyEl.className = 'text-xs sm:text-sm font-black text-rose-400 animate-pulse';
+                } else {
+                    concurrencyEl.textContent = `${maxConcurrentWatts.toLocaleString()} W at ${formatHour(peakHourIdx)} (Normal 🟢)`;
+                    concurrencyEl.className = 'text-xs sm:text-sm font-bold text-emerald-400';
+                }
+            }
         }
 
         // Render Appliance Switchboard in Left Panel
@@ -6287,7 +6558,8 @@
                 const isOn = Boolean(item.is_currently_on);
                 const isCooldown = Boolean(applianceSwitchCooldowns[item.id] && applianceSwitchCooldowns[item.id] > now);
                 const cooldownSecs = isCooldown ? Math.ceil((applianceSwitchCooldowns[item.id] - now) / 1000) : 0;
-                const hasSchedule = calendarScheduledBlocks.some(b => String(b.applianceId) === String(item.id));
+                const scheduledBlocks = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(item.id));
+                const hasSchedule = scheduledBlocks.length > 0;
 
                 let categoryIcon = '⚡';
                 const catLower = (item.category || '').toLowerCase();
@@ -6307,7 +6579,7 @@
                         openNewScheduleForAppliance(item.id);
                     } else {
                         const block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(item.id) && b.dayKey === calendarState.selectedDayKey)
-                                     || calendarScheduledBlocks.find(b => String(b.applianceId) === String(item.id));
+                                     || scheduledBlocks[0];
                         if (block) openBentoSettingsModal(block.id);
                         else openNewScheduleForAppliance(item.id);
                     }
@@ -6358,9 +6630,16 @@
                         <span class="${isOn ? 'text-emerald-300 font-bold' : 'text-slate-500'}">
                             ${isOn ? (runningLabel || '🟢 Active') : '⚪ Standby'}
                         </span>
-                        <span class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all">
-                            <span>📅</span> ${hasSchedule ? 'Edit Schedule' : '+ Set Schedule'}
-                        </span>
+                        <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                            <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all cursor-pointer">
+                                <span>📅</span> ${hasSchedule ? `${scheduledBlocks.length} Window${scheduledBlocks.length > 1 ? 's' : ''}` : '+ Schedule'}
+                            </span>
+                            ${hasSchedule ? `
+                                <button onclick="openNewScheduleForAppliance('${item.id}', true)" class="p-0.5 px-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-slate-700 transition-all" title="Add another operating window">
+                                    +
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
 
@@ -6419,12 +6698,14 @@
             const isCurrentlyOn = Boolean(item.is_currently_on);
             const willTurnOn = !isCurrentlyOn;
 
+            const startedAt = item.last_turned_on_at || new Date().toISOString();
+            const endedAt = new Date().toISOString();
+
             // Apply Toggle State
             item.is_currently_on = willTurnOn;
             item.manual_override_until = now + 60000; // 1-minute automation debounce
-            const turnTime = new Date().toISOString();
             if (willTurnOn) {
-                item.last_turned_on_at = turnTime;
+                item.last_turned_on_at = endedAt;
             }
 
             // Set 5-second surge cooldown
@@ -6440,15 +6721,30 @@
                 const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
                 const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
 
-                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_')) {
+                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_') && !item.id.startsWith('mock_')) {
                     await client
                         .from('user_appliances')
                         .update({
                             is_currently_on: willTurnOn,
-                            last_turned_on_at: willTurnOn ? turnTime : item.last_turned_on_at
+                            last_turned_on_at: willTurnOn ? endedAt : item.last_turned_on_at
                         })
                         .eq('id', item.id)
                         .eq('user_id', session.user.id);
+
+                    // If turning OFF, log complete usage session to appliance_usage_logs
+                    if (!willTurnOn && startedAt) {
+                        const elapsedMs = Math.max(0, now - new Date(startedAt).getTime());
+                        const durationMinutes = elapsedMs / 60000.0;
+                        const genInput = document.getElementById('genRateInput');
+                        const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+                        const kwhConsumed = (item.watts * (elapsedMs / 3600000.0)) / 1000.0;
+                        const estCost = kwhConsumed * (genRate + 3.5);
+                        const isPeak = isPeakHour(new Date().getHours());
+
+                        if (durationMinutes >= 0.1) {
+                            await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
+                        }
+                    }
                 }
             } catch (e) {
                 console.warn('Usage log session sync error:', e);
@@ -6472,17 +6768,25 @@
             }
         }
 
-        // Open Schedule Settings Modal from Left Inventory Selection
-        function openNewScheduleForAppliance(applianceId) {
+        // Open Schedule Settings Modal from Left Inventory Selection (supports multi-session window creation)
+        function openNewScheduleForAppliance(applianceId, forceNew = false) {
             const item = householdLoadList.find(a => String(a.id) === String(applianceId));
             if (!item) return;
 
             // Check if block already exists on current selected day
-            let block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
+            let block = !forceNew ? calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey) : null;
             if (!block) {
                 const now = new Date();
-                const curHour = now.getHours() + (now.getMinutes() >= 30 ? 0.5 : 0);
-                const startHour = Math.min(22.0, Math.max(0, curHour));
+                let startHour = now.getHours() + (now.getMinutes() >= 30 ? 0.5 : 0);
+                if (forceNew) {
+                    // Offset start hour to avoid exact collision
+                    const existing = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
+                    if (existing.length > 0) {
+                        const lastEnd = Math.max(...existing.map(e => e.startHour + e.durationHours));
+                        startHour = Math.min(22.0, (lastEnd + 1.0) % 24);
+                    }
+                }
+                startHour = Math.min(22.0, Math.max(0, startHour));
                 const durationHours = Math.min(2.0, 24.0 - startHour);
 
                 block = {
@@ -6498,6 +6802,7 @@
                 calendarScheduledBlocks.push(block);
                 saveCalendarBlocks();
                 renderCalendarBlocks();
+                dbInsertCalendarEvent(block);
             }
 
             openBentoSettingsModal(block.id);
@@ -6540,6 +6845,8 @@
             layer.innerHTML = '';
             const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
 
+            updateDailyCalendarSummary();
+
             if (dayBlocks.length === 0) {
                 layer.innerHTML = `
                     <div class="p-8 rounded-2xl bg-slate-950/40 border border-slate-800/80 text-center flex flex-col items-center justify-center gap-3 my-4">
@@ -6556,7 +6863,7 @@
             dayBlocks.forEach(block => {
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const appName = item ? item.name : 'Scheduled Appliance';
-                const appWatts = item ? item.watts : 1000;
+                const appWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
                 const isOn = item ? Boolean(item.is_currently_on) : false;
 
                 let categoryIcon = '⚡';
@@ -6576,7 +6883,8 @@
                 const sessionCost = (appWatts * block.durationHours / 1000.0) * (genRate + 3.5);
 
                 const isAuto = Boolean(block.autoPower);
-                const repeatMode = block.repeat || 'once';
+                const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
+                const isPeak = overlap.isPeak;
 
                 // Calculate horizontal percentage on exact 24-hour axis (clamped to 100%)
                 const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
@@ -6601,7 +6909,7 @@
                         </div>
                     </div>
 
-                    <!-- Right 24-Hour Roadmap Bar Track (Exact 24-Hour Grid) -->
+                    <!-- Right 24-Hour Roadmap Bar Track (Exact 24-Hour Grid with Peak Window Highlights) -->
                     <div class="flex-1 relative h-11 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center select-none overflow-hidden">
                         
                         <!-- 12-Segment Subtle Background Grid (2 Hours Per Segment) -->
@@ -6620,16 +6928,25 @@
                             <div class="h-full"></div>
                         </div>
 
+                        <!-- Highlight Overlays for Meralco Peak Hours -->
+                        <!-- Peak 1: 11 AM - 4 PM (45.83% to 66.66%) -->
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0"
+                             style="left: 45.83%; width: 20.83%;" title="Meralco Peak Window: 11 AM – 4 PM"></div>
+                        <!-- Peak 2: 6 PM - 9 PM (75% to 87.5%) -->
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0"
+                             style="left: 75%; width: 12.5%;" title="Meralco Peak Window: 6 PM – 9 PM"></div>
+
                         <!-- Roadmap Timeline Bar Representation -->
-                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
                              style="left: ${leftPercent}%; width: ${widthPercent}%;"
                              onclick="openBentoSettingsModal('${block.id}')"
-                             title="Click to edit schedule (${timeSpanLabel})">
+                             title="Click to edit schedule (${timeSpanLabel})${isPeak ? ' • ⚠️ Meralco Peak Window' : ''}">
                             
                             <!-- Inside Bar Cost & Auto Badges -->
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="font-extrabold text-[10px] truncate">~₱${sessionCost.toFixed(2)}</span>
                                 ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
+                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0" title="Scheduled during Meralco Peak Hours">🔥 Peak</span>` : ''}
                             </div>
 
                             <!-- Inside Bar Action Buttons -->
@@ -6657,6 +6974,7 @@
             saveCalendarBlocks();
             renderCalendarBlocks();
             renderCalendarApplianceSwitches();
+            dbDeleteCalendarEvent(blockId);
             showToast("Block Removed", "Removed schedule block from timeline.", "info");
         }
 
@@ -6741,7 +7059,10 @@
             const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
             const estCost = (watts * duration / 1000) * (genRate + 3.5);
 
-            if (costLabel) costLabel.textContent = `₱${estCost.toFixed(2)}`;
+            const isPeak = checkSchedulePeakOverlap(startVal, duration).isPeak;
+            if (costLabel) {
+                costLabel.innerHTML = `₱${estCost.toFixed(2)} ${isPeak ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold ml-1">🔥 Peak</span>' : ''}`;
+            }
         }
 
         function saveBentoSettingsModal() {
@@ -6801,8 +7122,9 @@
                             calendarScheduledBlocks[existingIdx].autoPower = block.autoPower;
                             calendarScheduledBlocks[existingIdx].repeat = repeatMode;
                             calendarScheduledBlocks[existingIdx].dayNum = targetDayNum;
+                            dbUpdateCalendarEvent(calendarScheduledBlocks[existingIdx]);
                         } else {
-                            calendarScheduledBlocks.push({
+                            const newRepBlock = {
                                 id: 'blk_' + Date.now() + '_' + day,
                                 applianceId: block.applianceId,
                                 dayKey: day,
@@ -6811,13 +7133,16 @@
                                 durationHours: block.durationHours,
                                 autoPower: block.autoPower,
                                 repeat: repeatMode
-                            });
+                            };
+                            calendarScheduledBlocks.push(newRepBlock);
+                            dbInsertCalendarEvent(newRepBlock);
                         }
                     }
                 });
             }
 
             saveCalendarBlocks();
+            dbUpdateCalendarEvent(block);
             renderCalendarBlocks();
             closeBentoSettingsModal();
             showToast("Settings Applied", `Saved operating window and recurrence (${repeatMode.toUpperCase()})!`, "success");
