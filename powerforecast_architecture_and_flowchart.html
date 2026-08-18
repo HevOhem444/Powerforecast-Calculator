@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerForecast — System Flowchart & Server-Dependent Database Architecture</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mermaid.js for Vector Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        };
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter, sans-serif'
+        });
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { border: 1px solid #cbd5e1 !important; box-shadow: none !important; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased p-4 sm:p-8">
+
+    <!-- Top Action Bar -->
+    <header class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 mb-8 border-b border-indigo-900/50 no-print">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-800 flex items-center justify-center text-white font-black text-2xl shadow-xl">
+                ⚡
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight">PowerForecast Database Architecture & System Flow</h1>
+                <p class="text-xs text-slate-400">Server-Dependent DOE PELP Data Model • Client State Management • Calculation Flow</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="window.print()" class="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-print"></i> Download / Print PDF
+            </button>
+            <button onclick="downloadMarkdownFile()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-download"></i> Download Markdown (.md)
+            </button>
+            <a href="home.html" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-indigo-400 text-xs font-semibold rounded-xl border border-indigo-900/60 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-arrow-left"></i> Back to App
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto flex flex-col gap-10">
+
+        <!-- SECTION 1: Server-Dependent Database & Data Tier Architecture -->
+        <section class="bg-slate-900/80 border border-indigo-500/25 rounded-3xl p-6 sm:p-8 shadow-2xl print-card">
+            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-1.5">
+                <i class="fa-solid fa-server"></i> Server-Dependent Data Tier
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white mb-2">1. Server-Dependent Database & ETL Pipeline Architecture</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+                The **DOE PELP Appliance Database is strictly server-dependent**. The client browser never downloads the heavy 5MB+ registry. Instead, the server parses official DOE bulletins, caches 6,819 indexed models across 6 categories, and handles real-time multi-token search and pagination over lightweight REST endpoints.
+            </p>
+
+            <div class="bg-slate-950/90 rounded-2xl p-4 sm:p-6 border border-slate-800/80 overflow-x-auto shadow-inner">
+                <pre class="mermaid text-center">
+graph TB
+    %% Styling
+    classDef serverStorage fill:#0f172a,stroke:#3b82f6,color:#ffffff,stroke-width:2px;
+    classDef clientStorage fill:#1e1b4b,stroke:#818cf8,color:#ffffff,stroke-width:2px;
+    classDef apiNode fill:#064e3b,stroke:#10b981,color:#ffffff,stroke-width:2px;
+    classDef extNode fill:#78350f,stroke:#f59e0b,color:#ffffff,stroke-width:2px;
+
+    %% External Sources
+    subgraph UPSTREAM["🌐 Upstream Regulatory & External Sources"]
+        DOE_PORTAL["🏛️ Official DOE Portal (doe.gov.ph)<br>PELP Registration & Energy Label Bulletins (PDFs)"]:::extNode
+        GEMINI_API["🤖 Google Gemini Multimodal Vision AI<br>(gemini-3.7-flash / gemini-2.5-flash)"]:::extNode
+        MERALCO_FEED["⚡ Meralco Power Rates Bulletins<br>Monthly Unbundled Generation & Distribution Schedules"]:::extNode
+    end
+
+    %% Ingestion & ETL Layer
+    subgraph ETL["⚙️ Server-Side Ingestion & ETL Engine"]
+        SCRAPER["scrape_pelp.py (CLI Scraper & Downloader)"]:::serverStorage
+        PDF_PARSER["pelp/parser.py (PDF Table Extraction & Normalization)"]:::serverStorage
+        MERALCO_PARSER["meralco_parser.py (Tariff Schedule Extraction)"]:::serverStorage
+    end
+
+    %% Server Data Tier
+    subgraph SERVER_DATA["🗄️ SERVER-SIDE DATABASE (Server-Dependent Storage)"]
+        subgraph PELP_TABLES["DOE PELP Certified Dataset (6,819 Verified Models)"]
+            T_AC[("air-conditioners.json<br>• 1,787 ACU models<br>• Watts, CSPF, Monthly kWh, Stars")]:::serverStorage
+            T_LIGHT[("lighting-products.json<br>• 2,722 Lighting models<br>• Watts, Lumens, Efficacy (lm/W)")]:::serverStorage
+            T_TV[("television-sets.json<br>• 1,320 TV models<br>• Watts, Screen Size, Annual kWh")]:::serverStorage
+            T_REF[("refrigerating-appliances.json<br>• 827 Refrigerator models<br>• Watts, Volume, EEF, Stars")]:::serverStorage
+            T_FAN[("electric-fans.json<br>• 153 Fan models<br>• Watts, Blade Size, Airflow, Stars")]:::serverStorage
+            T_WASH[("clothes-washing-machines.json<br>• 10 Washing Machine models<br>• Capacity (kg), Water, Stars")]:::serverStorage
+        end
+
+        T_RATES[("rates.json<br>• Unbundled Meralco tariff matrix<br>• Dist tiers 1-4, subsidies, universal charges, VAT")]:::serverStorage
+        T_APP_BENCH[("appliance_db.json<br>• Default typical power benchmarks")]:::serverStorage
+    end
+
+    %% Serverless API Gateway
+    subgraph API_GATEWAY["⚡ Vercel Serverless / Node API Gateway (/api)"]
+        API_PELP["/api/pelp<br>• /search (Real-time query & multi-token filter)<br>• /categories (Summary breakdown)<br>• /health (Total product count)"]:::apiNode
+        API_ANALYZE["/api/analyze<br>• Multi-Angle Photo Vision OCR<br>• Key Rotation Failover Engine"]:::apiNode
+        API_RATES["/api/rates<br>• Active rate feeder"]:::apiNode
+        API_CALC["/api/calculate<br>• 12-component Meralco math engine"]:::apiNode
+    end
+
+    %% Client Layer
+    subgraph CLIENT_DATA["💻 CLIENT-SIDE USER STATE (Browser Storage)"]
+        LS_LOADS[("powerforecast_household_loads<br>Active User Load Inventory (ID, Name, Watts, Hours, Days, Cost)")]:::clientStorage
+        LS_AI_HIST[("powerforecast_ai_history<br>Recent Vision AI OCR scans & Markdown Spec Sheets")]:::clientStorage
+        LS_RATES[("powerforecast_custom_rates<br>Custom Gen Rate Overrides & Budget Limits")]:::clientStorage
+        LS_THEME[("powerforecast_theme<br>'light' | 'dark'")]:::clientStorage
+        LS_AUTH[("powerforecast_auth_session<br>Google OAuth / User Auth Token")]:::clientStorage
+    end
+
+    %% Pipeline Connections
+    DOE_PORTAL -->|Fetch Bulletin PDFs| SCRAPER
+    SCRAPER --> PDF_PARSER
+    PDF_PARSER -->|Write Clean JSON Records| PELP_TABLES
+
+    MERALCO_FEED --> MERALCO_PARSER
+    MERALCO_PARSER -->|Update Schedules| T_RATES
+
+    PELP_TABLES -->|In-Memory Fast Search Index| API_PELP
+    T_RATES -->|Read Rates| API_RATES
+    T_APP_BENCH -->|Read Benchmarks| API_CALC
+
+    GEMINI_API <-->|Vision Multimodal Ingestion| API_ANALYZE
+
+    API_PELP <-->|Paginated Query / Stream 60 items| CLIENT_DATA
+    API_ANALYZE <-->|Upload Photos / Receive Specs| CLIENT_DATA
+    API_RATES <-->|Sync Tariff Updates| CLIENT_DATA
+    API_CALC <-->|Compute Monthly Expense| CLIENT_DATA
+                </pre>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Relational Entity Relationship Diagram (ERD) -->
+        <section class="bg-slate-900/80 border border-indigo-500/25 rounded-3xl p-6 sm:p-8 shadow-2xl print-card">
+            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-amber-400 mb-1.5">
+                <i class="fa-solid fa-diagram-project"></i> Relational Data Model
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white mb-2">2. Entity Relationship Diagram (ERD) & Schema Specification</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+                Represents how authenticated user accounts, server-dependent DOE PELP products, client load items, and the unbundled Meralco tariff matrix relate.
+            </p>
+
+            <div class="bg-slate-950/90 rounded-2xl p-4 sm:p-6 border border-slate-800/80 overflow-x-auto shadow-inner">
+                <pre class="mermaid text-center">
+erDiagram
+    USER_ACCOUNT {
+        string uid PK "Unique User ID (Google OAuth / Firebase)"
+        string email "User Email Address"
+        string display_name "User Full Name"
+        string auth_provider "google.com | password"
+        timestamp created_at "Registration Timestamp"
+        timestamp last_login "Last Active Session"
+    }
+
+    PELP_PRODUCT {
+        string control_no PK "Server Unique Certificate Code (e.g. ACU-0025-002837)"
+        string brand "Manufacturer / Brand"
+        string model "Model Number / Code"
+        string product_name "Standardized Appliance Name"
+        string category_slug "air-conditioners, lighting-products, etc."
+        float power_watts "Operating Wattage (W)"
+        float monthly_kwh "PELP Official Test Monthly Consumption (kWh)"
+        string energy_rating_type "CSPF | EEF | EER | Star Rating"
+        string energy_rating_value "Numerical Rating Metric (e.g. 4.10, 6.50)"
+        string star_rating "1 to 5 Star Rating"
+        string doe_link "Public Official Registry Link"
+        json raw_fields "Complete official bulletin spec map"
+    }
+
+    HOUSEHOLD_LOAD_ITEM {
+        int id PK "Timestamp Identifier"
+        string user_id FK "User Account Reference"
+        string pelp_control_no FK "Optional Foreign Key to PELP_PRODUCT"
+        string name "Appliance Name"
+        string source "pelp | ai_vision | manual_entry"
+        string category "Category Classification"
+        float watts "Operating Wattage (W)"
+        int qty "Unit Quantity (Default 1)"
+        float hours "Operating Hours per Day (0.1 - 24.0)"
+        int days "Monthly Operating Days (1 - 30)"
+        float kwh "Monthly Electricity Consumption (kWh)"
+        float estCost "Estimated Meralco Cost (PHP)"
+        json ai_metadata "Model name, preset, vision scan details"
+    }
+
+    MERALCO_TARIFF_RATES {
+        string rate_month PK "Effective Month (e.g. 2026-08)"
+        float base_generation "Generation Charge (₱/kWh)"
+        float transmission "1.4074 ₱/kWh"
+        float system_loss "0.7994 ₱/kWh"
+        float dist_tier1 "0.9803 ₱/kWh (0-200 kWh)"
+        float dist_tier2 "1.2908 ₱/kWh (201-300 kWh)"
+        float dist_tier3 "1.5837 ₱/kWh (301-400 kWh)"
+        float dist_tier4 "2.0941 ₱/kWh (400+ kWh)"
+        float metering_fixed "5.00 ₱ fixed"
+        float metering_per_kwh "0.3350 ₱/kWh"
+        float supply_fixed "16.38 ₱ fixed"
+        float supply_per_kwh "0.4979 ₱/kWh"
+        float universal_rate "0.3216 ₱/kWh"
+        float fit_all "0.2011 ₱/kWh"
+        float vat_rate "0.0941 - 0.1200 (9.41% - 12%)"
+    }
+
+    VISION_AI_SCAN {
+        int scan_id PK "Timestamp Scan ID"
+        string user_id FK "User Reference"
+        string appliance_detected "Identified Appliance Name"
+        float detected_watts "Extracted Power Rating (W)"
+        string preset_used "specs | electrical | serial_ocr | maintenance"
+        string model_used "gemini-3.7-flash | gemini-2.5-flash"
+        string raw_markdown "Technical Spec Sheet Markdown"
+        array color_palette "Extracted Hex Codes"
+    }
+
+    USER_ACCOUNT ||--o{ HOUSEHOLD_LOAD_ITEM : "manages"
+    USER_ACCOUNT ||--o{ VISION_AI_SCAN : "performs"
+    PELP_PRODUCT ||--o{ HOUSEHOLD_LOAD_ITEM : "references (when certified)"
+    HOUSEHOLD_LOAD_ITEM }o--|| MERALCO_TARIFF_RATES : "calculated by"
+                </pre>
+            </div>
+        </section>
+
+        <!-- SECTION 3: System Flowchart with Google Auth & Research Objectives -->
+        <section class="bg-slate-900/80 border border-indigo-500/25 rounded-3xl p-6 sm:p-8 shadow-2xl print-card">
+            <div class="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-purple-400 mb-1.5">
+                <i class="fa-solid fa-sitemap"></i> Complete Operational Flow
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white mb-2">3. End-to-End System Flowchart (Figure 1)</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+                Covers Authentication (Google OAuth 2.0 & Email/Password), Appliance Recognition, Management, Computation, Cost Estimation, Analytics, Forecasting, and Energy Recommendations.
+            </p>
+
+            <div class="bg-slate-950/90 rounded-2xl p-4 sm:p-6 border border-slate-800/80 overflow-x-auto shadow-inner">
+                <pre class="mermaid text-center">
+flowchart TD
+    %% Styling Classes
+    classDef authNode fill:#1e1b4b,stroke:#6366f1,color:#ffffff,stroke-width:2px;
+    classDef decisionNode fill:#312e81,stroke:#818cf8,color:#ffffff,stroke-width:2px;
+    classDef processNode fill:#0f172a,stroke:#38bdf8,color:#ffffff,stroke-width:1.5px;
+    classDef computeNode fill:#064e3b,stroke:#10b981,color:#ffffff,stroke-width:2px;
+    classDef outputNode fill:#78350f,stroke:#f59e0b,color:#ffffff,stroke-width:2px;
+    classDef endNode fill:#831843,stroke:#f43f5e,color:#ffffff,stroke-width:2px;
+
+    %% Entry & Authentication
+    START(["Start / Access PowerForecast"]):::authNode --> AuthChoice{"User Authenticated?"}:::decisionNode
+    
+    AuthChoice -->|No| AuthPage["Landing / Login & Sign Up Page"]:::authNode
+    AuthPage --> LoginMethod{"Select Authentication Method"}:::decisionNode
+    
+    LoginMethod -->|"Google OAuth 2.0"| GoogleAuth["Google Sign-In / SSO Token Validation"]:::authNode
+    LoginMethod -->|"Email & Password"| EmailAuth["Input Credentials (Email + Password)"]:::authNode
+    LoginMethod -->|"New User"| RegForm["Sign Up Registration (Name, Email, Password)"]:::authNode
+    LoginMethod -->|"Forgot Password"| ResetPass["Password Recovery / Email Reset Link"]:::authNode
+    
+    GoogleAuth --> VerifyAuth{"Authentication Successful?"}:::decisionNode
+    EmailAuth --> VerifyAuth
+    RegForm --> VerifyAuth
+    ResetPass --> AuthPage
+
+    VerifyAuth -->|No| AuthErr["Display Error Toast / Notification"]:::authNode --> AuthPage
+    VerifyAuth -->|Yes| SessionStore["Store Session Token & Preferences in LocalStorage"]:::authNode --> MainHub["Dashboard / Home Hub"]:::authNode
+    AuthChoice -->|Yes| MainHub
+
+    %% Primary Modules
+    MainHub --> NavChoice{"Select Primary Module"}:::decisionNode
+
+    %% 1. Appliance Recognition
+    NavChoice -->|"1. Appliance Recognition"| RecogMode{"Select Recognition Source"}:::decisionNode
+
+    %% 1A. AI Vision Recognition
+    RecogMode -->|"AI Vision Tag Scan"| UploadImg["Upload / Capture Multi-Angle Photos (Up to 3)"]:::processNode
+    UploadImg --> SelectPreset["Choose Vision Preset (Full Specs, Electrical, Rating Label OCR, Care)"]:::processNode
+    SelectPreset --> VisionApi["Call Gemini Vision AI (/api/analyze)<br>with Multi-Key Auto Rotation"]:::processNode
+    VisionApi --> ParseAiSpecs["Extract Appliance Name, Rated Watts, Voltage & Color Palette"]:::processNode
+    ParseAiSpecs --> ConfirmRecog{"Confirm Recognized Appliance?"}:::decisionNode
+    ConfirmRecog -->|Edit/Retry| UploadImg
+    ConfirmRecog -->|Accept| AddToInventory["Add to Household Appliance Inventory"]:::processNode
+
+    %% 1B. DOE PELP Certified Registry (Server-Dependent)
+    RecogMode -->|"DOE PELP Certified Catalog"| PelpSearch["Search 6,819 Certified Models<br>(Category Filter: AC, Ref, Fan, TV, Wash, Lighting)"]:::processNode
+    PelpSearch --> PelpQuery["Query Server-Side API (/api/pelp/search)<br>Server streams matching products"]:::processNode
+    PelpQuery --> SelectPelpModel["Select Product & Customize Quantity, Daily Hours & Days"]:::processNode
+    SelectPelpModel --> AddToInventory
+
+    %% 1C. Manual Entry Studio
+    RecogMode -->|"Custom / Manual Entry"| ManPreset["Select Typical Appliance Preset (HVAC, Kitchen, Computing...)"]:::processNode
+    ManPreset --> ManInputs["Manually Input Custom Appliance Name & Wattage (W)"]:::processNode
+    ManInputs --> AddToInventory
+
+    %% 2. Appliance Management
+    NavChoice -->|"2. Appliance Management"| ManageHub["Manage Household Appliance Load List"]:::processNode
+    AddToInventory --> ManageHub
+    ManageHub --> EditAppliance["Adjust Operating Hours (hrs/day), Days (days/mo), & Quantity"]:::processNode
+    ManageHub --> RemoveAppliance["Delete / Reorder Inventory Items"]:::processNode
+    EditAppliance --> StoreLoad["Save Updated State to 'powerforecast_household_loads'"]:::processNode
+    RemoveAppliance --> StoreLoad
+
+    %% 3. Electricity Consumption Computation
+    StoreLoad --> CalcKwh["⚡ Electricity Consumption Computation<br>Monthly kWh = (Watts × Daily Hours × Monthly Days × Qty) / 1000"]:::computeNode
+    
+    %% Direct Bill Calculator Mode
+    NavChoice -->|"Direct Bill Calculator"| DirectInput["Input Monthly Consumption (kWh) or Meter Readings"]:::processNode
+    DirectInput --> CalcKwh
+
+    %% 4. Electricity Cost Estimation & Bill Forecasting
+    CalcKwh --> FetchRates["Load Meralco Tariff Schedule (/api/rates or rates.json)"]:::computeNode
+    FetchRates --> MeralcoMath["⚡ Unbundled Rate Computation Engine<br>• Generation Charge (₱/kWh)<br>• Transmission Charge (₱/kWh)<br>• System Loss Charge (₱/kWh)<br>• Distribution Tiered Charge (Tiers 1-4)<br>• Fixed & Variable Metering / Supply<br>• Subsidies (Lifeline, Senior Citizen)<br>• Universal Charges, FIT-All & VAT (9.41% - 12%)"]:::computeNode
+    
+    MeralcoMath --> BillForecast["📈 Electricity Bill Forecasting<br>• Predict Next Cycle Bill based on Usage Trends<br>• Compare vs Target Budget Ceiling / Limit"]:::computeNode
+
+    %% 5. Consumption Analytics & Visualization
+    BillForecast --> AnalyticsEngine["📊 Consumption Analytics & Visualization<br>• Energy Distribution Pie Charts<br>• Unbundled Cost Stacked Bar Breakdown<br>• High-Consumption Appliance Ranking"]:::outputNode
+
+    %% 6. Energy-Efficiency Recommendations
+    AnalyticsEngine --> GenTips["💡 Energy-Efficiency Recommendations Module<br>• Identify Energy Vampires / High-Load Spikes<br>• Suggest Inverter Upgrades & Usage Shift (Peak to Off-Peak)<br>• Potential PHP Savings Estimation"]:::outputNode
+
+    %% 7. Output & Export Actions
+    GenTips --> FinalOutput["Display Interactive Results on Dashboard"]:::outputNode
+    FinalOutput --> ExportAction{"Select Export / Share Action"}:::decisionNode
+    
+    ExportAction -->|"Save / Sync"| SyncCalc["Sync Aggregate kWh to Main Calculator"]:::processNode
+    ExportAction -->|"Download Report"| ExportDoc["Generate Printable Energy Audit / PDF Spec Report"]:::outputNode
+    ExportAction -->|"Finish / Logout"| UserLogout["Session Terminated / Logout"]:::endNode
+    ExportAction -->|"Continue"| MainHub
+                </pre>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto text-center text-xs text-slate-500 mt-12 pt-6 border-t border-slate-800">
+        PowerForecast — A Utility Consumption and Bill Prediction System for Households • System Documentation
+    </footer>
+
+    <script>
+        function downloadMarkdownFile() {
+            const mdContent = `# PowerForecast: Server-Dependent Database & Flowchart Documentation\\n\\nView the rendered document at: http://localhost:8000/powerforecast_architecture_and_flowchart.html`;
+            const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'powerforecast_server_database_and_flowchart.md';
+            a.click();
+        }
+    </script>
+</body>
+</html>
