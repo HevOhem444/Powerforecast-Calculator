@@ -2903,7 +2903,21 @@
                                 </label>
                             </div>
 
-                            <!-- 2. Manual Time Inputs (e.g. 1:00 AM to 3:00 PM) -->
+                            <!-- 2. Schedule Start Date Picker -->
+                            <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-white flex items-center gap-1.5">
+                                        <span>📅</span>
+                                        <span>Schedule Start Date</span>
+                                    </span>
+                                    <span id="bentoModalDayBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                        Today
+                                    </span>
+                                </div>
+                                <input id="bentoSettingStartDate" type="date" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white w-full cursor-pointer" onchange="onModalStartDateChange()">
+                            </div>
+
+                            <!-- 3. Manual Time Inputs (e.g. 1:00 AM to 3:00 PM) -->
                             <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                                 <span class="font-bold text-white flex items-center gap-1.5">
                                     <span>⏱️</span>
@@ -2920,12 +2934,12 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                                    <span>Calculated Duration: <strong id="bentoModalDurationLabel" class="text-amber-400">3.0 hrs</strong></span>
-                                    <span>Est. Cost: <strong id="bentoModalCostLabel" class="text-emerald-400">₱38.25</strong></span>
+                                    <span>Calculated Duration: <strong id="bentoModalDurationLabel" class="text-amber-400">1.0 hrs</strong></span>
+                                    <span>Est. Cost: <strong id="bentoModalCostLabel" class="text-emerald-400">₱0.00</strong></span>
                                 </div>
                             </div>
 
-                            <!-- 3. Repeat on Next Day / Recurrence Setting -->
+                            <!-- 4. Repeat on Next Day / Recurrence Setting -->
                             <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                                 <span class="font-bold text-white flex items-center gap-1.5">
                                     <span>🔁</span>
@@ -6679,14 +6693,24 @@
                             ${isOn ? (runningLabel || '🟢 Active') : '⚪ Standby'}
                         </span>
                         <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
-                            <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all cursor-pointer">
-                                <span>📅</span> ${hasSchedule ? `${scheduledBlocks.length} Window${scheduledBlocks.length > 1 ? 's' : ''}` : '+ Schedule'}
-                            </span>
-                            ${hasSchedule ? `
-                                <button onclick="openNewScheduleForAppliance('${item.id}', true)" class="p-0.5 px-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-300 text-[10px] font-bold border border-slate-700 transition-all" title="Add another operating window">
-                                    +
-                                </button>
-                            ` : ''}
+                            ${(() => {
+                                const schedBlock = scheduledBlocks.find(b => b.dayKey === calendarState.selectedDayKey) || scheduledBlocks[0];
+                                if (schedBlock) {
+                                    const startLabel = formatHour(schedBlock.startHour);
+                                    const endLabel = formatHour((schedBlock.startHour + schedBlock.durationHours) % 24);
+                                    return `
+                                        <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all cursor-pointer" title="Scheduled: ${startLabel} – ${endLabel} (Click to configure)">
+                                            <span>📅</span> ${startLabel} – ${endLabel}
+                                        </span>
+                                    `;
+                                } else {
+                                    return `
+                                        <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 hover:text-white transition-all cursor-pointer">
+                                            <span>📅</span> + Set Schedule
+                                        </span>
+                                    `;
+                                }
+                            })()}
                         </div>
                     </div>
                 `;
@@ -6816,26 +6840,17 @@
             }
         }
 
-        // Open Schedule Settings Modal from Left Inventory Selection (supports multi-session window creation)
-        function openNewScheduleForAppliance(applianceId, forceNew = false) {
+        // Open Schedule Settings Modal from Left Inventory Selection (Single clean schedule per appliance)
+        function openNewScheduleForAppliance(applianceId) {
             const item = householdLoadList.find(a => String(a.id) === String(applianceId));
             if (!item) return;
 
-            // Check if block already exists on current selected day
-            let block = !forceNew ? calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey) : null;
+            // Enforce single block per appliance on the active day
+            let block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
             if (!block) {
                 const now = new Date();
-                let startHour = now.getHours() + (now.getMinutes() >= 30 ? 0.5 : 0);
-                if (forceNew) {
-                    // Offset start hour to avoid exact collision
-                    const existing = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
-                    if (existing.length > 0) {
-                        const lastEnd = Math.max(...existing.map(e => e.startHour + e.durationHours));
-                        startHour = Math.min(22.0, (lastEnd + 1.0) % 24);
-                    }
-                }
-                startHour = Math.min(22.0, Math.max(0, startHour));
-                const durationHours = Math.min(2.0, 24.0 - startHour);
+                const startHour = now.getHours() + (now.getMinutes() / 60.0);
+                const durationHours = 1.0; // 1-hour session default
 
                 block = {
                     id: 'blk_' + Date.now(),
@@ -6850,6 +6865,7 @@
                 calendarScheduledBlocks.push(block);
                 saveCalendarBlocks();
                 renderCalendarBlocks();
+                renderCalendarApplianceSwitches();
             }
 
             openBentoSettingsModal(block.id);
@@ -7151,6 +7167,38 @@
         let activeEditingBlockId = null;
         let activeEditingApplianceId = null;
 
+        function getBlockDateString(block) {
+            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const now = new Date();
+            const currentDayOfWeek = now.getDay();
+            const diffToMon = (currentDayOfWeek + 6) % 7;
+            const monDate = new Date(now);
+            monDate.setDate(now.getDate() - diffToMon);
+
+            const dayIdx = weekDayKeys.indexOf(block ? block.dayKey : calendarState.selectedDayKey);
+            const targetDate = new Date(monDate);
+            targetDate.setDate(monDate.getDate() + (dayIdx >= 0 ? dayIdx : 0));
+
+            const y = targetDate.getFullYear();
+            const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const d = String(targetDate.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function onModalStartDateChange() {
+            const dateInput = document.getElementById('bentoSettingStartDate');
+            const badgeEl = document.getElementById('bentoModalDayBadge');
+            if (!dateInput || !dateInput.value) return;
+
+            const [y, m, d] = dateInput.value.split('-').map(Number);
+            const targetDate = new Date(y, m - 1, d);
+            const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            if (badgeEl) {
+                badgeEl.textContent = `${daysFull[targetDate.getDay()]}, ${monthsShort[targetDate.getMonth()]} ${d}`;
+            }
+        }
+
         function openBentoSettingsModal(blockId) {
             const block = calendarScheduledBlocks.find(b => b.id === blockId);
             if (!block) return;
@@ -7163,6 +7211,7 @@
             const titleEl = document.getElementById('bentoModalTitle');
             const subEl = document.getElementById('bentoModalSubtitle');
             const autoPowerCb = document.getElementById('bentoSettingAutoPower');
+            const dateInput = document.getElementById('bentoSettingStartDate');
             const startInput = document.getElementById('bentoSettingStartTime');
             const endInput = document.getElementById('bentoSettingEndTime');
             const repeatSelect = document.getElementById('bentoSettingRepeat');
@@ -7178,6 +7227,12 @@
             if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
 
             if (autoPowerCb) autoPowerCb.checked = Boolean(block.autoPower);
+
+            // Populate Start Date Picker
+            if (dateInput) {
+                dateInput.value = getBlockDateString(block);
+                onModalStartDateChange();
+            }
 
             // Format hours into HH:MM time strings
             const startH = Math.floor(block.startHour);
@@ -7258,6 +7313,7 @@
             }
 
             const autoPowerCb = document.getElementById('bentoSettingAutoPower');
+            const dateInput = document.getElementById('bentoSettingStartDate');
             const startInput = document.getElementById('bentoSettingStartTime');
             const endInput = document.getElementById('bentoSettingEndTime');
             const repeatSelect = document.getElementById('bentoSettingRepeat');
@@ -7270,6 +7326,16 @@
             if (endVal <= startVal) endVal += 24;
             const duration = Math.max(0.1, endVal - startVal);
 
+            // Handle date picker changes
+            if (dateInput && dateInput.value) {
+                const [y, m, d] = dateInput.value.split('-').map(Number);
+                const targetDate = new Date(y, m - 1, d);
+                const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                const newDayKey = dayMap[targetDate.getDay()];
+                block.dayKey = newDayKey;
+                block.dayNum = d;
+            }
+
             const repeatMode = repeatSelect ? repeatSelect.value : 'once';
             const seriesId = repeatMode !== 'once' ? (block.seriesId || ('series_' + Date.now())) : null;
 
@@ -7279,7 +7345,7 @@
             block.repeat = repeatMode;
             block.seriesId = seriesId;
 
-            // Handle Repeat Replication across other days with correct dynamic day numbers and shared seriesId
+            // Handle Repeat Replication across other days with STRICT single block per appliance
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
             if (repeatMode === 'daily') {
@@ -7304,21 +7370,26 @@
                         targetDate.setDate(monDate.getDate() + dayIdx);
                         const targetDayNum = targetDate.getDate();
 
-                        const existingIdx = calendarScheduledBlocks.findIndex(b => 
-                            (b.seriesId && b.seriesId === seriesId && b.dayKey === day) ||
-                            (String(b.applianceId) === String(block.applianceId) && b.dayKey === day)
-                        );
-                        if (existingIdx !== -1) {
-                            calendarScheduledBlocks[existingIdx].startHour = block.startHour;
-                            calendarScheduledBlocks[existingIdx].durationHours = block.durationHours;
-                            calendarScheduledBlocks[existingIdx].autoPower = block.autoPower;
-                            calendarScheduledBlocks[existingIdx].repeat = repeatMode;
-                            calendarScheduledBlocks[existingIdx].seriesId = seriesId;
-                            calendarScheduledBlocks[existingIdx].dayNum = targetDayNum;
-                            if (calendarScheduledBlocks[existingIdx].id.startsWith('blk_')) {
-                                dbInsertCalendarEvent(calendarScheduledBlocks[existingIdx]);
+                        // Clean up any duplicates first to ensure single block
+                        const matching = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(block.applianceId) && b.dayKey === day);
+                        if (matching.length > 1) {
+                            for (let i = 1; i < matching.length; i++) {
+                                deleteCalendarBlock(matching[i].id);
+                            }
+                        }
+
+                        const existing = calendarScheduledBlocks.find(b => String(b.applianceId) === String(block.applianceId) && b.dayKey === day);
+                        if (existing) {
+                            existing.startHour = block.startHour;
+                            existing.durationHours = block.durationHours;
+                            existing.autoPower = block.autoPower;
+                            existing.repeat = repeatMode;
+                            existing.seriesId = seriesId;
+                            existing.dayNum = targetDayNum;
+                            if (existing.id.startsWith('blk_')) {
+                                dbInsertCalendarEvent(existing);
                             } else {
-                                dbUpdateCalendarEvent(calendarScheduledBlocks[existingIdx]);
+                                dbUpdateCalendarEvent(existing);
                             }
                         } else {
                             const newRepBlock = {
