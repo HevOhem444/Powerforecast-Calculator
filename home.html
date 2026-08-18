@@ -87,6 +87,28 @@
             --toggle-label-color: #ffffff;
             --overlay-bg: rgba(5, 5, 30, 0.88);
             --bulb-glow: rgba(255, 213, 79, 0.08);
+
+            /* Bento Tokens (Dark) */
+            --bento-bg: rgba(15, 14, 58, 0.65);
+            --bento-inner-bg: rgba(9, 9, 48, 0.65);
+            --bento-border: rgba(108, 122, 224, 0.22);
+            --bento-border-hover: rgba(129, 140, 248, 0.55);
+            --bento-border-dashed: rgba(108, 122, 224, 0.35);
+            --bento-stat-watt: #fbbf24;
+            --bento-stat-usage: #ffffff;
+            --bento-stat-kwh: #a2a5ff;
+            --bento-stat-cost: #34d399;
+            --bento-pill-bg: rgba(15, 14, 58, 0.85);
+            --bento-pill-text: #c7d2fe;
+            --bento-pill-border: rgba(99, 102, 241, 0.35);
+            --bento-tab-active-bg: #4f46e5;
+            --bento-tab-active-text: #ffffff;
+            --bento-tab-inactive-text: #94a3b8;
+            --bento-note-bg: rgba(9, 9, 48, 0.5);
+            --bento-note-text: #94a3b8;
+            --bento-note-border: rgba(108, 122, 224, 0.2);
+            --bento-icon-bg: rgba(99, 102, 241, 0.2);
+            --bento-icon-color: #a2a5ff;
         }
 
         [data-theme="light"] {
@@ -95,24 +117,46 @@
             --sidebar-bg: #121350;
             --sidebar-active: #2b2ca8;
             --sidebar-hover: rgba(255, 255, 255, 0.12);
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-border: rgba(108, 122, 224, 0.2);
-            --card-glow-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.94);
+            --card-border: rgba(99, 102, 241, 0.18);
+            --card-glow-bg: rgba(255, 255, 255, 0.98);
             --text-primary: #100b46;
-            --text-secondary: #3d3e75;
-            --text-muted: #696b9e;
+            --text-secondary: #333668;
+            --text-muted: #5e6094;
             --input-bg: #ffffff;
             --input-bg-solid: #ffffff;
-            --input-border: rgba(108, 122, 224, 0.28);
-            --input-focus: #5a5cc7;
-            --accent: #5a5cc7;
-            --accent-text: #3b3a8c;
-            --accent-glow: rgba(108, 122, 224, 0.12);
+            --input-border: rgba(99, 102, 241, 0.24);
+            --input-focus: #4f46e5;
+            --accent: #4f46e5;
+            --accent-text: #3730a3;
+            --accent-glow: rgba(79, 70, 229, 0.12);
             --highlight: #d97706;
-            --divider: rgba(108, 122, 224, 0.15);
+            --divider: rgba(99, 102, 241, 0.15);
             --toggle-label-color: #ffffff;
             --overlay-bg: rgba(255, 255, 255, 0.95);
             --bulb-glow: rgba(255, 213, 79, 0.38);
+
+            /* Bento Tokens (Light - High Contrast & Vibrant) */
+            --bento-bg: rgba(246, 248, 255, 0.92);
+            --bento-inner-bg: linear-gradient(145deg, #ffffff 0%, #f4f6ff 100%);
+            --bento-border: rgba(99, 102, 241, 0.2);
+            --bento-border-hover: rgba(79, 70, 229, 0.45);
+            --bento-border-dashed: rgba(99, 102, 241, 0.38);
+            --bento-stat-watt: #d97706;
+            --bento-stat-usage: #100b46;
+            --bento-stat-kwh: #4338ca;
+            --bento-stat-cost: #059669;
+            --bento-pill-bg: #ffffff;
+            --bento-pill-text: #1e1b4b;
+            --bento-pill-border: rgba(99, 102, 241, 0.25);
+            --bento-tab-active-bg: #4f46e5;
+            --bento-tab-active-text: #ffffff;
+            --bento-tab-inactive-text: #4b5563;
+            --bento-note-bg: rgba(238, 242, 255, 0.85);
+            --bento-note-text: #312e81;
+            --bento-note-border: rgba(99, 102, 241, 0.22);
+            --bento-icon-bg: #e0e7ff;
+            --bento-icon-color: #4338ca;
         }
 
         select option {
@@ -228,7 +272,204 @@
         }
 
         [data-theme="light"] .glow-card {
-            box-shadow: 0 4px 24px -4px rgba(108, 122, 224, 0.15);
+            box-shadow: 0 4px 24px -4px rgba(99, 102, 241, 0.15);
+        }
+
+        /* ===== Bento Card & Sub-Container Styles ===== */
+        .bento-sub-card {
+            background: var(--bento-inner-bg);
+            border: 1px solid var(--bento-border);
+            transition: all 0.25s ease;
+        }
+        .bento-sub-card:hover {
+            border-color: var(--bento-border-hover);
+            box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.12);
+        }
+
+        /* Appliance Photo Slots */
+        .ai-slot-card {
+            background: var(--bento-inner-bg);
+            border: 2px dashed var(--bento-border-dashed);
+            color: var(--text-primary);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ai-slot-card:hover {
+            border-color: var(--bento-border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px -4px rgba(99, 102, 241, 0.22);
+        }
+        .ai-slot-card .slot-placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Dropzone Bento Area */
+        .ai-dropzone-box {
+            background: var(--bento-inner-bg);
+            border: 2px dashed var(--bento-border-dashed);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ai-dropzone-box:hover, .ai-dropzone-box.dragover {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.22);
+        }
+        .ai-dropzone-icon {
+            background: var(--bento-icon-bg);
+            color: var(--bento-icon-color);
+            transition: all 0.25s ease;
+        }
+
+        /* Vision AI Preset Buttons */
+        .ai-preset-btn {
+            background: var(--bento-inner-bg);
+            border: 1px solid var(--bento-border);
+            color: var(--text-primary);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ai-preset-btn .preset-title {
+            color: var(--text-primary);
+            font-weight: 700;
+            transition: color 0.2s ease;
+        }
+        .ai-preset-btn .preset-desc {
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+        .ai-preset-btn:hover:not(.active) {
+            border-color: var(--bento-border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px -2px rgba(99, 102, 241, 0.16);
+        }
+        .ai-preset-btn.active {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%) !important;
+            border-color: #4338ca !important;
+            box-shadow: 0 6px 20px -2px rgba(79, 70, 229, 0.4) !important;
+            transform: translateY(-1px);
+        }
+        .ai-preset-btn.active .preset-title {
+            color: #ffffff !important;
+        }
+        .ai-preset-btn.active .preset-desc {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Bento Stat Boxes & Metric Values */
+        .bento-stat-box {
+            background: var(--bento-inner-bg);
+            border: 1px solid var(--bento-border);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            transition: all 0.25s ease;
+        }
+        .stat-val-watt {
+            color: var(--bento-stat-watt);
+            font-weight: 800;
+        }
+        .stat-val-usage {
+            color: var(--bento-stat-usage);
+            font-weight: 800;
+        }
+        .stat-val-kwh {
+            color: var(--bento-stat-kwh);
+            font-weight: 800;
+        }
+        .stat-val-cost {
+            color: var(--bento-stat-cost);
+            font-weight: 800;
+        }
+
+        /* Bento Segmented Toggle Controls */
+        .bento-segmented-wrap {
+            background: var(--bento-inner-bg);
+            border: 1px solid var(--bento-border);
+        }
+        .bento-seg-btn {
+            color: var(--bento-tab-inactive-text);
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .bento-seg-btn:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .bento-seg-btn.active {
+            background: var(--bento-tab-active-bg) !important;
+            color: var(--bento-tab-active-text) !important;
+            font-weight: 700 !important;
+            box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3) !important;
+        }
+
+        /* Bento Tab Buttons */
+        .ai-tab-btn {
+            color: var(--bento-tab-inactive-text);
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .ai-tab-btn:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .ai-tab-btn.active {
+            background: #4f46e5 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Bento Brand Filter Pills */
+        .bento-pills-btn {
+            background: var(--bento-pill-bg);
+            color: var(--bento-pill-text);
+            border: 1px solid var(--bento-pill-border);
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .bento-pills-btn:hover {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.25);
+        }
+
+        /* Bento Informative Note Box */
+        .bento-note-box {
+            background: var(--bento-note-bg);
+            color: var(--bento-note-text);
+            border: 1px solid var(--bento-note-border);
+        }
+
+        /* Bento Badges */
+        .bento-badge-category {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            color: var(--accent-text);
+        }
+        [data-theme="light"] .bento-badge-category {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            color: #4338ca;
+        }
+
+        .bento-badge-rating {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+        [data-theme="light"] .bento-badge-rating {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #059669;
+        }
+
+        .bento-badge-amber {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+        }
+        [data-theme="light"] .bento-badge-amber {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #b45309;
         }
 
         /* Text colors */
@@ -660,11 +901,11 @@
                     <!-- Left Column: Inputs & Estimator -->
                     <div class="lg:col-span-5 flex flex-col gap-5">
                         <!-- Mode Switcher Pill Bar -->
-                        <div class="glass-card p-1.5 rounded-2xl flex border border-slate-700/50 text-xs font-semibold shadow-inner">
-                            <button onclick="requestCalculatorModeSwitch('bill')" id="calcModeBtn-bill" class="flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md">
+                        <div class="bento-segmented-wrap p-1.5 rounded-2xl flex text-xs font-semibold shadow-inner">
+                            <button onclick="requestCalculatorModeSwitch('bill')" id="calcModeBtn-bill" class="bento-seg-btn active flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2">
                                 <span>📊</span> Bill Parameters
                             </button>
-                            <button onclick="requestCalculatorModeSwitch('estimator')" id="calcModeBtn-estimator" class="flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+                            <button onclick="requestCalculatorModeSwitch('estimator')" id="calcModeBtn-estimator" class="bento-seg-btn flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2">
                                 <span>🔌</span> Appliance Energy Estimator
                             </button>
                         </div>
@@ -998,14 +1239,14 @@
 
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Mode Toggle Segmented Control -->
-                        <div class="flex flex-wrap p-1 rounded-xl bg-slate-900/70 border border-indigo-500/20 shadow-inner">
-                            <button id="applianceModeBtn-vision" onclick="switchApplianceMode('vision')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow">
+                        <div class="bento-segmented-wrap flex flex-wrap p-1 rounded-xl shadow-inner">
+                            <button id="applianceModeBtn-vision" onclick="switchApplianceMode('vision')" class="bento-seg-btn active px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5">
                                 <span>📷</span> AI Vision Scan
                             </button>
-                            <button id="applianceModeBtn-pelp" onclick="switchApplianceMode('pelp')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
+                            <button id="applianceModeBtn-pelp" onclick="switchApplianceMode('pelp')" class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5">
                                 <span>🏷️</span> DOE PELP Catalog
                             </button>
-                            <button id="applianceModeBtn-manual" onclick="switchApplianceMode('manual')" class="px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
+                            <button id="applianceModeBtn-manual" onclick="switchApplianceMode('manual')" class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5">
                                 <span>✏️</span> Custom / Manual Entry
                             </button>
                         </div>
@@ -1042,31 +1283,31 @@
 
                                 <!-- 3 Photo Thumbnail Slots -->
                                 <div class="grid grid-cols-3 gap-3">
-                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="0" onclick="triggerSlotUpload(0)">
-                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                            <span class="text-xl">📷</span>
-                                            <span class="text-[10px] font-semibold t-muted">Slot 1 (Front)</span>
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer transition-all relative aspect-square" data-slot="0" onclick="triggerSlotUpload(0)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1.5 text-center">
+                                            <span class="text-2xl">📷</span>
+                                            <span class="text-[11px] font-bold">Slot 1 (Front)</span>
                                         </div>
                                         <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 1">
-                                        <button onclick="event.stopPropagation(); removeSlotPhoto(0)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(0)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md hover:bg-red-600">×</button>
                                     </div>
 
-                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="1" onclick="triggerSlotUpload(1)">
-                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                            <span class="text-xl">🏷️</span>
-                                            <span class="text-[10px] font-semibold t-muted">Slot 2 (Tag)</span>
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer transition-all relative aspect-square" data-slot="1" onclick="triggerSlotUpload(1)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1.5 text-center">
+                                            <span class="text-2xl">🏷️</span>
+                                            <span class="text-[11px] font-bold">Slot 2 (Tag)</span>
                                         </div>
                                         <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 2">
-                                        <button onclick="event.stopPropagation(); removeSlotPhoto(1)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(1)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md hover:bg-red-600">×</button>
                                     </div>
 
-                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-500/30 bg-indigo-950/20 cursor-pointer hover:border-indigo-400 transition-all relative aspect-square" data-slot="2" onclick="triggerSlotUpload(2)">
-                                        <div class="slot-placeholder flex flex-col items-center gap-1 text-center">
-                                            <span class="text-xl">🎛️</span>
-                                            <span class="text-[10px] font-semibold t-muted">Slot 3 (Panel)</span>
+                                    <div class="ai-slot-card empty flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer transition-all relative aspect-square" data-slot="2" onclick="triggerSlotUpload(2)">
+                                        <div class="slot-placeholder flex flex-col items-center gap-1.5 text-center">
+                                            <span class="text-2xl">🎛️</span>
+                                            <span class="text-[11px] font-bold">Slot 3 (Panel)</span>
                                         </div>
                                         <img class="slot-img hidden w-full h-full object-cover rounded-lg" alt="Slot 3">
-                                        <button onclick="event.stopPropagation(); removeSlotPhoto(2)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow">×</button>
+                                        <button onclick="event.stopPropagation(); removeSlotPhoto(2)" class="slot-remove hidden absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md hover:bg-red-600">×</button>
                                     </div>
                                 </div>
 
@@ -1074,19 +1315,19 @@
                                 <input type="file" id="aiFileInput" accept="image/*" multiple class="hidden" onchange="handleAiFileSelect(this.files)">
 
                                 <!-- Dropzone Drag Area & Camera Action -->
-                                <div id="aiDropzone" class="p-5 rounded-xl border-2 border-dashed border-indigo-500/40 bg-indigo-950/30 text-center flex flex-col items-center justify-center gap-3 transition-all">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-xl">
+                                <div id="aiDropzone" class="ai-dropzone-box p-6 rounded-2xl text-center flex flex-col items-center justify-center gap-3 transition-all">
+                                    <div class="ai-dropzone-icon w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm">
                                         📥
                                     </div>
                                     <div>
                                         <p class="text-xs font-bold t-primary">Drag & Drop Appliance Photos Here</p>
-                                        <p class="text-[10px] t-muted mt-0.5">Supports JPG, PNG, WEBP, SVG or Paste from Clipboard (Ctrl+V)</p>
+                                        <p class="text-[11px] t-muted mt-0.5">Supports JPG, PNG, WEBP, SVG or Paste from Clipboard (Ctrl+V)</p>
                                     </div>
                                     <div class="flex gap-2">
-                                        <button onclick="document.getElementById('aiFileInput').click()" class="px-3 py-1.5 btn-secondary rounded-lg text-xs font-semibold">
+                                        <button onclick="document.getElementById('aiFileInput').click()" class="px-3.5 py-1.5 btn-secondary rounded-lg text-xs font-semibold">
                                             📂 Browse Files
                                         </button>
-                                        <button onclick="openWebcamModal()" class="px-3 py-1.5 btn-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
+                                        <button onclick="openWebcamModal()" class="px-3.5 py-1.5 btn-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
                                             <span>📷</span> Live Camera
                                         </button>
                                     </div>
@@ -1103,40 +1344,40 @@
                             <div class="glass-card p-6 rounded-2xl flex flex-col gap-4 shadow-xl">
                                 <h3 class="text-sm font-bold t-primary">Vision Analysis Preset</h3>
 
-                                <div class="grid grid-cols-2 gap-2" id="aiPresetGrid">
-                                    <button data-preset="specs" onclick="selectAiPreset('specs')" class="ai-preset-btn active p-3 rounded-xl text-left border border-indigo-500/50 bg-indigo-900/40 text-white font-medium text-xs transition-all">
-                                        <div class="font-bold flex items-center gap-1.5">
+                                <div class="grid grid-cols-2 gap-2.5" id="aiPresetGrid">
+                                    <button data-preset="specs" onclick="selectAiPreset('specs')" class="ai-preset-btn active p-3.5 rounded-xl text-left">
+                                        <div class="preset-title flex items-center gap-1.5 text-xs">
                                             <span>⚡</span> Full Spec Sheet
                                         </div>
-                                        <div class="text-[10px] t-muted mt-1">Brand, model, wattage & care guide.</div>
+                                        <div class="preset-desc text-[10px] mt-1">Brand, model, wattage & care guide.</div>
                                     </button>
 
-                                    <button data-preset="electrical" onclick="selectAiPreset('electrical')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                        <div class="font-bold flex items-center gap-1.5">
+                                    <button data-preset="electrical" onclick="selectAiPreset('electrical')" class="ai-preset-btn p-3.5 rounded-xl text-left">
+                                        <div class="preset-title flex items-center gap-1.5 text-xs">
                                             <span>🔌</span> Electrical Specs
                                         </div>
-                                        <div class="text-[10px] t-muted mt-1">Voltage, Amps, Running vs Surge W.</div>
+                                        <div class="preset-desc text-[10px] mt-1">Voltage, Amps, Running vs Surge W.</div>
                                     </button>
 
-                                    <button data-preset="serial_ocr" onclick="selectAiPreset('serial_ocr')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                        <div class="font-bold flex items-center gap-1.5">
+                                    <button data-preset="serial_ocr" onclick="selectAiPreset('serial_ocr')" class="ai-preset-btn p-3.5 rounded-xl text-left">
+                                        <div class="preset-title flex items-center gap-1.5 text-xs">
                                             <span>🔍</span> Rating Label OCR
                                         </div>
-                                        <div class="text-[10px] t-muted mt-1">Extract physical tag & model codes.</div>
+                                        <div class="preset-desc text-[10px] mt-1">Extract physical tag & model codes.</div>
                                     </button>
 
-                                    <button data-preset="maintenance" onclick="selectAiPreset('maintenance')" class="ai-preset-btn p-3 rounded-xl text-left border border-indigo-500/20 bg-indigo-950/20 text-slate-300 font-medium text-xs transition-all hover:border-indigo-400">
-                                        <div class="font-bold flex items-center gap-1.5">
+                                    <button data-preset="maintenance" onclick="selectAiPreset('maintenance')" class="ai-preset-btn p-3.5 rounded-xl text-left">
+                                        <div class="preset-title flex items-center gap-1.5 text-xs">
                                             <span>🛠️</span> Care & Maintenance
                                         </div>
-                                        <div class="text-[10px] t-muted mt-1">Filter routines & error codes.</div>
+                                        <div class="preset-desc text-[10px] mt-1">Filter routines & error codes.</div>
                                     </button>
                                 </div>
 
                                 <div class="flex flex-col gap-1.5">
                                     <label for="aiCustomPrompt" class="text-xs font-semibold t-muted flex justify-between">
                                         <span>Custom Technical Question (Optional)</span>
-                                        <button onclick="document.getElementById('aiCustomPrompt').value=''" class="text-[10px] text-slate-400 hover:text-white">Clear</button>
+                                        <button onclick="document.getElementById('aiCustomPrompt').value=''" class="text-[10px] t-muted hover:text-primary">Clear</button>
                                     </label>
                                     <textarea id="aiCustomPrompt" rows="2" placeholder="Ask specific technical questions about this appliance..." class="w-full pf-input rounded-xl p-3 text-xs"></textarea>
                                 </div>
@@ -1155,29 +1396,29 @@
                             <div id="aiDetectedCard" class="glow-card p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-2xl">
                                 <div class="flex justify-between items-center">
                                     <div>
-                                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Detected Parameters & Meralco Cost Engine</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">Detected Parameters & Meralco Cost Engine</span>
                                         <h3 id="aiDetectedName" class="text-xl font-extrabold t-primary mt-1">Ready for Appliance Scan</h3>
                                     </div>
                                     <span id="aiModelBadge" class="text-xs font-semibold t-muted px-2.5 py-1 badge rounded-lg">Gemini 3.6 Flash</span>
                                 </div>
 
                                 <!-- Meralco Rate Calculation Quick Stats -->
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs">
+                                <div class="bento-stat-box grid grid-cols-2 sm:grid-cols-4 gap-3.5 p-4 rounded-2xl text-xs">
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">ESTIMATED WATTAGE</span>
-                                        <span id="aiDetectedWatts" class="font-extrabold text-amber-400 text-base">0 W</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">ESTIMATED WATTAGE</span>
+                                        <span id="aiDetectedWatts" class="stat-val-watt text-base block mt-0.5">0 W</span>
                                     </div>
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">DAILY USAGE</span>
-                                        <span id="aiDetectedHours" class="font-bold text-white text-base">8 hrs/day</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">DAILY USAGE</span>
+                                        <span id="aiDetectedHours" class="stat-val-usage text-base block mt-0.5">8 hrs/day</span>
                                     </div>
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MONTHLY kWh</span>
-                                        <span id="aiDetectedKwh" class="font-extrabold t-accent text-base">0.00 kWh</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MONTHLY kWh</span>
+                                        <span id="aiDetectedKwh" class="stat-val-kwh text-base block mt-0.5">0.00 kWh</span>
                                     </div>
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
-                                        <span id="aiDetectedCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MERALCO EST. COST</span>
+                                        <span id="aiDetectedCost" class="stat-val-cost text-base block mt-0.5">₱0.00 / mo</span>
                                     </div>
                                 </div>
 
@@ -1196,13 +1437,13 @@
                                 <div class="flex flex-wrap justify-between items-center gap-2 pf-divider border-b pb-3">
                                     <!-- Tab Buttons -->
                                     <div class="flex gap-2">
-                                        <button onclick="switchAiTab('formatted')" id="aiTabBtn-formatted" class="ai-tab-btn active px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow">
+                                        <button onclick="switchAiTab('formatted')" id="aiTabBtn-formatted" class="ai-tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold shadow">
                                             📄 Technical Spec Sheet
                                         </button>
-                                        <button onclick="switchAiTab('palette')" id="aiTabBtn-palette" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                        <button onclick="switchAiTab('palette')" id="aiTabBtn-palette" class="ai-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium">
                                             🎨 Finish Colors
                                         </button>
-                                        <button onclick="switchAiTab('raw')" id="aiTabBtn-raw" class="ai-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+                                        <button onclick="switchAiTab('raw')" id="aiTabBtn-raw" class="ai-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium">
                                             ⚙️ Raw JSON
                                         </button>
                                     </div>
@@ -1219,7 +1460,7 @@
 
                                 <!-- Tab Pane 1: Formatted Spec Sheet -->
                                 <div id="aiPane-formatted" class="ai-tab-pane flex flex-col gap-3">
-                                    <div id="aiOutputContent" class="prose prose-invert max-w-none text-xs leading-relaxed t-secondary max-h-[480px] overflow-y-auto pr-2">
+                                    <div id="aiOutputContent" class="prose max-w-none text-xs leading-relaxed t-secondary max-h-[480px] overflow-y-auto pr-2">
                                         <p class="t-muted italic">Upload appliance photo(s) and click <strong>Run Vision AI Spec Extraction</strong> to generate a complete technical specification sheet with Meralco rate cost estimations.</p>
                                     </div>
                                 </div>
@@ -1232,7 +1473,7 @@
 
                                 <!-- Tab Pane 3: Raw JSON -->
                                 <div id="aiPane-raw" class="ai-tab-pane hidden flex-col gap-3">
-                                    <pre id="aiJsonOutput" class="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-[400px]">{}</pre>
+                                    <pre id="aiJsonOutput" class="p-4 rounded-xl bento-sub-card text-emerald-600 dark:text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-[400px]">{}</pre>
                                 </div>
                             </div>
 
@@ -1302,14 +1543,14 @@
 
                             <!-- Quick Brand Filter Pills -->
                             <div class="flex flex-wrap items-center gap-1.5 text-[11px] t-muted">
-                                <span class="font-semibold text-xs text-slate-300">Popular Brands:</span>
-                                <button onclick="setPelpBrandSearch('Samsung')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Samsung</button>
-                                <button onclick="setPelpBrandSearch('Panasonic')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Panasonic</button>
-                                <button onclick="setPelpBrandSearch('Sharp')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Sharp</button>
-                                <button onclick="setPelpBrandSearch('Carrier')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Carrier</button>
-                                <button onclick="setPelpBrandSearch('LG')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">LG</button>
-                                <button onclick="setPelpBrandSearch('Tough Mama')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Tough Mama</button>
-                                <button onclick="setPelpBrandSearch('Condura')" class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/40 transition-colors">Condura</button>
+                                <span class="font-bold text-xs t-secondary">Popular Brands:</span>
+                                <button onclick="setPelpBrandSearch('Samsung')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Samsung</button>
+                                <button onclick="setPelpBrandSearch('Panasonic')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Panasonic</button>
+                                <button onclick="setPelpBrandSearch('Sharp')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Sharp</button>
+                                <button onclick="setPelpBrandSearch('Carrier')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Carrier</button>
+                                <button onclick="setPelpBrandSearch('LG')" class="bento-pills-btn px-2.5 py-1 rounded-lg">LG</button>
+                                <button onclick="setPelpBrandSearch('Tough Mama')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Tough Mama</button>
+                                <button onclick="setPelpBrandSearch('Condura')" class="bento-pills-btn px-2.5 py-1 rounded-lg">Condura</button>
                             </div>
                         </div>
                     </div>
@@ -1345,11 +1586,11 @@
                             <div id="pelpConfigCard" class="glow-card p-5 sm:p-6 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <span id="pelpConfigCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">PELP Certified Load</span>
+                                        <span id="pelpConfigCategoryBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">PELP Certified Load</span>
                                         <h3 id="pelpConfigTitle" class="text-lg font-extrabold t-primary mt-1">Select an Appliance</h3>
                                         <p id="pelpConfigSubtitle" class="text-xs t-muted">Pick a certified model from the list to calculate consumption.</p>
                                     </div>
-                                    <span id="pelpConfigRatingBadge" class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">⭐ Certified</span>
+                                    <span id="pelpConfigRatingBadge" class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg bento-badge-rating">⭐ Certified</span>
                                 </div>
 
                                 <!-- Wattage & Quantity Inputs -->
@@ -1368,7 +1609,7 @@
                                 </div>
 
                                 <!-- Usage Sliders -->
-                                <div class="flex flex-col gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-indigo-500/20">
+                                <div class="bento-stat-box flex flex-col gap-3 p-3.5 rounded-xl">
                                     <!-- Daily Hours Slider -->
                                     <div class="flex flex-col gap-1.5">
                                         <div class="flex justify-between items-center text-xs">
@@ -1389,20 +1630,20 @@
                                 </div>
 
                                 <!-- Computed Real-Time Metrics -->
-                                <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
+                                <div class="bento-stat-box grid grid-cols-2 gap-3 p-3.5 rounded-xl text-xs">
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MONTHLY ENERGY</span>
-                                        <span id="pelpMonthlyKwh" class="font-extrabold text-amber-400 text-base">0.00 kWh</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MONTHLY ENERGY</span>
+                                        <span id="pelpMonthlyKwh" class="stat-val-watt text-base block mt-0.5">0.00 kWh</span>
                                     </div>
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
-                                        <span id="pelpMonthlyCost" class="font-extrabold text-emerald-400 text-base">₱0.00 / mo</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MERALCO EST. COST</span>
+                                        <span id="pelpMonthlyCost" class="stat-val-cost text-base block mt-0.5">₱0.00 / mo</span>
                                     </div>
                                 </div>
 
                                 <!-- Informative Note about Marginal Cost -->
-                                <div class="text-[10px] text-slate-400 bg-indigo-950/30 p-2 rounded-lg border border-indigo-500/20 flex items-center gap-1.5">
-                                    <span>💡</span>
+                                <div class="bento-note-box text-[11px] p-2.5 rounded-xl flex items-center gap-2">
+                                    <span class="text-base">💡</span>
                                     <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption rate added to your household's monthly electric load.</span>
                                 </div>
 
@@ -1489,129 +1730,129 @@
                                 </div>
 
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="manualPresetsGrid">
-                                    <button type="button" onclick="selectManualPreset('Rice Cooker', 700, 1, 'Kitchen', '🍚')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Rice Cooker', 700, 1, 'Kitchen', '🍚')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🍚</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">700 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">700 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Rice Cooker</span>
+                                        <span class="font-bold t-primary text-xs">Rice Cooker</span>
                                         <span class="text-[10px] t-muted">Kitchen • 1h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Induction Cooker', 1800, 1.5, 'Kitchen', '🍲')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Induction Cooker', 1800, 1.5, 'Kitchen', '🍲')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🍲</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1800 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">1800 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Induction Cooker</span>
+                                        <span class="font-bold t-primary text-xs">Induction Cooker</span>
                                         <span class="text-[10px] t-muted">Kitchen • 1.5h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Microwave Oven', 1000, 0.5, 'Kitchen', '🍿')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Microwave Oven', 1000, 0.5, 'Kitchen', '🍿')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🍿</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Microwave Oven</span>
+                                        <span class="font-bold t-primary text-xs">Microwave Oven</span>
                                         <span class="text-[10px] t-muted">Kitchen • 0.5h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Desktop / Gaming PC', 350, 6, 'Computing', '🖥️')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Desktop / Gaming PC', 350, 6, 'Computing', '🖥️')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🖥️</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">350 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">350 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Desktop / Gaming PC</span>
+                                        <span class="font-bold t-primary text-xs">Desktop / Gaming PC</span>
                                         <span class="text-[10px] t-muted">Computing • 6h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Laptop Computer', 65, 8, 'Computing', '💻')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Laptop Computer', 65, 8, 'Computing', '💻')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">💻</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">65 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">65 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Laptop Computer</span>
+                                        <span class="font-bold t-primary text-xs">Laptop Computer</span>
                                         <span class="text-[10px] t-muted">Computing • 8h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Water Dispenser (Hot/Cold)', 550, 24, 'Kitchen', '🚰')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Water Dispenser (Hot/Cold)', 550, 24, 'Kitchen', '🚰')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🚰</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">550 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">550 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Water Dispenser</span>
+                                        <span class="font-bold t-primary text-xs">Water Dispenser</span>
                                         <span class="text-[10px] t-muted">Kitchen • 24h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Electric Kettle', 1500, 0.3, 'Kitchen', '♨️')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Electric Kettle', 1500, 0.3, 'Kitchen', '♨️')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">♨️</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1500 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">1500 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Electric Kettle</span>
+                                        <span class="font-bold t-primary text-xs">Electric Kettle</span>
                                         <span class="text-[10px] t-muted">Kitchen • 0.3h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Shower Water Heater', 3500, 0.5, 'Bath', '🚿')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Shower Water Heater', 3500, 0.5, 'Bath', '🚿')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🚿</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">3500 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">3500 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Shower Heater</span>
+                                        <span class="font-bold t-primary text-xs">Shower Heater</span>
                                         <span class="text-[10px] t-muted">Bath • 0.5h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Gaming Console (PS5/Xbox)', 200, 3, 'Entertainment', '🎮')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Gaming Console (PS5/Xbox)', 200, 3, 'Entertainment', '🎮')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🎮</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">200 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">200 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Gaming Console</span>
+                                        <span class="font-bold t-primary text-xs">Gaming Console</span>
                                         <span class="text-[10px] t-muted">Entertainment • 3h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Air Purifier', 45, 12, 'Climate', '💨')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Air Purifier', 45, 12, 'Climate', '💨')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">💨</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">45 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">45 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Air Purifier</span>
+                                        <span class="font-bold t-primary text-xs">Air Purifier</span>
                                         <span class="text-[10px] t-muted">Climate • 12h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Bread Toaster', 850, 0.2, 'Kitchen', '🍞')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Bread Toaster', 850, 0.2, 'Kitchen', '🍞')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🍞</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">850 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">850 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Bread Toaster</span>
+                                        <span class="font-bold t-primary text-xs">Bread Toaster</span>
                                         <span class="text-[10px] t-muted">Kitchen • 0.2h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Hair Dryer / Styler', 1400, 0.2, 'Bath', '💇')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Hair Dryer / Styler', 1400, 0.2, 'Bath', '💇')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">💇</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1400 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">1400 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Hair Dryer</span>
+                                        <span class="font-bold t-primary text-xs">Hair Dryer</span>
                                         <span class="text-[10px] t-muted">Bath • 0.2h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Coffee Maker', 800, 0.3, 'Kitchen', '☕')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Coffee Maker', 800, 0.3, 'Kitchen', '☕')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">☕</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">800 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">800 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Coffee Maker</span>
+                                        <span class="font-bold t-primary text-xs">Coffee Maker</span>
                                         <span class="text-[10px] t-muted">Kitchen • 0.3h/day</span>
                                     </button>
 
-                                    <button type="button" onclick="selectManualPreset('Clothes Flat Iron', 1000, 0.5, 'Cleaning', '🧯')" class="manual-preset-card p-3 rounded-xl bg-slate-900/70 border border-indigo-500/20 hover:border-amber-400 hover:bg-slate-900 transition-all text-left flex flex-col gap-1 shadow group">
+                                    <button type="button" onclick="selectManualPreset('Clothes Flat Iron', 1000, 0.5, 'Cleaning', '🧯')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🧯</span>
-                                            <span class="text-[10px] font-extrabold text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">1000 W</span>
                                         </div>
-                                        <span class="font-bold text-white text-xs">Clothes Iron</span>
+                                        <span class="font-bold t-primary text-xs">Clothes Iron</span>
                                         <span class="text-[10px] t-muted">Cleaning • 0.5h/day</span>
                                     </button>
                                 </div>
@@ -1705,7 +1946,7 @@
                                 </div>
 
                                 <!-- Usage Sliders -->
-                                <div class="flex flex-col gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-indigo-500/20">
+                                <div class="bento-stat-box flex flex-col gap-3 p-3.5 rounded-xl">
                                     <!-- Daily Hours Slider -->
                                     <div class="flex flex-col gap-1.5">
                                         <div class="flex justify-between items-center text-xs">
@@ -1726,20 +1967,20 @@
                                 </div>
 
                                 <!-- Computed Real-Time Metrics -->
-                                <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
+                                <div class="bento-stat-box grid grid-cols-2 gap-3 p-3.5 rounded-xl text-xs">
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MONTHLY ENERGY</span>
-                                        <span id="manualMonthlyKwh" class="font-extrabold text-amber-400 text-base">42.00 kWh</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MONTHLY ENERGY</span>
+                                        <span id="manualMonthlyKwh" class="stat-val-watt text-base block mt-0.5">42.00 kWh</span>
                                     </div>
                                     <div>
-                                        <span class="t-muted text-[10px] block font-medium">MERALCO EST. COST</span>
-                                        <span id="manualMonthlyCost" class="font-extrabold text-emerald-400 text-base">₱535.52 / mo</span>
+                                        <span class="t-muted text-[10px] block font-bold uppercase tracking-wider">MERALCO EST. COST</span>
+                                        <span id="manualMonthlyCost" class="stat-val-cost text-base block mt-0.5">₱535.52 / mo</span>
                                     </div>
                                 </div>
 
                                 <!-- Informative Note about Marginal Cost -->
-                                <div class="text-[10px] text-slate-400 bg-indigo-950/30 p-2 rounded-lg border border-indigo-500/20 flex items-center gap-1.5">
-                                    <span>💡</span>
+                                <div class="bento-note-box text-[11px] p-2.5 rounded-xl flex items-center gap-2">
+                                    <span class="text-base">💡</span>
                                     <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption rate added to your household's monthly electric load.</span>
                                 </div>
 
@@ -2178,17 +2419,17 @@
                         <div class="flex-1 px-6 py-6 flex flex-col gap-5">
 
                             <!-- Manual Meralco Rate Fetcher Section -->
-                            <div class="flex flex-col gap-3 p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 shadow-inner">
+                            <div class="bento-sub-card flex flex-col gap-3 p-4 rounded-2xl shadow-inner">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">⚡ Meralco Rate Scraper</span>
-                                    <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-mono">Official Fetch</span>
+                                    <span class="text-xs font-bold t-accent uppercase tracking-widest">⚡ Meralco Rate Scraper</span>
+                                    <span class="text-[10px] bento-badge-category px-2.5 py-0.5 rounded-full font-mono font-bold">Official Fetch</span>
                                 </div>
                                 <p class="text-[11px] t-muted">Fetch rates directly from Meralco S3 bulletins or custom advisory news links.</p>
                                 <div class="flex flex-col gap-2">
-                                    <label for="manualRateUrlInput" class="text-[11px] font-medium text-slate-300">News / Advisory / PDF URL:</label>
-                                    <input type="url" id="manualRateUrlInput" placeholder="https://company.meralco.com.ph/news-and-advisories/..." class="pf-input rounded-xl px-3 py-2 text-xs text-white" value="https://company.meralco.com.ph/news-and-advisories/higher-residential-rates-april-2026">
+                                    <label for="manualRateUrlInput" class="text-[11px] font-semibold t-secondary">News / Advisory / PDF URL:</label>
+                                    <input type="url" id="manualRateUrlInput" placeholder="https://company.meralco.com.ph/news-and-advisories/..." class="pf-input rounded-xl px-3 py-2 text-xs font-medium" value="https://company.meralco.com.ph/news-and-advisories/higher-residential-rates-april-2026">
                                     <div class="flex gap-2 pt-1">
-                                        <button id="manualFetchBtn" onclick="manualFetchMeralcoRates()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-1.5">
+                                        <button id="manualFetchBtn" onclick="manualFetchMeralcoRates()" class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5">
                                             <span>🔄</span> Fetch &amp; Apply Rate
                                         </button>
                                         <button onclick="fetchRates(true)" class="px-3.5 py-2.5 btn-secondary rounded-xl text-xs font-semibold" title="Fetch latest month PDF from Meralco S3">
@@ -2711,13 +2952,13 @@
             const estCard = document.getElementById('card-appliance-estimator');
 
             if (targetMode === 'bill') {
-                if (billBtn) billBtn.className = 'flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md';
-                if (estBtn) estBtn.className = 'flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+                if (billBtn) billBtn.classList.add('active');
+                if (estBtn) estBtn.classList.remove('active');
                 if (billCard) billCard.classList.remove('hidden');
                 if (estCard) estCard.classList.add('hidden');
             } else {
-                if (estBtn) estBtn.className = 'flex-1 py-2.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md';
-                if (billBtn) billBtn.className = 'flex-1 py-2.5 rounded-xl font-medium transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+                if (estBtn) estBtn.classList.add('active');
+                if (billBtn) billBtn.classList.remove('active');
                 if (estCard) estCard.classList.remove('hidden');
                 if (billCard) billCard.classList.add('hidden');
             }
@@ -3605,15 +3846,15 @@
                 // 2. Render in Appliances Module Rich Load Lists
                 appContainers.forEach(container => {
                     const appDiv = document.createElement('div');
-                    appDiv.className = 'flex justify-between items-center p-3 rounded-xl text-xs bg-slate-900/60 border border-indigo-500/20 hover:border-indigo-400/40 transition-all';
+                    appDiv.className = 'flex justify-between items-center p-3 rounded-2xl text-xs bento-sub-card transition-all shadow-sm';
 
-                    let badgeColor = 'bg-indigo-950 text-indigo-300 border-indigo-700/50';
+                    let badgeClass = 'bento-badge-category';
                     let sourceLabel = 'Certified';
                     if (item.source === 'ai_vision') {
-                        badgeColor = 'bg-amber-950/60 text-amber-300 border-amber-500/30';
+                        badgeClass = 'bento-badge-amber';
                         sourceLabel = 'AI Vision';
                     } else if (item.source === 'manual_entry') {
-                        badgeColor = 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30';
+                        badgeClass = 'bento-badge-rating';
                         sourceLabel = 'Manual';
                     }
 
@@ -3621,8 +3862,8 @@
                         <div class="flex flex-col gap-0.5">
                             <div class="flex items-center gap-2">
                                 <span class="font-extrabold t-primary text-xs">${item.name}</span>
-                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border ${badgeColor}">${sourceLabel}</span>
-                                ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 font-bold">×${item.qty} units</span>` : ''}
+                                <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${badgeClass}">${sourceLabel}</span>
+                                ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bento-badge-category font-bold">×${item.qty} units</span>` : ''}
                             </div>
                             <div class="flex items-center gap-2 text-[10px] t-muted">
                                 <span>⚡ ${item.watts}W</span>
@@ -3630,15 +3871,15 @@
                                 <span>⏱️ ${item.hours} hrs/day</span>
                                 <span>•</span>
                                 <span>📅 ${item.days || 30} days/mo</span>
-                                ${item.energy_rating ? `<span>• <span class="text-amber-400 font-semibold">${item.energy_rating}</span></span>` : ''}
+                                ${item.energy_rating ? `<span>• <span class="text-amber-500 dark:text-amber-400 font-semibold">${item.energy_rating}</span></span>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <div class="flex flex-col text-right">
-                                <span class="font-extrabold t-accent text-xs">${itemKwh.toFixed(2)} kWh</span>
-                                <span class="text-[10px] text-emerald-400 font-bold">₱${itemCost.toFixed(2)}</span>
+                                <span class="stat-val-kwh text-xs">${itemKwh.toFixed(2)} kWh</span>
+                                <span class="stat-val-cost text-[10px]">${itemCost ? `₱${itemCost.toFixed(2)}` : '₱0.00'}</span>
                             </div>
-                            <button onclick="removeHouseholdLoadItem(${item.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/30 transition-all" title="Remove Appliance">
+                            <button onclick="removeHouseholdLoadItem(${item.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Remove Appliance">
                                 🗑️
                             </button>
                         </div>
@@ -3941,11 +4182,9 @@
             aiState.currentPreset = presetKey;
             document.querySelectorAll('.ai-preset-btn').forEach(btn => {
                 if (btn.getAttribute('data-preset') === presetKey) {
-                    btn.classList.add('active', 'border-indigo-500/50', 'bg-indigo-900/40', 'text-white');
-                    btn.classList.remove('border-indigo-500/20', 'bg-indigo-950/20', 'text-slate-300');
+                    btn.classList.add('active');
                 } else {
-                    btn.classList.remove('active', 'border-indigo-500/50', 'bg-indigo-900/40', 'text-white');
-                    btn.classList.add('border-indigo-500/20', 'bg-indigo-950/20', 'text-slate-300');
+                    btn.classList.remove('active');
                 }
             });
         }
@@ -4370,18 +4609,15 @@
 
         function switchAiTab(tabName) {
             document.querySelectorAll('.ai-tab-btn').forEach(btn => {
-                btn.classList.remove('active', 'bg-indigo-600', 'text-white', 'shadow');
-                btn.classList.add('text-slate-400');
+                btn.classList.remove('active');
             });
             document.querySelectorAll('.ai-tab-pane').forEach(pane => pane.classList.add('hidden'));
 
             const targetBtn = document.getElementById('aiTabBtn-' + tabName);
             const targetPane = document.getElementById('aiPane-' + tabName);
-            if (targetBtn) targetBtn.classList.add('active', 'bg-indigo-600', 'text-white', 'shadow');
+            if (targetBtn) targetBtn.classList.add('active');
             if (targetPane) targetPane.classList.remove('hidden');
         }
-
-
 
         function toggleAiHistoryDrawer() {
             const drawer = document.getElementById('aiHistoryDrawer');
@@ -4415,7 +4651,7 @@
             list.innerHTML = '';
             aiState.history.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs flex flex-col gap-1 cursor-pointer hover:border-indigo-400';
+                div.className = 'bento-sub-card p-3.5 rounded-2xl text-xs flex flex-col gap-1.5 cursor-pointer';
                 div.onclick = () => {
                     renderAiResults({ analysis: item.analysis, preset: item.preset });
                     toggleAiHistoryDrawer();
@@ -4425,7 +4661,7 @@
                         <span>${item.name}</span>
                         <span class="text-[10px] t-muted">${item.timestamp}</span>
                     </div>
-                    <span class="text-[10px] t-accent font-semibold uppercase">${item.preset}</span>
+                    <span class="text-[10px] bento-badge-category w-fit px-2 py-0.5 rounded-full font-semibold uppercase">${item.preset}</span>
                 `;
                 list.appendChild(div);
             });
@@ -4481,57 +4717,6 @@
             showToast("Report Exported", "Downloaded technical spec sheet.", "success");
         }
 
-        // ===== Toast Notification System =====
-        function showToast(title, message, type = 'success') {
-            let container = document.getElementById('toastContainer');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'toastContainer';
-                container.className = 'fixed top-20 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full';
-                document.body.appendChild(container);
-            }
-
-            const toast = document.createElement('div');
-            toast.className = 'pointer-events-auto flex items-start gap-3 p-4 rounded-2xl text-xs text-white shadow-2xl backdrop-blur-xl border transition-all transform translate-y-2 opacity-0';
-
-            let icon = '⚡';
-            let bgClass = 'bg-slate-900/90 border-indigo-500/40 text-indigo-100';
-            if (type === 'success') {
-                icon = '✅';
-                bgClass = 'bg-slate-900/90 border-emerald-500/50 text-emerald-100';
-            } else if (type === 'warning') {
-                icon = '⚠️';
-                bgClass = 'bg-slate-900/90 border-amber-500/50 text-amber-100';
-            } else if (type === 'info') {
-                icon = 'ℹ️';
-                bgClass = 'bg-slate-900/90 border-blue-500/50 text-blue-100';
-            }
-
-            toast.style.cssText = 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);';
-            toast.className += ` ${bgClass}`;
-            toast.innerHTML = `
-                <span class="text-base">${icon}</span>
-                <div class="flex-1 flex flex-col gap-0.5">
-                    <span class="font-bold text-white text-xs">${title}</span>
-                    <span class="text-[11px] text-slate-300">${message}</span>
-                </div>
-            `;
-
-            container.appendChild(toast);
-
-            // Animate in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
-            });
-
-            // Animate out & remove after 3.5s
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-x-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        }
-
         // ===== Appliance View 3-Way Mode Switcher =====
         function switchApplianceMode(mode) {
             const btnVision = document.getElementById('applianceModeBtn-vision');
@@ -4542,12 +4727,9 @@
             const modePelp = document.getElementById('applianceMode-pelp');
             const modeManual = document.getElementById('applianceMode-manual');
 
-            const activeBtnClass = "px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-indigo-600 text-white shadow";
-            const inactiveBtnClass = "px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white";
-
-            if (btnVision) btnVision.className = (mode === 'vision') ? activeBtnClass : inactiveBtnClass;
-            if (btnPelp) btnPelp.className = (mode === 'pelp') ? activeBtnClass : inactiveBtnClass;
-            if (btnManual) btnManual.className = (mode === 'manual') ? activeBtnClass : inactiveBtnClass;
+            if (btnVision) btnVision.classList.toggle('active', mode === 'vision');
+            if (btnPelp) btnPelp.classList.toggle('active', mode === 'pelp');
+            if (btnManual) btnManual.classList.toggle('active', mode === 'manual');
 
             if (modeVision) modeVision.classList.toggle('hidden', mode !== 'vision');
             if (modePelp) modePelp.classList.toggle('hidden', mode !== 'pelp');
@@ -4718,32 +4900,32 @@
             listEl.innerHTML = '';
             pelpState.results.forEach((prod, index) => {
                 const itemDiv = document.createElement('div');
-                itemDiv.className = 'p-3.5 rounded-xl bg-slate-900/60 border border-indigo-500/20 hover:border-indigo-400 hover:bg-slate-900 transition-all cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow';
+                itemDiv.className = 'p-3.5 rounded-2xl bento-sub-card transition-all cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm';
                 itemDiv.onclick = () => selectPelpProduct(index);
 
                 let ratingBadge = '';
                 if (prod.energy_rating_type && prod.energy_rating_value) {
-                    ratingBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">⭐ ${prod.energy_rating_type}: ${prod.energy_rating_value}</span>`;
+                    ratingBadge = `<span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bento-badge-rating">⭐ ${prod.energy_rating_type}: ${prod.energy_rating_value}</span>`;
                 } else if (prod.star_rating) {
-                    ratingBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">⭐ ${prod.star_rating} Stars</span>`;
+                    ratingBadge = `<span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bento-badge-rating">⭐ ${prod.star_rating} Stars</span>`;
                 }
 
                 itemDiv.innerHTML = `
                     <div class="flex flex-col gap-1 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="font-extrabold t-primary text-xs">${prod.brand}</span>
-                            <span class="text-xs text-slate-300 font-semibold">${prod.model || prod.product_name}</span>
+                            <span class="text-xs t-secondary font-semibold">${prod.model || prod.product_name}</span>
                             ${ratingBadge}
                         </div>
                         <div class="flex flex-wrap items-center gap-2 text-[10px] t-muted">
-                            <span class="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 font-semibold border border-indigo-800/40">${prod.category_name}</span>
+                            <span class="px-2 py-0.5 rounded-lg bento-badge-category font-semibold">${prod.category_name}</span>
                             <span>•</span>
                             <span>⚡ <strong>${prod.power_watts > 0 ? prod.power_watts + ' W' : 'Standard Wattage'}</strong></span>
                             ${prod.monthly_kwh > 0 ? `<span>• 📊 <strong>${prod.monthly_kwh} kWh/mo (PELP Standard)</strong></span>` : ''}
                             ${prod.control_no ? `<span>• 🏷️ ${prod.control_no}</span>` : ''}
                         </div>
                     </div>
-                    <button class="px-3 py-1.5 rounded-lg btn-secondary text-xs font-semibold flex items-center gap-1 hover:bg-indigo-600 hover:text-white transition-all">
+                    <button class="px-3 py-1.5 rounded-lg btn-secondary text-xs font-semibold flex items-center gap-1 hover:btn-primary transition-all">
                         <span>Select</span> ➔
                     </button>
                 `;
