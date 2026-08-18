@@ -1329,13 +1329,24 @@
 
                             <div id="applianceSpecsPanel" class="flex flex-col gap-3.5 p-4 rounded-xl"
                                 style="background: var(--input-bg); border: 1px solid var(--input-border);">
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="t-muted font-medium">Standard Wattage</span>
-                                    <div class="flex items-center gap-1">
-                                        <input type="number" id="applianceWattsInput" value="0" min="1" step="1"
-                                            oninput="updateApplianceKwhCalculation()"
-                                            class="w-20 pf-input rounded px-2 py-1 text-right font-bold text-xs">
-                                        <span class="t-muted">Watts</span>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex flex-col gap-1 text-xs">
+                                        <span class="t-muted font-medium">Standard Wattage</span>
+                                        <div class="flex items-center gap-1">
+                                            <input type="number" id="applianceWattsInput" value="0" min="1" step="1"
+                                                oninput="updateApplianceKwhCalculation()"
+                                                class="w-full pf-input rounded-lg px-2.5 py-1.5 font-bold text-xs">
+                                            <span class="t-muted text-[10px] font-bold">W</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-1 text-xs">
+                                        <span class="t-muted font-medium">Quantity (Units)</span>
+                                        <div class="flex items-center gap-1">
+                                            <input type="number" id="applianceQtyInput" value="1" min="1" max="100" step="1"
+                                                oninput="updateApplianceKwhCalculation()"
+                                                class="w-full pf-input rounded-lg px-2.5 py-1.5 font-bold text-xs">
+                                            <span class="t-muted text-[10px] font-bold">qty</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -3562,9 +3573,9 @@
                 const other = parseFloat(document.getElementById('otherChargesInput')?.value || 0);
                 return kwh > 0 || other > 0;
             } else {
-                const loadCount = typeof householdLoadList !== 'undefined' ? householdLoadList.length : 0;
+                const calcCount = typeof calculatorLoadList !== 'undefined' ? calculatorLoadList.length : 0;
                 const estKwh = typeof updateApplianceKwhCalculation === 'function' ? updateApplianceKwhCalculation() : 0;
-                return loadCount > 0 || estKwh > 0;
+                return calcCount > 0 || estKwh > 0;
             }
         }
 
@@ -3578,10 +3589,12 @@
                 if (otherIn) otherIn.value = "0.00";
             }
             if (mode === 'estimator' || !mode) {
-                if (typeof householdLoadList !== 'undefined') householdLoadList = [];
-                if (typeof renderHouseholdLoadList === 'function') renderHouseholdLoadList();
+                calculatorLoadList = [];
+                if (typeof renderCalculationLoadList === 'function') renderCalculationLoadList();
                 const wattsIn = document.getElementById('applianceWattsInput');
                 if (wattsIn) wattsIn.value = 0;
+                const qtyIn = document.getElementById('applianceQtyInput');
+                if (qtyIn) qtyIn.value = 1;
                 const hoursSlider = document.getElementById('applianceHoursSlider');
                 if (hoursSlider) hoursSlider.value = 8;
                 const lblHours = document.getElementById('lblApplianceHours');
@@ -3603,20 +3616,11 @@
             if (typeof isGenerationRateManual !== 'undefined') isGenerationRateManual = false;
             if (typeof updateGenRateFromRates === 'function') updateGenRateFromRates();
             resetCalculatorInputs();
+            showToast("Calculator Reset", "Reset all bill and calculation inputs to zero.", "info");
         }
 
         function requestCalculatorModeSwitch(targetMode) {
-            if (targetMode === calculatorMode) return;
-
-            if (hasActiveCalculatorInputs()) {
-                pendingAction = { type: 'mode', target: targetMode };
-                showConfirmModal(
-                    "Clear Inputs & Switch Mode?",
-                    `Switching to ${targetMode === 'estimator' ? 'Appliance Energy Estimator' : 'Bill Parameters'} mode will clear your current inputs to avoid calculation conflicts. Are you sure you want to proceed?`
-                );
-            } else {
-                executeCalculatorModeSwitch(targetMode);
-            }
+            executeCalculatorModeSwitch(targetMode);
         }
 
         function executeCalculatorModeSwitch(targetMode) {
@@ -3644,14 +3648,6 @@
 
         // ===== View Panel Switcher =====
         function switchView(viewName) {
-            if (currentViewName === 'calculator' && viewName !== 'calculator' && hasActiveCalculatorInputs()) {
-                pendingAction = { type: 'view', target: viewName };
-                showConfirmModal(
-                    "Confirm Navigation",
-                    "Leaving the Calculator view will clear your active inputs to prevent calculation conflicts. Do you want to proceed?"
-                );
-                return;
-            }
             executeSwitchView(viewName);
         }
 
@@ -4363,10 +4359,11 @@
 
         function updateApplianceKwhCalculation() {
             const watts = parseFloat(document.getElementById('applianceWattsInput')?.value || 0);
+            const qty = parseInt(document.getElementById('applianceQtyInput')?.value || 1, 10) || 1;
             const hours = parseFloat(document.getElementById('applianceHoursSlider')?.value || 0);
             const days = parseFloat(document.getElementById('applianceDaysSlider')?.value || 0);
 
-            const estKwh = (watts * hours * days) / 1000;
+            const estKwh = (watts * qty * hours * days) / 1000.0;
             const kwhLbl = document.getElementById('applianceEstKwh');
             if (kwhLbl) kwhLbl.textContent = estKwh.toFixed(2);
             return estKwh;
@@ -4375,7 +4372,8 @@
         function applyApplianceAsKwh() {
             const estKwh = updateApplianceKwhCalculation();
             syncKwhInput(Math.round(estKwh));
-            switchView('calculator');
+            executeCalculatorModeSwitch('bill');
+            showToast("Applied to Bill", `Applied ${Math.round(estKwh)} kWh to Monthly Bill Parameters!`, "success");
         }
 
         // ===== Appliance Catalog & Load Estimator & Supabase DB Sync =====
@@ -4545,16 +4543,18 @@
 
             const appName = appSelect.options[appSelect.selectedIndex].text.replace(/^⚡ \[My Inventory\] /, '').split(' (')[0];
             const watts = parseFloat(document.getElementById('applianceWattsInput')?.value || 0);
+            const qty = parseInt(document.getElementById('applianceQtyInput')?.value || 1, 10) || 1;
             const hours = parseFloat(document.getElementById('applianceHoursSlider')?.value || 0);
             const days = parseFloat(document.getElementById('applianceDaysSlider')?.value || 0);
 
-            const kwh = (watts * hours * days) / 1000.0;
+            const kwh = (watts * qty * hours * days) / 1000.0;
 
             const item = {
                 id: 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                name: appName,
+                name: qty > 1 ? `${appName} (×${qty})` : appName,
                 category: document.getElementById('applianceCategorySelect')?.value || 'General',
                 watts: watts,
+                qty: qty,
                 hours: hours,
                 days: days,
                 kwh: kwh
