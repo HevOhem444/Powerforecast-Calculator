@@ -2890,7 +2890,7 @@
 
                 </div>
 
-                <!-- BENTO BLOCK SETTINGS MODAL (Two-Tier Architecture: Live Today vs. Recurring Routines) -->
+                <!-- BENTO BLOCK SETTINGS MODAL (3-Tier Architecture: Today, Routine, Queue) -->
                 <div id="bentoSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
                     <div class="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl flex flex-col gap-4 scale-95 transition-transform duration-200">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -2908,15 +2908,19 @@
                             </button>
                         </div>
 
-                        <!-- 2-Tier Segmented Switcher (Today's Live Session vs. Recurring Routine Rule) -->
-                        <div id="bentoModalTabContainer" class="grid grid-cols-2 p-1 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs font-bold">
+                        <!-- 3-Tier Segmented Switcher (Today's Live Session vs. Recurring Routine Rule vs. Manage Queue) -->
+                        <div id="bentoModalTabContainer" class="grid grid-cols-3 p-1 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs font-bold gap-1">
                             <button id="bentoTabBtnLive" type="button" onclick="switchBentoModalTab('live')" class="py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow">
                                 <span>🟢</span>
-                                <span id="bentoTabLabelLive">Today's Session</span>
+                                <span id="bentoTabLabelLive">Today</span>
                             </button>
                             <button id="bentoTabBtnRoutine" type="button" onclick="switchBentoModalTab('routine')" class="py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
                                 <span>🔄</span>
-                                <span>Automation Routine</span>
+                                <span>Routine</span>
+                            </button>
+                            <button id="bentoTabBtnQueue" type="button" onclick="switchBentoModalTab('queue')" class="py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+                                <span>📋</span>
+                                <span id="bentoTabLabelQueue">Queue (0)</span>
                             </button>
                         </div>
 
@@ -2992,7 +2996,7 @@
                         </div>
 
                         <!-- TAB 2: Recurring Automation Routine Scheduler View -->
-                        <div id="bentoTabContentRoutine" class="hidden flex flex-col gap-3.5 text-xs">
+                        <div id="bentoTabContentRoutine" class="hidden flex flex-col gap-3 text-xs">
                             <!-- Auto ON/OFF Feature -->
                             <div class="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">
                                 <div class="flex flex-col gap-0.5">
@@ -3006,6 +3010,25 @@
                                     <input id="bentoSettingAutoPower" type="checkbox" class="sr-only peer" checked>
                                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
+                            </div>
+
+                            <!-- Starting Day / Date Picker (Today, Tomorrow, Custom Pick) -->
+                            <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-white flex items-center gap-1.5">
+                                        <span>📅</span>
+                                        <span>Starting Day / Effective From</span>
+                                    </span>
+                                    <span id="bentoRoutineDateBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                        Tomorrow
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5 pt-0.5">
+                                    <button type="button" onclick="setRoutineQuickStart('today')" id="btnQuickStart_today" class="py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Today</button>
+                                    <button type="button" onclick="setRoutineQuickStart('tomorrow')" id="btnQuickStart_tomorrow" class="py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow">Tomorrow</button>
+                                    <button type="button" onclick="setRoutineQuickStart('custom')" id="btnQuickStart_custom" class="py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Pick Date</button>
+                                </div>
+                                <input id="bentoRoutineStartDateInput" type="date" class="hidden pf-input rounded-xl px-3 py-2 text-xs font-bold text-white w-full mt-1 cursor-pointer" onchange="onRoutineStartDateInputChange()">
                             </div>
 
                             <!-- Regular Planned Time Range -->
@@ -3039,7 +3062,7 @@
                                     <span>Recurring Frequency</span>
                                 </span>
                                 <select id="bentoSettingRepeat" class="pf-input rounded-xl px-3 py-2.5 text-xs font-semibold text-white" onchange="onRecurrenceModeChange()">
-                                    <option value="once">Once (Active Day Only)</option>
+                                    <option value="once">Once (On Starting Day Only)</option>
                                     <option value="daily">🔄 Everyday (All 7 Days)</option>
                                     <option value="weekdays">💼 Weekdays (Mon - Fri)</option>
                                     <option value="weekends">🏖️ Weekends (Sat - Sun)</option>
@@ -3057,6 +3080,29 @@
                                     <button type="button" onclick="toggleCustomDay('sat')" id="dayPill_sat" class="py-1 rounded-lg text-[10px] font-bold border border-slate-700 text-slate-400 hover:border-indigo-400">Sat</button>
                                     <button type="button" onclick="toggleCustomDay('sun')" id="dayPill_sun" class="py-1 rounded-lg text-[10px] font-bold border border-slate-700 text-slate-400 hover:border-indigo-400">Sun</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: Schedule Queue Manager (Future Schedules List & Bulk/1-by-1 Delete) -->
+                        <div id="bentoTabContentQueue" class="hidden flex flex-col gap-3 text-xs">
+                            <div class="flex items-center justify-between px-1 pb-1.5 border-b border-slate-800">
+                                <label class="flex items-center gap-2 cursor-pointer text-slate-300 font-bold">
+                                    <input id="bentoQueueSelectAllCb" type="checkbox" onchange="toggleQueueSelectAll(this.checked)" class="rounded border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer">
+                                    <span>Select All (<span id="bentoQueueSelectedCount">0</span>)</span>
+                                </label>
+                                <div class="flex items-center gap-2">
+                                    <button id="bentoQueueDeleteSelectedBtn" type="button" onclick="deleteSelectedQueueItems()" class="hidden px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold transition-all shadow cursor-pointer">
+                                        🗑️ Delete Selected
+                                    </button>
+                                    <button id="bentoQueueClearAllBtn" type="button" onclick="clearAllApplianceQueue()" class="px-2.5 py-1 rounded-lg border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-[11px] font-bold transition-all cursor-pointer">
+                                        🗑️ Clear All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Scrollable Schedule List Container -->
+                            <div id="bentoQueueListContainer" class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                                <!-- Populated dynamically by renderBentoQueueList() -->
                             </div>
                         </div>
 
@@ -7653,41 +7699,248 @@
             renderCalendarApplianceSwitches();
         }
 
-        // ===== BENTO BLOCK SETTINGS MODAL HANDLERS (Two-Tier Architecture) =====
+        // ===== BENTO BLOCK SETTINGS MODAL HANDLERS (3-Tier Architecture: Today, Routine, Queue) =====
         let activeEditingBlockId = null;
         let activeEditingApplianceId = null;
-        let currentBentoTab = 'live'; // 'live' | 'routine'
+        let currentBentoTab = 'routine'; // 'live' | 'routine' | 'queue'
         let customSelectedDays = new Set(['mon', 'wed', 'fri']);
+        let routineStartingDateStr = '';
+
+        function getTomorrowDateString() {
+            const tom = new Date();
+            tom.setDate(tom.getDate() + 1);
+            return `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+        }
+
+        function setRoutineQuickStart(mode) {
+            const btnToday = document.getElementById('btnQuickStart_today');
+            const btnTomorrow = document.getElementById('btnQuickStart_tomorrow');
+            const btnCustom = document.getElementById('btnQuickStart_custom');
+            const dateInput = document.getElementById('bentoRoutineStartDateInput');
+            const badge = document.getElementById('bentoRoutineDateBadge');
+
+            const todayStr = getTodayDateString();
+            const tomorrowStr = getTomorrowDateString();
+
+            if (mode === 'today') {
+                routineStartingDateStr = todayStr;
+                if (btnToday) btnToday.className = 'py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
+                if (btnTomorrow) btnTomorrow.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (btnCustom) btnCustom.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (dateInput) dateInput.classList.add('hidden');
+                if (badge) badge.textContent = 'Today';
+            } else if (mode === 'tomorrow') {
+                routineStartingDateStr = tomorrowStr;
+                if (btnToday) btnToday.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (btnTomorrow) btnTomorrow.className = 'py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
+                if (btnCustom) btnCustom.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (dateInput) dateInput.classList.add('hidden');
+                if (badge) badge.textContent = 'Tomorrow';
+            } else {
+                if (btnToday) btnToday.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (btnTomorrow) btnTomorrow.className = 'py-1.5 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+                if (btnCustom) btnCustom.className = 'py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
+                if (dateInput) {
+                    dateInput.min = todayStr;
+                    if (!dateInput.value) dateInput.value = tomorrowStr;
+                    dateInput.classList.remove('hidden');
+                    routineStartingDateStr = dateInput.value;
+                }
+                onRoutineStartDateInputChange();
+            }
+        }
+
+        function onRoutineStartDateInputChange() {
+            const dateInput = document.getElementById('bentoRoutineStartDateInput');
+            const badge = document.getElementById('bentoRoutineDateBadge');
+            if (!dateInput || !dateInput.value) return;
+
+            routineStartingDateStr = dateInput.value;
+            const [y, m, d] = dateInput.value.split('-').map(Number);
+            const targetDate = new Date(y, m - 1, d);
+            const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            if (badge) {
+                badge.textContent = `${daysShort[targetDate.getDay()]}, ${monthsShort[targetDate.getMonth()]} ${d}`;
+            }
+        }
 
         function switchBentoModalTab(tab) {
             currentBentoTab = tab;
             const btnLive = document.getElementById('bentoTabBtnLive');
             const btnRoutine = document.getElementById('bentoTabBtnRoutine');
+            const btnQueue = document.getElementById('bentoTabBtnQueue');
             const contentLive = document.getElementById('bentoTabContentLive');
             const contentRoutine = document.getElementById('bentoTabContentRoutine');
+            const contentQueue = document.getElementById('bentoTabContentQueue');
             const saveBtn = document.getElementById('bentoSaveBtn');
+            const delSingleBtn = document.getElementById('bentoDeleteSingleBtn');
+            const delSeriesBtn = document.getElementById('bentoDeleteSeriesBtn');
+
+            // Reset tab styles
+            [btnLive, btnRoutine, btnQueue].forEach(btn => {
+                if (btn) btn.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
+            });
+            [contentLive, contentRoutine, contentQueue].forEach(c => {
+                if (c) c.classList.add('hidden');
+            });
 
             if (tab === 'live') {
-                if (btnLive) {
-                    btnLive.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
-                }
-                if (btnRoutine) {
-                    btnRoutine.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
-                }
+                if (btnLive) btnLive.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
                 if (contentLive) contentLive.classList.remove('hidden');
-                if (contentRoutine) contentRoutine.classList.add('hidden');
-                if (saveBtn) saveBtn.textContent = 'Save Today\'s End Time';
-            } else {
-                if (btnLive) {
-                    btnLive.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
+                if (saveBtn) {
+                    saveBtn.classList.remove('hidden');
+                    saveBtn.textContent = 'Save Today\'s End Time';
                 }
-                if (btnRoutine) {
-                    btnRoutine.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
-                }
-                if (contentLive) contentLive.classList.add('hidden');
+                if (delSingleBtn) delSingleBtn.classList.add('hidden');
+                if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
+            } else if (tab === 'routine') {
+                if (btnRoutine) btnRoutine.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
                 if (contentRoutine) contentRoutine.classList.remove('hidden');
-                if (saveBtn) saveBtn.textContent = 'Save Routine Rule';
+                if (saveBtn) {
+                    saveBtn.classList.remove('hidden');
+                    saveBtn.textContent = 'Save Routine Rule';
+                }
+                if (delSingleBtn) delSingleBtn.classList.add('hidden');
+                if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
+            } else if (tab === 'queue') {
+                if (btnQueue) btnQueue.className = 'py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
+                if (contentQueue) contentQueue.classList.remove('hidden');
+                if (saveBtn) saveBtn.classList.add('hidden');
+                if (delSingleBtn) delSingleBtn.classList.add('hidden');
+                if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
+                renderBentoQueueList();
             }
+        }
+
+        function renderBentoQueueList() {
+            const container = document.getElementById('bentoQueueListContainer');
+            const queueTabBadge = document.getElementById('bentoTabLabelQueue');
+            const selectAllCb = document.getElementById('bentoQueueSelectAllCb');
+            const selCountEl = document.getElementById('bentoQueueSelectedCount');
+            const delSelBtn = document.getElementById('bentoQueueDeleteSelectedBtn');
+
+            if (selectAllCb) selectAllCb.checked = false;
+            if (selCountEl) selCountEl.textContent = '0';
+            if (delSelBtn) delSelBtn.classList.add('hidden');
+
+            const appId = activeEditingApplianceId;
+            if (!appId || !container) return;
+
+            const matchingBlocks = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(appId));
+            if (queueTabBadge) queueTabBadge.textContent = `Queue (${matchingBlocks.length})`;
+
+            if (matchingBlocks.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center flex flex-col items-center justify-center gap-2 text-slate-500">
+                        <span class="text-3xl">✨</span>
+                        <p class="font-bold text-xs">No scheduled routines found for this appliance.</p>
+                        <span class="text-[11px]">Use the Routine tab to create your first automation rule.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const item = householdLoadList.find(a => String(a.id) === String(appId));
+            const watts = item ? (item.watts * (item.qty || 1)) : 1000;
+            const totalRate = getEffectiveCalendarRate();
+            const daysFull = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+
+            let html = '';
+            matchingBlocks.forEach(b => {
+                const startStr = formatHour(b.startHour);
+                const endH = (b.startHour + b.durationHours) % 24;
+                const endStr = formatHour(endH);
+                const estCost = (watts * b.durationHours / 1000.0) * totalRate;
+                const dayLabel = daysFull[b.dayKey] || b.dayKey.toUpperCase();
+                const freqBadge = b.repeat === 'daily' ? '🔄 Everyday' : (b.repeat === 'weekdays' ? '💼 Weekdays' : (b.repeat === 'weekends' ? '🏖️ Weekends' : 'Single'));
+
+                html += `
+                    <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 hover:border-indigo-500/40 transition-all flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" data-id="${b.id}" class="bento-queue-cb rounded border-slate-700 text-indigo-600 focus:ring-0 cursor-pointer" onchange="onQueueItemCheckboxChange()">
+                            <div class="flex flex-col gap-0.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-white text-xs">${dayLabel}</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${freqBadge}</span>
+                                </div>
+                                <span class="text-[11px] text-slate-400">${startStr} – ${endStr} • <strong class="text-amber-400">${b.durationHours.toFixed(1)} hrs</strong></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-extrabold text-xs text-emerald-400">₱${estCost.toFixed(2)}</span>
+                            <button type="button" onclick="deleteSingleQueueItem('${b.id}')" class="p-1.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-600/30 transition-all text-xs" title="Delete this schedule">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function onQueueItemCheckboxChange() {
+            const checkboxes = document.querySelectorAll('.bento-queue-cb:checked');
+            const totalCbs = document.querySelectorAll('.bento-queue-cb');
+            const selCountEl = document.getElementById('bentoQueueSelectedCount');
+            const delSelBtn = document.getElementById('bentoQueueDeleteSelectedBtn');
+            const selectAllCb = document.getElementById('bentoQueueSelectAllCb');
+
+            const count = checkboxes.length;
+            if (selCountEl) selCountEl.textContent = String(count);
+            if (delSelBtn) delSelBtn.classList.toggle('hidden', count === 0);
+            if (selectAllCb) selectAllCb.checked = (count === totalCbs.length && totalCbs.length > 0);
+        }
+
+        function toggleQueueSelectAll(checked) {
+            const checkboxes = document.querySelectorAll('.bento-queue-cb');
+            checkboxes.forEach(cb => cb.checked = checked);
+            onQueueItemCheckboxChange();
+        }
+
+        function deleteSingleQueueItem(blockId) {
+            deleteCalendarBlock(blockId, false);
+            renderBentoQueueList();
+            renderCalendarBlocks();
+            renderCalendarApplianceSwitches();
+            showToast("Schedule Deleted", "Removed schedule from the appliance queue.", "info");
+        }
+
+        function deleteSelectedQueueItems() {
+            const checkboxes = document.querySelectorAll('.bento-queue-cb:checked');
+            if (checkboxes.length === 0) return;
+
+            const idsToDelete = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+            idsToDelete.forEach(id => {
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== id);
+                dbDeleteCalendarEvent(id);
+            });
+
+            saveCalendarBlocks();
+            renderBentoQueueList();
+            renderCalendarBlocks();
+            renderCalendarApplianceSwitches();
+            showToast("Schedules Deleted", `Removed ${idsToDelete.length} selected schedule(s).`, "success");
+        }
+
+        function clearAllApplianceQueue() {
+            const appId = activeEditingApplianceId;
+            if (!appId) return;
+
+            const matching = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(appId));
+            if (matching.length === 0) return;
+
+            matching.forEach(b => {
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(x => x.id !== b.id);
+                dbDeleteCalendarEvent(b.id);
+            });
+
+            saveCalendarBlocks();
+            renderBentoQueueList();
+            renderCalendarBlocks();
+            renderCalendarApplianceSwitches();
+            showToast("Queue Cleared", `Cleared all ${matching.length} scheduled routines for this appliance.`, "info");
         }
 
         function onRecurrenceModeChange() {
@@ -7812,6 +8065,14 @@
 
             if (titleEl) titleEl.textContent = `${item ? item.name : 'Appliance'} Control & Schedule`;
             if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Appliance Settings'}`;
+
+            // Initialize default starting day to tomorrow
+            setRoutineQuickStart('tomorrow');
+
+            // Update queue count badge
+            const matchingCount = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(activeEditingApplianceId)).length;
+            const queueTabBadge = document.getElementById('bentoTabLabelQueue');
+            if (queueTabBadge) queueTabBadge.textContent = `Queue (${matchingCount})`;
 
             if (temporalStatus === 'past' || receiptData) {
                 // 1. PAST HISTORICAL RECEIPT
@@ -8039,7 +8300,13 @@
             const autoPower = Boolean(autoPowerCb && autoPowerCb.checked);
             const appId = block ? block.applianceId : activeEditingApplianceId;
 
-            // Target Days Calculation
+            // Target Starting Date & Days Calculation
+            const startDayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const startingDateStr = routineStartingDateStr || getTomorrowDateString();
+            const [sy, smon, sd] = startingDateStr.split('-').map(Number);
+            const startingDate = new Date(sy, smon - 1, sd);
+            const startingDayKey = startDayMap[startingDate.getDay()];
+
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
             if (repeatMode === 'daily') targetDays = weekDayKeys;
@@ -8047,7 +8314,7 @@
             else if (repeatMode === 'weekends') targetDays = ['sat', 'sun'];
             else if (repeatMode === 'every_other_day') targetDays = ['mon', 'wed', 'fri', 'sun'];
             else if (repeatMode === 'custom') targetDays = Array.from(customSelectedDays);
-            else targetDays = [calendarState.selectedDayKey];
+            else targetDays = [startingDayKey];
 
             // Apply across target days
             targetDays.forEach(day => {
@@ -8068,7 +8335,7 @@
                         id: 'blk_' + Date.now() + '_' + day,
                         applianceId: appId,
                         dayKey: day,
-                        dayNum: calendarState.selectedDay,
+                        dayNum: sd,
                         startHour: startVal,
                         durationHours: duration,
                         autoPower: autoPower,
@@ -8084,19 +8351,7 @@
             renderCalendarBlocks();
             renderCalendarApplianceSwitches();
             closeBentoSettingsModal();
-            showToast("Routine Saved", `Automation schedule saved (${repeatMode.toUpperCase()}) across ${targetDays.length} days!`, "success");
-        }
-
-        function deleteCurrentBentoBlockFromModal(deleteAllSeries = false) {
-            let blockId = activeEditingBlockId;
-            if (!blockId && activeEditingApplianceId) {
-                const block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
-                if (block) blockId = block.id;
-            }
-            if (blockId) {
-                deleteCalendarBlock(blockId, deleteAllSeries);
-            }
-            closeBentoSettingsModal();
+            showToast("Routine Saved", `Automation schedule active from ${startingDateStr} across ${targetDays.length} days!`, "success");
         }
 
         function deleteCurrentBentoBlockFromModal(deleteAllSeries = false) {
