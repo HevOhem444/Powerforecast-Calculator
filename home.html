@@ -6763,11 +6763,22 @@
         function updateLiveEnergyMonitor() {
             let totalActiveWatts = 0;
             let activeCount = 0;
+            const now = Date.now();
 
             householdLoadList.forEach(item => {
                 if (item.is_currently_on) {
                     totalActiveWatts += (item.watts || 0) * (item.qty || 1);
                     activeCount++;
+                }
+            });
+
+            // Clean up expired switch cooldowns continuously
+            let hasActiveCooldowns = false;
+            Object.keys(applianceSwitchCooldowns).forEach(id => {
+                if (applianceSwitchCooldowns[id] <= now) {
+                    delete applianceSwitchCooldowns[id];
+                } else {
+                    hasActiveCooldowns = true;
                 }
             });
 
@@ -6785,7 +6796,7 @@
 
             const calView = document.getElementById('view-calendar');
             if (calView && !calView.classList.contains('hidden')) {
-                if (activeCount > 0) {
+                if (activeCount > 0 || hasActiveCooldowns) {
                     renderCalendarApplianceSwitches();
                 }
             }
@@ -6816,18 +6827,36 @@
             // Apply Toggle State
             item.is_currently_on = willTurnOn;
             item.manual_override_until = now + 60000; // 1-minute automation debounce
+            
+            let isQuickMicroToggle = false;
             if (willTurnOn) {
                 item.last_turned_on_at = endedAt;
             } else if (startedAt) {
-                // Precision Second-Level Cutoff for current calendar block!
-                const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
-                const durationHours = elapsedMs / 3600000.0;
+                const elapsedMs = Math.max(0, now - new Date(startedAt).getTime());
+                const elapsedSeconds = elapsedMs / 1000.0;
                 
-                // Find active block for this appliance on today's calendar and truncate cleanly
-                const activeBlock = calendarScheduledBlocks.find(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey);
-                if (activeBlock) {
-                    activeBlock.durationHours = Math.max(0.01, durationHours);
-                    saveCalendarBlocks();
+                // If stopped within 30 seconds -> Treat as accidental click / test toggle!
+                if (elapsedSeconds < 30) {
+                    isQuickMicroToggle = true;
+                    // Clean up any ephemeral block created on today's calendar for this immediate run
+                    const activeBlockIdx = calendarScheduledBlocks.findIndex(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey && b.id.startsWith('blk_'));
+                    if (activeBlockIdx !== -1) {
+                        const blk = calendarScheduledBlocks[activeBlockIdx];
+                        if (blk.repeat === 'once' && blk.durationHours <= 1.0) {
+                            calendarScheduledBlocks.splice(activeBlockIdx, 1);
+                            dbDeleteCalendarEvent(blk.id);
+                            saveCalendarBlocks();
+                        }
+                    }
+                    showToast("Quick Toggle (<30s)", "Discarded test toggle. Slot is clear.", "info");
+                } else {
+                    // Normal valid session >= 30 seconds
+                    const durationHours = elapsedMs / 3600000.0;
+                    const activeBlock = calendarScheduledBlocks.find(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey);
+                    if (activeBlock) {
+                        activeBlock.durationHours = durationHours;
+                        saveCalendarBlocks();
+                    }
                 }
             }
 
@@ -6854,9 +6883,9 @@
                         .eq('id', item.id)
                         .eq('user_id', session.user.id);
 
-                    // If turning OFF, log complete usage session to appliance_usage_logs with seconds precision
-                    if (!willTurnOn && startedAt) {
-                        const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
+                    // If turning OFF and NOT a micro-toggle (<30s), log usage session
+                    if (!willTurnOn && startedAt && !isQuickMicroToggle) {
+                        const elapsedMs = Math.max(30000, now - new Date(startedAt).getTime());
                         const durationMinutes = elapsedMs / 60000.0;
                         const genInput = document.getElementById('genRateInput');
                         const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
@@ -6864,9 +6893,7 @@
                         const estCost = kwhConsumed * (genRate + 3.5);
                         const isPeak = isPeakHour(new Date().getHours());
 
-                        if (durationMinutes >= 0.01) {
-                            await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
-                        }
+                        await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
                     }
                 }
             } catch (e) {
