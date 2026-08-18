@@ -578,6 +578,10 @@
             opacity: 0.85;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         /* Keyframes */
         @keyframes fadeSlideUp {
             from {
@@ -705,127 +709,130 @@
         <!-- Signup Card Container -->
         <div class="signup-card-container">
             <div class="signup-card" id="signup-card">
-                <h1 class="card-title">Create Account</h1>
+                <!-- Registration Form State -->
+                <div id="signup-form-state">
+                    <h1 class="card-title">Create Account</h1>
 
-                <!-- Google Sign Up -->
-                <button class="google-btn" id="google-signup-btn" type="button">
-                    <svg width="22" height="22" viewBox="0 0 48 48">
-                        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-                        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
-                        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-                        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
-                    </svg>
-                    Google
-                </button>
-
-                <!-- Divider -->
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <span class="divider-text">or</span>
-                    <div class="divider-line"></div>
-                </div>
-
-                <!-- Full Name -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    <input type="text" id="fullname-input" placeholder="Full Name" autocomplete="name">
-                </div>
-
-                <!-- Email -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="4" width="20" height="16" rx="2"/>
-                        <path d="M22 4L12 13L2 4"/>
-                    </svg>
-                    <input type="email" id="email-input" placeholder="Email" autocomplete="email">
-                </div>
-
-                <!-- Password -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    <input type="password" id="password-input" placeholder="Password" autocomplete="new-password">
-                    <button type="button" class="password-toggle" id="password-toggle-1" aria-label="Toggle password visibility">
-                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
+                    <!-- Google Sign Up -->
+                    <button class="google-btn" id="google-signup-btn" type="button">
+                        <svg width="22" height="22" viewBox="0 0 48 48">
+                            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
+                            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                         </svg>
-                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                            <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
+                        Google
                     </button>
-                </div>
 
-                <!-- Confirm Password -->
-                <div class="input-group">
-                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    <input type="password" id="confirm-password-input" placeholder="Confirm Password" autocomplete="new-password">
-                    <button type="button" class="password-toggle" id="password-toggle-2" aria-label="Toggle confirm password visibility">
-                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                            <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                            <line x1="1" y1="1" x2="23" y2="23"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Password match hint -->
-                <p class="password-hint hidden" id="password-hint">Passwords match</p>
-
-                <!-- Terms & Conditions -->
-                <div class="terms-check">
-                    <input type="checkbox" id="terms-checkbox">
-                    <label for="terms-checkbox">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-                </div>
-
-                <!-- Sign Up Button -->
-                <button class="signup-btn" id="signup-btn" type="button">Sign Up</button>
-
-                <!-- Login redirect -->
-                <p class="login-text">Already have an account? <a href="login.html" id="login-link">Log in</a></p>
-            </div>
-
-            <!-- Registration Success & Email Confirmation State -->
-            <div class="signup-card hidden" id="signup-success-card" style="margin: 0 auto; text-align: center;">
-                <div class="lock-icon-wrapper">
-                    <div class="lock-icon-circle" style="background: rgba(81, 207, 102, 0.15); border-color: rgba(81, 207, 102, 0.3); color: #51cf66;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
+                    <!-- Divider -->
+                    <div class="divider">
+                        <div class="divider-line"></div>
+                        <span class="divider-text">or</span>
+                        <div class="divider-line"></div>
                     </div>
-                </div>
 
-                <h1 class="card-title">Account Created! 🎉</h1>
-                <p class="card-subtitle">Welcome to PowerForecast, <strong id="registered-name" style="color:var(--card-title-color);"></strong>!<br>A confirmation email has been dispatched to <strong id="registered-email" style="color:#f7b02c;"></strong>.</p>
-
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin: 16px 0; text-align: left; font-size: 0.85rem; color: var(--card-text-secondary); line-height: 1.5;">
-                    <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 6px; font-weight:700; color:var(--card-title-color);">
-                        <span>📩</span> Email Confirmation
+                    <!-- Full Name -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input type="text" id="fullname-input" placeholder="Full Name" autocomplete="name">
                     </div>
-                    Please check your inbox to confirm your account, or proceed to log in directly.
+
+                    <!-- Email -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <path d="M22 4L12 13L2 4"/>
+                        </svg>
+                        <input type="email" id="email-input" placeholder="Email" autocomplete="email">
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password-input" placeholder="Password (min. 8 chars, 0-9, special)" autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="password-toggle-1" aria-label="Toggle password visibility">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="confirm-password-input" placeholder="Confirm Password" autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="password-toggle-2" aria-label="Toggle confirm password visibility">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Password match hint -->
+                    <p class="password-hint hidden" id="password-hint">Passwords match</p>
+
+                    <!-- Terms & Conditions -->
+                    <div class="terms-check">
+                        <input type="checkbox" id="terms-checkbox">
+                        <label for="terms-checkbox">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                    </div>
+
+                    <!-- Sign Up Button -->
+                    <button class="signup-btn" id="signup-btn" type="button">Sign Up</button>
+
+                    <!-- Login redirect -->
+                    <p class="login-text">Already have an account? <a href="login.html" id="login-link">Log in</a></p>
                 </div>
 
-                <a href="login.html" class="submit-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Proceed to Login 🚀</a>
+                <!-- Registration Success & Email Confirmation State (Hidden initially) -->
+                <div class="hidden" id="signup-success-state" style="text-align: center;">
+                    <div class="lock-icon-wrapper">
+                        <div class="lock-icon-circle" style="background: rgba(81, 207, 102, 0.15); border-color: rgba(81, 207, 102, 0.3); color: #51cf66;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                    </div>
 
-                <p style="font-size: 0.85rem; color: var(--card-text-secondary); margin-top: 14px;">
-                    Didn't get the email? <button id="resend-signup-email-btn" type="button" style="color:#f7b02c; font-weight:700; background:none; border:none; cursor:pointer; text-decoration:underline;">Resend Email</button>
-                </p>
+                    <h1 class="card-title">Account Created! 🎉</h1>
+                    <p class="card-subtitle">Welcome to PowerForecast, <strong id="registered-name" style="color:var(--card-title-color);"></strong>!<br>A confirmation email has been dispatched to <strong id="registered-email" style="color:#f7b02c;"></strong>.</p>
+
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin: 16px 0; text-align: left; font-size: 0.85rem; color: var(--card-text-secondary); line-height: 1.5;">
+                        <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 6px; font-weight:700; color:var(--card-title-color);">
+                            <span>📩</span> Email Confirmation
+                        </div>
+                        Please check your inbox to confirm your account, or proceed to log in directly.
+                    </div>
+
+                    <a href="login.html" class="submit-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Proceed to Login 🚀</a>
+
+                    <p style="font-size: 0.85rem; color: var(--card-text-secondary); margin-top: 14px;">
+                        Didn't get the email? <button id="resend-signup-email-btn" type="button" style="color:#f7b02c; font-weight:700; background:none; border:none; cursor:pointer; text-decoration:underline;">Resend Email</button>
+                    </p>
+                </div>
             </div>
         </div>
     </main>
@@ -984,10 +991,9 @@
                 if (data.session) {
                     window.location.href = 'home.html';
                 } else {
-                    // Show confirmation email dispatched UI
-                    document.getElementById('signup-card').classList.add('hidden');
-                    const successCard = document.getElementById('signup-success-card');
-                    successCard.classList.remove('hidden');
+                    // Show confirmation email dispatched UI inside the single card
+                    document.getElementById('signup-form-state').classList.add('hidden');
+                    document.getElementById('signup-success-state').classList.remove('hidden');
                     document.getElementById('registered-name').textContent = fullname;
                     document.getElementById('registered-email').textContent = email;
                 }
