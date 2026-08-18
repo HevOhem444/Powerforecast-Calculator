@@ -937,9 +937,21 @@
                 return;
             }
 
-            if (password.length < 6) {
+            if (password.length < 8) {
                 triggerShake(card);
-                showError('Password must be at least 6 characters.');
+                showError('Password must be at least 8 characters long.');
+                return;
+            }
+
+            if (!/\d/.test(password)) {
+                triggerShake(card);
+                showError('Password must contain at least one number (0-9).');
+                return;
+            }
+
+            if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                triggerShake(card);
+                showError('Password must contain at least one special character (!@#$%...).');
                 return;
             }
 
