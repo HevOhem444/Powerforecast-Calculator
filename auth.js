@@ -195,7 +195,7 @@
         },
 
         /**
-         * Send Password Reset Email.
+         * Send Password Reset Email / OTP.
          */
         async resetPasswordForEmail(email) {
             const client = getSupabase();
@@ -212,7 +212,47 @@
         },
 
         /**
-         * Update password for an authenticated session (e.g. from password reset link).
+         * Verify 6-digit OTP code or Recovery Token for password reset.
+         */
+        async verifyRecoveryOtp(email, token) {
+            const client = getSupabase();
+            if (!client) throw new Error('Supabase client unavailable.');
+
+            const cleanEmail = email.trim().toLowerCase();
+            const cleanToken = token.trim();
+
+            const { data, error } = await client.auth.verifyOtp({
+                email: cleanEmail,
+                token: cleanToken,
+                type: 'recovery'
+            });
+
+            if (error) throw error;
+            if (data?.user) {
+                setCachedUser(data.user);
+            }
+            return data;
+        },
+
+        /**
+         * Resend confirmation email for unconfirmed account.
+         */
+        async resendConfirmationEmail(email) {
+            const client = getSupabase();
+            if (!client) throw new Error('Supabase client unavailable.');
+
+            const cleanEmail = email.trim().toLowerCase();
+            const { data, error } = await client.auth.resend({
+                type: 'signup',
+                email: cleanEmail
+            });
+
+            if (error) throw error;
+            return data;
+        },
+
+        /**
+         * Update password for an authenticated session.
          */
         async updatePassword(newPassword) {
             const client = getSupabase();

@@ -800,6 +800,33 @@
                 <!-- Login redirect -->
                 <p class="login-text">Already have an account? <a href="login.html" id="login-link">Log in</a></p>
             </div>
+
+            <!-- Registration Success & Email Confirmation State -->
+            <div class="signup-card hidden" id="signup-success-card" style="margin: 0 auto; text-align: center;">
+                <div class="lock-icon-wrapper">
+                    <div class="lock-icon-circle" style="background: rgba(81, 207, 102, 0.15); border-color: rgba(81, 207, 102, 0.3); color: #51cf66;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <h1 class="card-title">Account Created! 🎉</h1>
+                <p class="card-subtitle">Welcome to PowerForecast, <strong id="registered-name" style="color:var(--card-title-color);"></strong>!<br>A confirmation email has been dispatched to <strong id="registered-email" style="color:#f7b02c;"></strong>.</p>
+
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin: 16px 0; text-align: left; font-size: 0.85rem; color: var(--card-text-secondary); line-height: 1.5;">
+                    <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 6px; font-weight:700; color:var(--card-title-color);">
+                        <span>📩</span> Email Confirmation
+                    </div>
+                    Please check your inbox to confirm your account, or proceed to log in directly.
+                </div>
+
+                <a href="login.html" class="submit-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Proceed to Login 🚀</a>
+
+                <p style="font-size: 0.85rem; color: var(--card-text-secondary); margin-top: 14px;">
+                    Didn't get the email? <button id="resend-signup-email-btn" type="button" style="color:#f7b02c; font-weight:700; background:none; border:none; cursor:pointer; text-decoration:underline;">Resend Email</button>
+                </p>
+            </div>
         </div>
     </main>
 
@@ -892,6 +919,8 @@
             });
         }
 
+        let registeredEmailForResend = '';
+
         // Sign Up button logic
         const signupBtn = document.getElementById('signup-btn');
         signupBtn.addEventListener('click', async () => {
@@ -937,15 +966,18 @@
                 const errEl = document.getElementById('signup-error');
                 if (errEl) errEl.remove();
 
-                // If user is auto-confirmed or session established
+                registeredEmailForResend = email;
+
+                // If user is auto-confirmed or session established directly
                 if (data.session) {
                     window.location.href = 'home.html';
                 } else {
-                    // Email confirmation sent or account created
-                    showSuccess('Account created! Please check your email to confirm your registration or log in now.');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2500);
+                    // Show confirmation email dispatched UI
+                    document.getElementById('signup-card').classList.add('hidden');
+                    const successCard = document.getElementById('signup-success-card');
+                    successCard.classList.remove('hidden');
+                    document.getElementById('registered-name').textContent = fullname;
+                    document.getElementById('registered-email').textContent = email;
                 }
             } catch (error) {
                 console.error('Signup error:', error);
@@ -958,6 +990,32 @@
             } finally {
                 signupBtn.disabled = false;
                 signupBtn.textContent = originalBtnText;
+            }
+        });
+
+        // Resend confirmation email handler
+        document.getElementById('resend-signup-email-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('resend-signup-email-btn');
+            if (!registeredEmailForResend) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                await PowerForecastAuth.resendConfirmationEmail(registeredEmailForResend);
+                btn.textContent = 'Email Resent ✓';
+                btn.style.color = '#51cf66';
+                setTimeout(() => {
+                    btn.textContent = 'Resend Email';
+                    btn.style.color = '#f7b02c';
+                    btn.disabled = false;
+                }, 10000);
+            } catch (e) {
+                btn.textContent = 'Failed to resend';
+                setTimeout(() => {
+                    btn.textContent = 'Resend Email';
+                    btn.disabled = false;
+                }, 3000);
             }
         });
 
