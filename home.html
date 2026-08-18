@@ -1730,6 +1730,62 @@
                                 </div>
 
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="manualPresetsGrid">
+                                    <!-- DOE PELP Preset Cards -->
+                                    <button type="button" onclick="selectManualPreset('Inverter Air Conditioner (1.0 HP)', 850, 8, 'Air Conditioners', '❄️')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">❄️</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">850 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">Air Conditioner</span>
+                                        <span class="text-[10px] t-muted">AC (PELP) • 8h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Two-Door Refrigerator (8 cu ft)', 120, 24, 'Refrigerators', '🧊')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🧊</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">120 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">Refrigerator</span>
+                                        <span class="text-[10px] t-muted">Ref (PELP) • 24h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Electric Stand Fan (16 inch)', 55, 12, 'Electric Fans', '🌀')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🌀</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">55 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">Electric Fan</span>
+                                        <span class="text-[10px] t-muted">Fans (PELP) • 12h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Smart LED TV (50 inch)', 100, 5, 'Television Sets', '📺')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">📺</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">100 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">Television Set</span>
+                                        <span class="text-[10px] t-muted">TV (PELP) • 5h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('Automatic Washing Machine', 450, 1.5, 'Washing Machines', '🧺')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">🧺</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">450 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">Washing Machine</span>
+                                        <span class="text-[10px] t-muted">Wash (PELP) • 1.5h/day</span>
+                                    </button>
+
+                                    <button type="button" onclick="selectManualPreset('LED Room Bulb (9W)', 9, 8, 'Lighting', '💡')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-base">💡</span>
+                                            <span class="text-[10px] font-extrabold text-amber-500 dark:text-amber-400 group-hover:scale-105 transition-transform">9 W</span>
+                                        </div>
+                                        <span class="font-bold t-primary text-xs">LED Light Bulb</span>
+                                        <span class="text-[10px] t-muted">Lighting (PELP) • 8h/day</span>
+                                    </button>
+
+                                    <!-- Other Household Preset Cards -->
                                     <button type="button" onclick="selectManualPreset('Rice Cooker', 700, 1, 'Kitchen', '🍚')" class="manual-preset-card p-3 rounded-xl bento-sub-card hover:border-amber-400 transition-all text-left flex flex-col gap-1 shadow-sm group">
                                         <div class="flex justify-between items-center">
                                             <span class="text-base">🍚</span>
@@ -1913,14 +1969,24 @@
                                         <div class="flex flex-col gap-1">
                                             <label class="text-[11px] font-semibold t-muted">Category</label>
                                             <select id="manualCategorySelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs font-semibold" onchange="recalcManualConfig()">
-                                                <option value="Kitchen">🍳 Kitchen Appliance</option>
-                                                <option value="Computing">🖥️ Computing & Work</option>
-                                                <option value="Entertainment">🎮 Entertainment & Media</option>
-                                                <option value="Climate">💨 Climate & Comfort</option>
-                                                <option value="Bath">🚿 Bath & Grooming</option>
-                                                <option value="Cleaning">🧹 Cleaning & Laundry</option>
-                                                <option value="Home Electronics">🔌 Home Electronics</option>
-                                                <option value="Other">📦 Other Appliance</option>
+                                                <optgroup label="── DOE PELP Categories ──">
+                                                    <option value="Air Conditioners">❄️ Air Conditioners</option>
+                                                    <option value="Refrigerators">🧊 Refrigerators</option>
+                                                    <option value="Electric Fans">🌀 Electric Fans</option>
+                                                    <option value="Television Sets">📺 Television Sets</option>
+                                                    <option value="Washing Machines">🧺 Washing Machines</option>
+                                                    <option value="Lighting">💡 Lighting</option>
+                                                </optgroup>
+                                                <optgroup label="── Other Household Categories ──">
+                                                    <option value="Kitchen" selected>🍳 Kitchen Appliance</option>
+                                                    <option value="Computing">🖥️ Computing & Work</option>
+                                                    <option value="Entertainment">🎮 Entertainment & Media</option>
+                                                    <option value="Climate">💨 Climate & Comfort</option>
+                                                    <option value="Bath">🚿 Bath & Grooming</option>
+                                                    <option value="Cleaning">🧹 Cleaning & Laundry</option>
+                                                    <option value="Home Electronics">🔌 Home Electronics</option>
+                                                    <option value="Other">📦 Other Appliance</option>
+                                                </optgroup>
                                             </select>
                                         </div>
                                         <div class="flex flex-col gap-1">
@@ -5067,9 +5133,10 @@
             if (wattsInput) wattsInput.value = watts;
             if (hoursSlider) hoursSlider.value = defaultHours;
 
+            const cleanCatName = category.replace(/Appliance/i, '').trim();
             if (titleEl) titleEl.textContent = `${icon} ${name}`;
-            if (subtitleEl) subtitleEl.textContent = `Custom ${category} Appliance • ${watts}W Rating`;
-            if (categoryBadge) categoryBadge.textContent = `${category} Load`;
+            if (subtitleEl) subtitleEl.textContent = `${cleanCatName} • ${watts}W Rating`;
+            if (categoryBadge) categoryBadge.textContent = `${cleanCatName} Load`;
 
             recalcManualConfig();
             showToast("Preset Loaded", `Loaded "${name}" (${watts}W, ${defaultHours}h/day)`, "info");
@@ -5120,6 +5187,16 @@
             const lblDays = document.getElementById('lblManualDays');
             if (lblHours) lblHours.textContent = hours.toFixed(1);
             if (lblDays) lblDays.textContent = days;
+
+            const catSelect = document.getElementById('manualCategorySelect');
+            const categoryBadge = document.getElementById('manualConfigCategoryBadge');
+            if (catSelect && categoryBadge) {
+                const selectedOpt = catSelect.options[catSelect.selectedIndex];
+                if (selectedOpt) {
+                    const cleanText = selectedOpt.text.replace(/^[^\w\s]+/, '').replace(/Appliance/i, '').trim();
+                    categoryBadge.textContent = `${cleanText} Load`;
+                }
+            }
 
             const monthlyKwh = (watts * hours * days * qty) / 1000.0;
             const genInput = document.getElementById('genRateInput');
