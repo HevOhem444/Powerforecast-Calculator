@@ -2919,19 +2919,29 @@
 
                             <!-- 3. Manual Time Inputs (e.g. 1:00 AM to 3:00 PM) -->
                             <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-                                <span class="font-bold text-white flex items-center gap-1.5">
-                                    <span>⏱️</span>
-                                    <span>Manual Time Range Input</span>
-                                </span>
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-white flex items-center gap-1.5">
+                                        <span>⏱️</span>
+                                        <span>Manual Time Range Input</span>
+                                    </span>
+                                    <span id="bentoStartLockBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                        🔒 Start Time Locked (In Progress)
+                                    </span>
+                                </div>
                                 <div class="grid grid-cols-2 gap-3 mt-1">
                                     <div class="flex flex-col gap-1">
-                                        <label for="bentoSettingStartTime" class="text-[11px] font-semibold text-slate-400">Start Time</label>
+                                        <label for="bentoSettingStartTime" class="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+                                            <span>Start Time</span>
+                                        </label>
                                         <input id="bentoSettingStartTime" type="time" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white" onchange="recalcModalDuration()">
                                     </div>
                                     <div class="flex flex-col gap-1">
                                         <label for="bentoSettingEndTime" class="text-[11px] font-semibold text-slate-400">End Time</label>
                                         <input id="bentoSettingEndTime" type="time" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white" onchange="recalcModalDuration()">
                                     </div>
+                                </div>
+                                <div id="bentoModalTimeWarning" class="hidden text-[10px] text-amber-400 font-semibold bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+                                    ⚠️ Minimum end time is 5 minutes ahead of current time.
                                 </div>
                                 <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
                                     <span>Calculated Duration: <strong id="bentoModalDurationLabel" class="text-amber-400">1.0 hrs</strong></span>
@@ -2940,7 +2950,7 @@
                             </div>
 
                             <!-- 4. Repeat on Next Day / Recurrence Setting -->
-                            <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                            <div id="bentoRepeatSection" class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                                 <span class="font-bold text-white flex items-center gap-1.5">
                                     <span>🔁</span>
                                     <span>Repeat Recurrence</span>
@@ -2955,7 +2965,16 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                        <!-- Read-Only Notice for Past Records -->
+                        <div id="bentoModalReadOnlyNotice" class="hidden p-3 rounded-2xl bg-slate-950/80 border border-indigo-500/30 flex items-center justify-between text-xs">
+                            <span class="text-indigo-300 font-bold flex items-center gap-1.5">
+                                <span>📜</span>
+                                <span>Historical Record (Read-Only)</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400">Past operating sessions cannot be modified.</span>
+                        </div>
+
+                        <div id="bentoModalFooterActions" class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
                             <div class="flex items-center gap-2">
                                 <button id="bentoDeleteSingleBtn" onclick="deleteCurrentBentoBlockFromModal(false)" class="px-3.5 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all border border-rose-500/20 cursor-pointer">
                                     🗑️ Delete This Day
@@ -2968,7 +2987,7 @@
                                 <button onclick="closeBentoSettingsModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold">
                                     Cancel
                                 </button>
-                                <button onclick="saveBentoSettingsModal()" class="px-5 py-2 rounded-xl btn-primary text-xs font-extrabold shadow-lg shadow-indigo-500/20">
+                                <button id="bentoSaveBtn" onclick="saveBentoSettingsModal()" class="px-5 py-2 rounded-xl btn-primary text-xs font-extrabold shadow-lg shadow-indigo-500/20">
                                     Save Changes
                                 </button>
                             </div>
@@ -6840,35 +6859,91 @@
             }
         }
 
-        // Open Schedule Settings Modal from Left Inventory Selection (Single clean schedule per appliance)
+        // Temporal Integrity Helpers: Get Active Date & Classify Schedule Status
+        function getTodayDateString() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getSelectedCalendarDateString() {
+            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const now = new Date();
+            const currentDayOfWeek = now.getDay();
+            const diffToMon = (currentDayOfWeek + 6) % 7;
+            const monDate = new Date(now);
+            monDate.setDate(now.getDate() - diffToMon);
+
+            const dayIdx = weekDayKeys.indexOf(calendarState.selectedDayKey);
+            const targetDate = new Date(monDate);
+            targetDate.setDate(monDate.getDate() + (dayIdx >= 0 ? dayIdx : 0));
+
+            const y = targetDate.getFullYear();
+            const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const d = String(targetDate.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getScheduleTemporalStatus(block, dateStr) {
+            const todayStr = getTodayDateString();
+            if (!dateStr) dateStr = getSelectedCalendarDateString();
+
+            if (dateStr < todayStr) return 'past';
+            if (dateStr > todayStr) return 'future';
+
+            // Selected day is Today:
+            const now = new Date();
+            const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+            const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+            const isRunning = Boolean(item && item.is_currently_on);
+
+            const endHour = block.startHour + block.durationHours;
+
+            if (isRunning && currentHour >= block.startHour) {
+                return 'running';
+            }
+
+            if (endHour <= currentHour) {
+                return 'past';
+            } else if (currentHour >= block.startHour) {
+                return isRunning ? 'running' : 'past';
+            } else {
+                return 'future';
+            }
+        }
+
+        // Draft-First Schedule Creator (Zero Phantom Blocks on Cancel)
+        let activeEditingDraft = null;
+
         function openNewScheduleForAppliance(applianceId) {
             const item = householdLoadList.find(a => String(a.id) === String(applianceId));
             if (!item) return;
 
-            // Enforce single block per appliance on the active day
-            let block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
-            if (!block) {
-                const now = new Date();
-                const startHour = now.getHours() + (now.getMinutes() / 60.0);
-                const durationHours = 1.0; // 1-hour session default
-
-                block = {
-                    id: 'blk_' + Date.now(),
-                    applianceId: item.id,
-                    dayKey: calendarState.selectedDayKey,
-                    dayNum: calendarState.selectedDay,
-                    startHour: startHour,
-                    durationHours: durationHours,
-                    autoPower: true,
-                    repeat: 'once'
-                };
-                calendarScheduledBlocks.push(block);
-                saveCalendarBlocks();
-                renderCalendarBlocks();
-                renderCalendarApplianceSwitches();
+            // Check if block already exists on active day
+            const existing = calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
+            if (existing) {
+                activeEditingDraft = null;
+                openBentoSettingsModal(existing.id);
+                return;
             }
 
-            openBentoSettingsModal(block.id);
+            const now = new Date();
+            const startHour = now.getHours() + (now.getMinutes() / 60.0);
+            const durationHours = 1.0;
+
+            activeEditingDraft = {
+                applianceId: item.id,
+                dayKey: calendarState.selectedDayKey,
+                dayNum: calendarState.selectedDay,
+                startHour: startHour,
+                durationHours: durationHours,
+                autoPower: true,
+                repeat: 'once'
+            };
+
+            openBentoSettingsModal(null);
         }
 
         function formatHour(h) {
@@ -6887,13 +6962,12 @@
             if (endHour <= 24) {
                 return currentHour >= startHour && currentHour < endHour;
             } else {
-                // Spans past midnight (e.g. 22:00 to 02:00 -> [22..24) or [0..2))
                 const wrappedEnd = endHour % 24;
                 return currentHour >= startHour || currentHour < wrappedEnd;
             }
         }
 
-        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Overnight Multi-Day Rollover)
+        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Temporal Protections)
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineRoadmapRowsLayer');
             if (!layer) return;
@@ -6907,11 +6981,11 @@
 
             layer.innerHTML = '';
             const selectedKey = calendarState.selectedDayKey;
+            const selectedDateStr = getSelectedCalendarDateString();
+            const todayStr = getTodayDateString();
+            const isPastDay = selectedDateStr < todayStr;
             const { prevDayKey, nextDayKey } = getAdjacentDays(selectedKey);
 
-            // Gathers blocks to render for selected day:
-            // 1) Blocks that start on selectedKey
-            // 2) Rollover blocks from prevDayKey that span past midnight (> 24.0)
             const dayStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
             const incomingRolloverBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey && (b.startHour + b.durationHours) > 24.0);
 
@@ -6920,10 +6994,10 @@
             if (dayStartingBlocks.length === 0 && incomingRolloverBlocks.length === 0) {
                 layer.innerHTML = `
                     <div class="p-8 rounded-2xl bg-slate-950/40 border border-slate-800/80 text-center flex flex-col items-center justify-center gap-3 my-4">
-                        <span class="text-3xl">📅</span>
+                        <span class="text-3xl">${isPastDay ? '📜' : '📅'}</span>
                         <div class="flex flex-col">
-                            <h4 class="text-sm font-bold text-white">No Scheduled Routines for ${selectedKey.toUpperCase()}</h4>
-                            <p class="text-xs t-muted mt-0.5">Click any appliance on the left inventory to configure its operating window.</p>
+                            <h4 class="text-sm font-bold text-white">${isPastDay ? 'Past Historical Log' : `No Scheduled Routines for ${selectedKey.toUpperCase()}`}</h4>
+                            <p class="text-xs t-muted mt-0.5">${isPastDay ? 'Past days are preserved as read-only historical records.' : 'Click any appliance on the left inventory to configure its operating window.'}</p>
                         </div>
                     </div>
                 `;
@@ -6933,7 +7007,7 @@
             const genInput = document.getElementById('genRateInput');
             const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
 
-            // 1. Render Incoming Rollover Blocks (Spilling over from previous day)
+            // 1. Render Incoming Rollover Blocks
             incomingRolloverBlocks.forEach(block => {
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const appName = item ? item.name : 'Scheduled Appliance';
@@ -6959,9 +7033,11 @@
 
                 const leftPercent = 0;
                 const widthPercent = Math.max(3, Math.min(100, (rolloverHours / 24.0) * 100));
-
                 const overlap = checkSchedulePeakOverlap(0, rolloverHours);
                 const isPeak = overlap.isPeak;
+
+                const temporalStatus = getScheduleTemporalStatus(block, selectedDateStr);
+                const isReadOnly = temporalStatus === 'past';
 
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 hover:border-indigo-400 transition-all';
@@ -6997,31 +7073,34 @@
                             <div class="h-full"></div>
                         </div>
 
-                        <!-- Highlight Overlays for Meralco Peak Hours -->
+                        <!-- Peak Overlays -->
                         <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0" style="left: 45.83%; width: 20.83%;"></div>
                         <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0" style="left: 75%; width: 12.5%;"></div>
 
                         <!-- Rollover Bar Representation -->
-                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 border border-purple-400/80 text-white hover:brightness-110"
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${isReadOnly ? 'bg-slate-800/90 border border-slate-700 text-slate-300' : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 border border-purple-400/80 text-white hover:brightness-110'}"
                              style="left: ${leftPercent}%; width: ${widthPercent}%;"
                              onclick="openBentoSettingsModal('${block.id}')"
-                             title="Click to edit schedule (${timeSpanLabel})">
+                             title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
                             
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="font-extrabold text-[10px] truncate">🌅 ~₱${sessionCost.toFixed(2)}</span>
                                 <span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>
                                 ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
                                 ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
+                                ${isReadOnly ? `<span class="text-[8px] font-bold bg-slate-700 text-slate-300 px-1 py-0.5 rounded shrink-0">📜 Past</span>` : ''}
                             </div>
 
-                            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-                                <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
-                                    ⚙️
-                                </button>
-                                <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
-                                    ✕
-                                </button>
-                            </div>
+                            ${!isReadOnly ? `
+                                <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                                    <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
+                                        ⚙️
+                                    </button>
+                                    <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
+                                        ✕
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -7055,14 +7134,26 @@
                 const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
                 const isPeak = overlap.isPeak;
 
-                // Clamped to 24-hour axis
+                const temporalStatus = getScheduleTemporalStatus(block, selectedDateStr);
+                const isReadOnly = temporalStatus === 'past';
+                const isRunning = temporalStatus === 'running';
+
                 const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
                 const widthPercent = isOvernight
                     ? Math.max(3, 100 - leftPercent)
                     : Math.max(3, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
 
                 const row = document.createElement('div');
-                row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all';
+                row.className = `flex items-center gap-3 p-2 rounded-2xl border transition-all ${isRunning ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'}`;
+
+                let barClass = '';
+                if (isRunning) {
+                    barClass = 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 border border-emerald-400 text-white shadow-lg shadow-emerald-500/20 animate-pulse';
+                } else if (isReadOnly) {
+                    barClass = 'bg-slate-800/90 border border-slate-700 text-slate-300';
+                } else {
+                    barClass = 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110';
+                }
 
                 row.innerHTML = `
                     <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
@@ -7095,31 +7186,35 @@
                             <div class="h-full"></div>
                         </div>
 
-                        <!-- Highlight Overlays for Meralco Peak Hours -->
+                        <!-- Peak Overlays -->
                         <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0" style="left: 45.83%; width: 20.83%;"></div>
                         <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0" style="left: 75%; width: 12.5%;"></div>
 
-                        <!-- Roadmap Timeline Bar Representation -->
-                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
+                        <!-- Roadmap Timeline Bar -->
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${barClass}"
                              style="left: ${leftPercent}%; width: ${widthPercent}%;"
                              onclick="openBentoSettingsModal('${block.id}')"
-                             title="Click to edit schedule (${timeSpanLabel})${isPeak ? ' • ⚠️ Meralco Peak Window' : ''}">
+                             title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
                             
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="font-extrabold text-[10px] truncate">~₱${sessionCost.toFixed(2)}</span>
                                 ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
-                                ${isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0" title="Spans overnight into ${nextDayKey.toUpperCase()}">🌙 Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
-                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0" title="Scheduled during Meralco Peak Hours">🔥 Peak</span>` : ''}
+                                ${isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">🌙 Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
+                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
+                                ${isRunning ? `<span class="text-[8px] font-bold bg-emerald-400/40 text-emerald-100 px-1 py-0.5 rounded shrink-0">🟢 Active</span>` : ''}
+                                ${isReadOnly ? `<span class="text-[8px] font-bold bg-slate-700 text-slate-300 px-1 py-0.5 rounded shrink-0">📜 Past</span>` : ''}
                             </div>
 
-                            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-                                <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
-                                    ⚙️
-                                </button>
-                                <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
-                                    ✕
-                                </button>
-                            </div>
+                            ${!isReadOnly ? `
+                                <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                                    <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
+                                        ⚙️
+                                    </button>
+                                    <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
+                                        ✕
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -7190,6 +7285,12 @@
             const badgeEl = document.getElementById('bentoModalDayBadge');
             if (!dateInput || !dateInput.value) return;
 
+            const todayStr = getTodayDateString();
+            if (dateInput.value < todayStr) {
+                dateInput.value = todayStr;
+                showToast("Past Date Blocked", "Schedules cannot start in the past.", "warning");
+            }
+
             const [y, m, d] = dateInput.value.split('-').map(Number);
             const targetDate = new Date(y, m - 1, d);
             const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -7200,12 +7301,15 @@
         }
 
         function openBentoSettingsModal(blockId) {
-            const block = calendarScheduledBlocks.find(b => b.id === blockId);
+            let block = blockId ? calendarScheduledBlocks.find(b => b.id === blockId) : activeEditingDraft;
             if (!block) return;
 
-            activeEditingBlockId = block.id;
+            activeEditingBlockId = blockId;
             activeEditingApplianceId = block.applianceId;
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+
+            const dateStr = getSelectedCalendarDateString();
+            const temporalStatus = blockId ? getScheduleTemporalStatus(block, dateStr) : 'future';
 
             const modal = document.getElementById('bentoSettingsModal');
             const titleEl = document.getElementById('bentoModalTitle');
@@ -7215,24 +7319,35 @@
             const startInput = document.getElementById('bentoSettingStartTime');
             const endInput = document.getElementById('bentoSettingEndTime');
             const repeatSelect = document.getElementById('bentoSettingRepeat');
-
+            const startLockBadge = document.getElementById('bentoStartLockBadge');
+            const timeWarning = document.getElementById('bentoModalTimeWarning');
+            const readOnlyNotice = document.getElementById('bentoModalReadOnlyNotice');
             const delSingleBtn = document.getElementById('bentoDeleteSingleBtn');
             const delSeriesBtn = document.getElementById('bentoDeleteSeriesBtn');
+            const saveBtn = document.getElementById('bentoSaveBtn');
 
-            const isRecurring = Boolean(block.seriesId || (block.repeat && block.repeat !== 'once'));
-            if (delSingleBtn) delSingleBtn.textContent = isRecurring ? '🗑️ Delete This Day' : '🗑️ Delete Block';
-            if (delSeriesBtn) delSeriesBtn.classList.toggle('hidden', !isRecurring);
-
-            if (titleEl) titleEl.textContent = `${item ? item.name : 'Appliance'} Schedule Settings`;
-            if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
-
-            if (autoPowerCb) autoPowerCb.checked = Boolean(block.autoPower);
-
-            // Populate Start Date Picker
+            // Date picker min constraint
             if (dateInput) {
-                dateInput.value = getBlockDateString(block);
+                const todayStr = getTodayDateString();
+                dateInput.min = todayStr;
+                dateInput.value = blockId ? getBlockDateString(block) : (dateStr >= todayStr ? dateStr : todayStr);
                 onModalStartDateChange();
             }
+
+            if (titleEl) {
+                if (!blockId) {
+                    titleEl.textContent = `➕ New Schedule: ${item ? item.name : 'Appliance'}`;
+                } else if (temporalStatus === 'past') {
+                    titleEl.textContent = `📜 Completed Record: ${item ? item.name : 'Appliance'}`;
+                } else if (temporalStatus === 'running') {
+                    titleEl.textContent = `🟢 Active Session: ${item ? item.name : 'Appliance'}`;
+                } else {
+                    titleEl.textContent = `⚙️ Edit Schedule: ${item ? item.name : 'Appliance'}`;
+                }
+            }
+
+            if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
+            if (autoPowerCb) autoPowerCb.checked = Boolean(block.autoPower);
 
             // Format hours into HH:MM time strings
             const startH = Math.floor(block.startHour);
@@ -7243,8 +7358,52 @@
 
             if (startInput) startInput.value = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
             if (endInput) endInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-
             if (repeatSelect) repeatSelect.value = block.repeat || 'once';
+
+            // Handle Temporal UI Modes
+            if (temporalStatus === 'past') {
+                if (autoPowerCb) autoPowerCb.disabled = true;
+                if (dateInput) dateInput.disabled = true;
+                if (startInput) startInput.disabled = true;
+                if (endInput) endInput.disabled = true;
+                if (repeatSelect) repeatSelect.disabled = true;
+                if (startLockBadge) startLockBadge.classList.add('hidden');
+                if (timeWarning) timeWarning.classList.add('hidden');
+                if (readOnlyNotice) readOnlyNotice.classList.remove('hidden');
+                if (delSingleBtn) delSingleBtn.classList.add('hidden');
+                if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
+                if (saveBtn) saveBtn.classList.add('hidden');
+            } else {
+                if (autoPowerCb) autoPowerCb.disabled = false;
+                if (dateInput) dateInput.disabled = false;
+                if (endInput) endInput.disabled = false;
+                if (repeatSelect) repeatSelect.disabled = false;
+                if (readOnlyNotice) readOnlyNotice.classList.add('hidden');
+                if (saveBtn) {
+                    saveBtn.classList.remove('hidden');
+                    saveBtn.textContent = blockId ? 'Save Changes' : 'Create Schedule';
+                }
+
+                if (temporalStatus === 'running') {
+                    if (startInput) startInput.disabled = true;
+                    if (startLockBadge) startLockBadge.classList.remove('hidden');
+                    if (delSingleBtn) {
+                        delSingleBtn.classList.remove('hidden');
+                        delSingleBtn.textContent = '⏹️ Stop & Delete';
+                    }
+                    if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
+                } else {
+                    // Future / Draft
+                    if (startInput) startInput.disabled = false;
+                    if (startLockBadge) startLockBadge.classList.add('hidden');
+                    const isRecurring = Boolean(block.seriesId || (block.repeat && block.repeat !== 'once'));
+                    if (delSingleBtn) {
+                        delSingleBtn.classList.toggle('hidden', !blockId);
+                        delSingleBtn.textContent = isRecurring ? '🗑️ Delete This Day' : '🗑️ Delete Block';
+                    }
+                    if (delSeriesBtn) delSeriesBtn.classList.toggle('hidden', !isRecurring || !blockId);
+                }
+            }
 
             recalcModalDuration();
 
@@ -7266,6 +7425,7 @@
             }
             activeEditingBlockId = null;
             activeEditingApplianceId = null;
+            activeEditingDraft = null;
         }
 
         function recalcModalDuration() {
@@ -7273,23 +7433,36 @@
             const endInput = document.getElementById('bentoSettingEndTime');
             const durLabel = document.getElementById('bentoModalDurationLabel');
             const costLabel = document.getElementById('bentoModalCostLabel');
+            const timeWarning = document.getElementById('bentoModalTimeWarning');
 
             if (!startInput || !endInput) return;
 
             const [sh, sm] = (startInput.value || '00:00').split(':').map(Number);
-            const [eh, em] = (endInput.value || '02:00').split(':').map(Number);
+            let [eh, em] = (endInput.value || '02:00').split(':').map(Number);
 
             const startVal = sh + (sm / 60);
             let endVal = eh + (em / 60);
-            if (endVal <= startVal) endVal += 24; // spans past midnight
+            if (endVal <= startVal) endVal += 24;
+
+            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : activeEditingDraft;
+            const dateStr = getSelectedCalendarDateString();
+            const temporalStatus = block ? getScheduleTemporalStatus(block, dateStr) : 'future';
+
+            let hasWarning = false;
+            if (temporalStatus === 'running') {
+                const now = new Date();
+                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+                const minAllowedEnd = currentHour + (5 / 60.0);
+                if (endVal < minAllowedEnd && (endVal + 24) < minAllowedEnd) {
+                    hasWarning = true;
+                }
+            }
+
+            if (timeWarning) timeWarning.classList.toggle('hidden', !hasWarning);
 
             const duration = Math.max(0.1, endVal - startVal);
             if (durLabel) durLabel.textContent = `${duration.toFixed(1)} hrs`;
 
-            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
-            if (!block && activeEditingApplianceId) {
-                block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
-            }
             const item = block ? householdLoadList.find(a => String(a.id) === String(block.applianceId)) : (activeEditingApplianceId ? householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId)) : null);
             const watts = item ? item.watts : 1000;
             const genInput = document.getElementById('genRateInput');
@@ -7303,10 +7476,7 @@
         }
 
         function saveBentoSettingsModal() {
-            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
-            if (!block && activeEditingApplianceId) {
-                block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
-            }
+            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : activeEditingDraft;
             if (!block) {
                 closeBentoSettingsModal();
                 return;
@@ -7319,20 +7489,42 @@
             const repeatSelect = document.getElementById('bentoSettingRepeat');
 
             const [sh, sm] = (startInput ? startInput.value : '00:00').split(':').map(Number);
-            const [eh, em] = (endInput ? endInput.value : '02:00').split(':').map(Number);
+            let [eh, em] = (endInput ? endInput.value : '02:00').split(':').map(Number);
 
             const startVal = sh + (sm / 60);
             let endVal = eh + (em / 60);
             if (endVal <= startVal) endVal += 24;
+
+            const dateStr = getSelectedCalendarDateString();
+            const temporalStatus = activeEditingBlockId ? getScheduleTemporalStatus(block, dateStr) : 'future';
+
+            // Enforce minimum 5 minutes ahead of now for running sessions
+            if (temporalStatus === 'running') {
+                const now = new Date();
+                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+                const minAllowedEnd = currentHour + (5 / 60.0);
+                if (endVal < minAllowedEnd && (endVal + 24) < minAllowedEnd) {
+                    endVal = minAllowedEnd;
+                    const newEh = Math.floor(endVal % 24);
+                    const newEm = Math.round((endVal - Math.floor(endVal)) * 60);
+                    if (endInput) endInput.value = `${String(newEh).padStart(2, '0')}:${String(newEm).padStart(2, '0')}`;
+                    showToast("Adjusted End Time", "End time adjusted to minimum +5 minutes from now.", "info");
+                }
+            }
+
             const duration = Math.max(0.1, endVal - startVal);
 
-            // Handle date picker changes
+            // Validate date picker (no past dates)
             if (dateInput && dateInput.value) {
+                const todayStr = getTodayDateString();
+                if (dateInput.value < todayStr) {
+                    showToast("Invalid Date", "Schedule start date cannot be set in the past.", "error");
+                    return;
+                }
                 const [y, m, d] = dateInput.value.split('-').map(Number);
                 const targetDate = new Date(y, m - 1, d);
                 const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                const newDayKey = dayMap[targetDate.getDay()];
-                block.dayKey = newDayKey;
+                block.dayKey = dayMap[targetDate.getDay()];
                 block.dayNum = d;
             }
 
@@ -7345,16 +7537,25 @@
             block.repeat = repeatMode;
             block.seriesId = seriesId;
 
+            if (!activeEditingBlockId) {
+                // Draft Commit: Assign ID and save
+                block.id = 'blk_' + Date.now();
+                calendarScheduledBlocks.push(block);
+                dbInsertCalendarEvent(block);
+            } else {
+                if (block.id.startsWith('blk_')) {
+                    dbInsertCalendarEvent(block);
+                } else {
+                    dbUpdateCalendarEvent(block);
+                }
+            }
+
             // Handle Repeat Replication across other days with STRICT single block per appliance
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
-            if (repeatMode === 'daily') {
-                targetDays = weekDayKeys;
-            } else if (repeatMode === 'weekdays') {
-                targetDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
-            } else if (repeatMode === 'weekends') {
-                targetDays = ['sat', 'sun'];
-            }
+            if (repeatMode === 'daily') targetDays = weekDayKeys;
+            else if (repeatMode === 'weekdays') targetDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            else if (repeatMode === 'weekends') targetDays = ['sat', 'sun'];
 
             if (targetDays.length > 0) {
                 const now = new Date();
@@ -7370,7 +7571,6 @@
                         targetDate.setDate(monDate.getDate() + dayIdx);
                         const targetDayNum = targetDate.getDate();
 
-                        // Clean up any duplicates first to ensure single block
                         const matching = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(block.applianceId) && b.dayKey === day);
                         if (matching.length > 1) {
                             for (let i = 1; i < matching.length; i++) {
@@ -7413,11 +7613,6 @@
             }
 
             saveCalendarBlocks();
-            if (block.id.startsWith('blk_')) {
-                dbInsertCalendarEvent(block);
-            } else {
-                dbUpdateCalendarEvent(block);
-            }
             renderCalendarBlocks();
             renderCalendarApplianceSwitches();
             closeBentoSettingsModal();
