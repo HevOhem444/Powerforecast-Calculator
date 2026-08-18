@@ -1996,12 +1996,10 @@
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
                         <!-- Right Column: Selected Appliance Load Configurator & Household Load List -->
                         <div class="lg:col-span-5 flex flex-col gap-5">
-
                             <!-- Selected / Configured Appliance Card -->
                             <div id="pelpConfigCard"
                                 class="glow-card p-5 sm:p-6 rounded-3xl flex flex-col gap-4 shadow-2xl relative">
@@ -2013,7 +2011,7 @@
                                         <h3 id="pelpConfigTitle" class="text-lg font-extrabold t-primary mt-1">Select an
                                             Appliance</h3>
                                         <p id="pelpConfigSubtitle" class="text-xs t-muted">Pick a certified model from
-                                            the list to calculate consumption.</p>
+                                            the list to register specifications.</p>
                                     </div>
                                     <span id="pelpConfigRatingBadge"
                                         class="hidden text-[10px] font-bold px-2.5 py-1 rounded-lg bento-badge-rating">⭐
@@ -2040,65 +2038,20 @@
                                     </div>
                                 </div>
 
-                                <!-- Usage Sliders -->
-                                <div class="bento-stat-box flex flex-col gap-3 p-3.5 rounded-xl">
-                                    <!-- Daily Hours Slider -->
-                                    <div class="flex flex-col gap-1.5">
-                                        <div class="flex justify-between items-center text-xs">
-                                            <span class="t-secondary font-medium">Daily Usage Time</span>
-                                            <span class="font-bold t-accent"><span id="lblPelpHours">8.0</span> hrs /
-                                                day</span>
-                                        </div>
-                                        <input type="range" id="pelpHoursSlider" min="0.1" max="24" step="0.1" value="8"
-                                            class="w-full cursor-pointer" oninput="recalcPelpConfig()">
-                                    </div>
-
-                                    <!-- Days / Month Slider -->
-                                    <div class="flex flex-col gap-1.5">
-                                        <div class="flex justify-between items-center text-xs">
-                                            <span class="t-secondary font-medium">Days Used per Month</span>
-                                            <span class="font-bold t-accent"><span id="lblPelpDays">30</span> days /
-                                                mo</span>
-                                        </div>
-                                        <input type="range" id="pelpDaysSlider" min="1" max="30" step="1" value="30"
-                                            class="w-full cursor-pointer" oninput="recalcPelpConfig()">
+                                <!-- Real-time Calendar tracking indicator -->
+                                <div class="bento-note-box text-[11px] p-3 rounded-2xl flex items-start gap-2.5 bg-indigo-950/30 border border-indigo-500/20 text-slate-300">
+                                    <span class="text-base">⏱️</span>
+                                    <div class="flex flex-col gap-0.5">
+                                        <strong class="text-indigo-300 font-semibold">Calendar Real-Time Tracking</strong>
+                                        <span class="text-[10px] text-slate-400">Actual operating hours & metered power are tracked live via the <strong>Calendar ON/OFF Switches</strong>.</span>
                                     </div>
                                 </div>
 
-                                <!-- Computed Real-Time Metrics -->
-                                <div class="bento-stat-box grid grid-cols-2 gap-3 p-3.5 rounded-xl text-xs">
-                                    <div>
-                                        <span
-                                            class="t-muted text-[10px] block font-bold uppercase tracking-wider">MONTHLY
-                                            ENERGY</span>
-                                        <span id="pelpMonthlyKwh" class="stat-val-watt text-base block mt-0.5">0.00
-                                            kWh</span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            class="t-muted text-[10px] block font-bold uppercase tracking-wider">MERALCO
-                                            EST. COST</span>
-                                        <span id="pelpMonthlyCost" class="stat-val-cost text-base block mt-0.5">₱0.00 /
-                                            mo</span>
-                                    </div>
-                                </div>
-
-                                <!-- Informative Note about Marginal Cost -->
-                                <div class="bento-note-box text-[11px] p-2.5 rounded-xl flex items-center gap-2">
-                                    <span class="text-base">💡</span>
-                                    <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption
-                                        rate added to your household's monthly electric load.</span>
-                                </div>
-
-                                <!-- Save & Apply Actions -->
-                                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                                <!-- Save to Household Inventory Action -->
+                                <div class="pt-1">
                                     <button onclick="savePelpToLoadList()"
-                                        class="flex-1 py-3 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg hover:brightness-110">
-                                        <span>💾</span> Save to Household Load List
-                                    </button>
-                                    <button onclick="applyPelpAsBillKwh()"
-                                        class="flex-1 py-3 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
-                                        <span>⚡</span> Apply to Calculator
+                                        class="w-full py-3.5 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg hover:brightness-110">
+                                        <span>💾</span> Save to Household Inventory
                                     </button>
                                 </div>
                             </div>
@@ -2567,65 +2520,20 @@
                                     </div>
                                 </div>
 
-                                <!-- Usage Sliders -->
-                                <div class="bento-stat-box flex flex-col gap-3 p-3.5 rounded-xl">
-                                    <!-- Daily Hours Slider -->
-                                    <div class="flex flex-col gap-1.5">
-                                        <div class="flex justify-between items-center text-xs">
-                                            <span class="t-secondary font-medium">Daily Usage Time</span>
-                                            <span class="font-bold t-accent"><span id="lblManualHours">4.0</span> hrs /
-                                                day</span>
-                                        </div>
-                                        <input type="range" id="manualHoursSlider" min="0.1" max="24" step="0.1"
-                                            value="4" class="w-full cursor-pointer" oninput="recalcManualConfig()">
-                                    </div>
-
-                                    <!-- Days / Month Slider -->
-                                    <div class="flex flex-col gap-1.5">
-                                        <div class="flex justify-between items-center text-xs">
-                                            <span class="t-secondary font-medium">Days Used per Month</span>
-                                            <span class="font-bold t-accent"><span id="lblManualDays">30</span> days /
-                                                mo</span>
-                                        </div>
-                                        <input type="range" id="manualDaysSlider" min="1" max="30" step="1" value="30"
-                                            class="w-full cursor-pointer" oninput="recalcManualConfig()">
+                                <!-- Real-time Calendar tracking indicator -->
+                                <div class="bento-note-box text-[11px] p-3 rounded-2xl flex items-start gap-2.5 bg-amber-950/30 border border-amber-500/20 text-slate-300">
+                                    <span class="text-base">⏱️</span>
+                                    <div class="flex flex-col gap-0.5">
+                                        <strong class="text-amber-300 font-semibold">Calendar Real-Time Tracking</strong>
+                                        <span class="text-[10px] text-slate-400">Actual operating hours & metered power are tracked live via the <strong>Calendar ON/OFF Switches</strong>.</span>
                                     </div>
                                 </div>
 
-                                <!-- Computed Real-Time Metrics -->
-                                <div class="bento-stat-box grid grid-cols-2 gap-3 p-3.5 rounded-xl text-xs">
-                                    <div>
-                                        <span
-                                            class="t-muted text-[10px] block font-bold uppercase tracking-wider">MONTHLY
-                                            ENERGY</span>
-                                        <span id="manualMonthlyKwh" class="stat-val-watt text-base block mt-0.5">42.00
-                                            kWh</span>
-                                    </div>
-                                    <div>
-                                        <span
-                                            class="t-muted text-[10px] block font-bold uppercase tracking-wider">MERALCO
-                                            EST. COST</span>
-                                        <span id="manualMonthlyCost"
-                                            class="stat-val-cost text-base block mt-0.5">₱535.52 / mo</span>
-                                    </div>
-                                </div>
-
-                                <!-- Informative Note about Marginal Cost -->
-                                <div class="bento-note-box text-[11px] p-2.5 rounded-xl flex items-center gap-2">
-                                    <span class="text-base">💡</span>
-                                    <span><strong>Marginal Cost:</strong> Calculated based on the variable consumption
-                                        rate added to your household's monthly electric load.</span>
-                                </div>
-
-                                <!-- Save & Apply Actions -->
-                                <div class="flex flex-col sm:flex-row gap-2 pt-1">
+                                <!-- Save to Household Inventory Action -->
+                                <div class="pt-1">
                                     <button onclick="saveManualToLoadList()"
-                                        class="flex-1 py-3 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg hover:brightness-110">
-                                        <span>💾</span> Save to Household Load List
-                                    </button>
-                                    <button onclick="applyManualAsBillKwh()"
-                                        class="flex-1 py-3 btn-secondary rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow">
-                                        <span>⚡</span> Apply to Calculator
+                                        class="w-full py-3.5 btn-primary rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg hover:brightness-110">
+                                        <span>💾</span> Save to Household Inventory
                                     </button>
                                 </div>
                             </div>
@@ -4821,32 +4729,29 @@
             ].filter(Boolean);
 
             countBadges.forEach(b => {
-                b.textContent = `${householdLoadList.length} item${householdLoadList.length === 1 ? '' : 's'}`;
+                b.textContent = `${householdLoadList.length} appliance${householdLoadList.length === 1 ? '' : 's'}`;
             });
 
             if (householdLoadList.length === 0) {
-                if (calcContainer) calcContainer.innerHTML = '<p class="text-xs t-muted italic">No appliances added yet.</p>';
+                if (calcContainer) calcContainer.innerHTML = '<p class="text-xs t-muted italic">No appliances in inventory.</p>';
                 appContainers.forEach(c => {
-                    c.innerHTML = '<p class="text-xs t-muted italic">No appliances saved yet. Click "Save to Household Load List" above to add.</p>';
+                    c.innerHTML = '<p class="text-xs t-muted italic">No appliances saved yet. Add from PELP or Custom Presets above.</p>';
                 });
                 if (totalLbl) totalLbl.textContent = '0.00 kWh';
-                totalKwhLabels.forEach(l => l.textContent = '0.00 kWh');
-                totalCostLabels.forEach(l => l.textContent = '₱0.00');
+                totalKwhLabels.forEach(l => l.textContent = '0 W');
+                totalCostLabels.forEach(l => l.textContent = '0 Devices');
                 return;
             }
 
-            let totalKwh = 0;
+            let totalConnectedWatts = 0;
+            let totalActiveCount = 0;
             if (calcContainer) calcContainer.innerHTML = '';
             appContainers.forEach(c => c.innerHTML = '');
 
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-
             householdLoadList.forEach(item => {
-                const itemKwh = item.kwh || ((item.watts * item.hours * (item.days || 30) * (item.qty || 1)) / 1000);
-                totalKwh += itemKwh;
-
-                const itemCost = item.estCost || (itemKwh * (genRate + 3.5));
+                const itemWatts = (item.watts || 0) * (item.qty || 1);
+                totalConnectedWatts += itemWatts;
+                if (item.is_currently_on) totalActiveCount++;
 
                 // 1. Render in Calculator Sidebar Load List
                 if (calcContainer) {
@@ -4859,11 +4764,11 @@
                                 <span class="font-bold t-primary">${item.name}</span>
                                 ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1 rounded bg-indigo-500/20 text-indigo-300 font-bold">×${item.qty}</span>` : ''}
                             </div>
-                            <span class="text-[10px] t-muted">${item.watts}W • ${item.hours}h/day • ${item.days || 30}d/mo</span>
+                            <span class="text-[10px] t-muted">${item.watts}W • ${item.category || 'General'}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="font-bold t-accent">${itemKwh.toFixed(1)} kWh</span>
-                            <button onclick="removeHouseholdLoadItem(${item.id})" class="t-muted hover:text-red-400 p-1 transition-colors" title="Remove">
+                            <span class="font-bold t-accent">${itemWatts.toLocaleString()} W</span>
+                            <button onclick="removeHouseholdLoadItem('${item.id}')" class="t-muted hover:text-red-400 p-1 transition-colors" title="Remove">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
@@ -4883,8 +4788,10 @@
                         sourceLabel = 'AI Vision';
                     } else if (item.source === 'manual_entry') {
                         badgeClass = 'bento-badge-rating';
-                        sourceLabel = 'Manual';
+                        sourceLabel = 'Custom';
                     }
+
+                    const isOn = Boolean(item.is_currently_on);
 
                     appDiv.innerHTML = `
                         <div class="flex flex-col gap-0.5">
@@ -4892,22 +4799,21 @@
                                 <span class="font-extrabold t-primary text-xs">${item.name}</span>
                                 <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${badgeClass}">${sourceLabel}</span>
                                 ${item.qty && item.qty > 1 ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bento-badge-category font-bold">×${item.qty} units</span>` : ''}
+                                ${isOn ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold animate-pulse">🟢 Active in Calendar</span>` : ''}
                             </div>
                             <div class="flex items-center gap-2 text-[10px] t-muted">
-                                <span>⚡ ${item.watts}W</span>
+                                <span class="font-bold text-amber-400">⚡ ${item.watts}W Rating</span>
                                 <span>•</span>
-                                <span>⏱️ ${item.hours} hrs/day</span>
-                                <span>•</span>
-                                <span>📅 ${item.days || 30} days/mo</span>
+                                <span>📍 ${item.room_location || 'General'}</span>
                                 ${item.energy_rating ? `<span>• <span class="text-amber-500 dark:text-amber-400 font-semibold">${item.energy_rating}</span></span>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <div class="flex flex-col text-right">
-                                <span class="stat-val-kwh text-xs">${itemKwh.toFixed(2)} kWh</span>
-                                <span class="stat-val-cost text-[10px]">${itemCost ? `₱${itemCost.toFixed(2)}` : '₱0.00'}</span>
+                                <span class="stat-val-watt text-xs font-bold">${itemWatts.toLocaleString()} W</span>
+                                <span class="text-[9px] text-indigo-400 font-semibold">Track via Calendar</span>
                             </div>
-                            <button onclick="removeHouseholdLoadItem(${item.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Remove Appliance">
+                            <button onclick="removeHouseholdLoadItem('${item.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Remove Appliance">
                                 🗑️
                             </button>
                         </div>
@@ -4916,17 +4822,10 @@
                 });
             });
 
-            if (totalLbl) totalLbl.textContent = totalKwh.toFixed(2) + ' kWh';
-            totalKwhLabels.forEach(l => l.textContent = totalKwh.toFixed(2) + ' kWh');
-
-            const grandCalcRes = typeof performCalculation === 'function' ? performCalculation(totalKwh, genRate, 0) : null;
-            const grandTotalCost = grandCalcRes ? grandCalcRes.summary.total_bill : (totalKwh * (genRate + 3.5));
+            totalKwhLabels.forEach(l => l.textContent = `${totalConnectedWatts.toLocaleString()} W Connected`);
             totalCostLabels.forEach(l => {
-                l.textContent = `₱${grandTotalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                l.textContent = `${householdLoadList.length} Registered Device${householdLoadList.length === 1 ? '' : 's'}`;
             });
-
-            // Sync with Calculator kWh Slider
-            syncKwhInput(Math.round(totalKwh));
         }
 
         // Clear any old local manual API key
@@ -6015,27 +5914,7 @@
         function recalcPelpConfig() {
             const watts = parseFloat(document.getElementById('pelpWattsInput')?.value || 0);
             const qty = parseInt(document.getElementById('pelpQtyInput')?.value || 1, 10) || 1;
-            const hours = parseFloat(document.getElementById('pelpHoursSlider')?.value || 8);
-            const days = parseInt(document.getElementById('pelpDaysSlider')?.value || 30, 10);
-
-            const lblHours = document.getElementById('lblPelpHours');
-            const lblDays = document.getElementById('lblPelpDays');
-            if (lblHours) lblHours.textContent = hours.toFixed(1);
-            if (lblDays) lblDays.textContent = days;
-
-            const monthlyKwh = (watts * hours * days * qty) / 1000.0;
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-
-            // Marginal cost computation based on variable residential rate
-            const estCost = monthlyKwh * (genRate + 3.5);
-
-            const kwhEl = document.getElementById('pelpMonthlyKwh');
-            const costEl = document.getElementById('pelpMonthlyCost');
-            if (kwhEl) kwhEl.textContent = `${monthlyKwh.toFixed(2)} kWh`;
-            if (costEl) costEl.textContent = `₱${estCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
-
-            return { watts, qty, hours, days, monthlyKwh, estCost };
+            return { watts, qty };
         }
 
         function savePelpToLoadList() {
@@ -6064,10 +5943,10 @@
                 watts: config.watts,
                 voltage: 230,
                 qty: config.qty,
-                hours: config.hours,
-                days: config.days,
-                kwh: config.monthlyKwh,
-                estCost: config.estCost,
+                hours: 0,
+                days: 30,
+                kwh: 0,
+                estCost: 0,
                 energy_rating: energyRating,
                 room_location: 'General',
                 is_active: true,
@@ -6079,15 +5958,9 @@
             householdLoadList.push(item);
             renderHouseholdLoadList();
             renderCalendarApplianceSwitches();
+            updateLiveEnergyMonitor();
             dbInsertAppliance(item);
             showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Inventory!`, "success");
-        }
-
-        function applyPelpAsBillKwh() {
-            const config = recalcPelpConfig();
-            syncKwhInput(Math.round(config.monthlyKwh));
-            switchView('calculator');
-            showToast("Applied to Calculator", `Applied ${Math.round(config.monthlyKwh)} kWh to your bill calculator.`, "success");
         }
 
         // ===== Custom & Non-DOE Household Appliances Studio Controller =====
@@ -6103,7 +5976,6 @@
             const nameInput = document.getElementById('manualNameInput');
             const catSelect = document.getElementById('manualCategorySelect');
             const wattsInput = document.getElementById('manualWattsInput');
-            const hoursSlider = document.getElementById('manualHoursSlider');
             const titleEl = document.getElementById('manualConfigTitle');
             const subtitleEl = document.getElementById('manualConfigSubtitle');
             const categoryBadge = document.getElementById('manualConfigCategoryBadge');
@@ -6111,7 +5983,6 @@
             if (nameInput) nameInput.value = name;
             if (catSelect) catSelect.value = category;
             if (wattsInput) wattsInput.value = watts;
-            if (hoursSlider) hoursSlider.value = defaultHours;
 
             const cleanCatName = category.replace(/Appliance/i, '').trim();
             if (titleEl) titleEl.textContent = `${icon} ${name}`;
@@ -6119,7 +5990,7 @@
             if (categoryBadge) categoryBadge.textContent = `${cleanCatName} Load`;
 
             recalcManualConfig();
-            showToast("Preset Loaded", `Loaded "${name}" (${watts}W, ${defaultHours}h/day)`, "info");
+            showToast("Preset Loaded", `Loaded "${name}" (${watts}W Rating)`, "info");
         }
 
         function calcWattsFromVoltsAmps(apply = false) {
@@ -6160,13 +6031,6 @@
         function recalcManualConfig() {
             const watts = parseFloat(document.getElementById('manualWattsInput')?.value || 0);
             const qty = parseInt(document.getElementById('manualQtyInput')?.value || 1, 10) || 1;
-            const hours = parseFloat(document.getElementById('manualHoursSlider')?.value || 4);
-            const days = parseInt(document.getElementById('manualDaysSlider')?.value || 30, 10);
-
-            const lblHours = document.getElementById('lblManualHours');
-            const lblDays = document.getElementById('lblManualDays');
-            if (lblHours) lblHours.textContent = hours.toFixed(1);
-            if (lblDays) lblDays.textContent = days;
 
             const catSelect = document.getElementById('manualCategorySelect');
             const categoryBadge = document.getElementById('manualConfigCategoryBadge');
@@ -6178,18 +6042,7 @@
                 }
             }
 
-            const monthlyKwh = (watts * hours * days * qty) / 1000.0;
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-
-            const estCost = monthlyKwh * (genRate + 3.5);
-
-            const kwhEl = document.getElementById('manualMonthlyKwh');
-            const costEl = document.getElementById('manualMonthlyCost');
-            if (kwhEl) kwhEl.textContent = `${monthlyKwh.toFixed(2)} kWh`;
-            if (costEl) costEl.textContent = `₱${estCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
-
-            return { watts, qty, hours, days, monthlyKwh, estCost };
+            return { watts, qty };
         }
 
         function saveManualToLoadList() {
@@ -6218,10 +6071,10 @@
                 watts: config.watts,
                 voltage: 230,
                 qty: config.qty,
-                hours: config.hours,
-                days: config.days,
-                kwh: config.monthlyKwh,
-                estCost: config.estCost,
+                hours: 0,
+                days: 30,
+                kwh: 0,
+                estCost: 0,
                 energy_rating: '',
                 room_location: 'General',
                 is_active: true,
@@ -6233,15 +6086,9 @@
             householdLoadList.push(item);
             renderHouseholdLoadList();
             renderCalendarApplianceSwitches();
+            updateLiveEnergyMonitor();
             dbInsertAppliance(item);
             showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Inventory!`, "success");
-        }
-
-        function applyManualAsBillKwh() {
-            const config = recalcManualConfig();
-            syncKwhInput(Math.round(config.monthlyKwh));
-            switchView('calculator');
-            showToast("Applied to Calculator", `Applied ${Math.round(config.monthlyKwh)} kWh to your bill calculator.`, "success");
         }
 
         // Initialize AI module health check
