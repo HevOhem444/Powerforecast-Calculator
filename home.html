@@ -6943,70 +6943,59 @@
             item.manual_override_until = now + 60000; // 1-minute automation debounce
             item.auto_powered = Boolean(isAutomationCall && willTurnOn);
             
-            let isQuickMicroToggle = false;
+            const nowDt = new Date();
+            const curHour = (nowDt.getHours() * 60 + nowDt.getMinutes() + nowDt.getSeconds() / 60.0) / 60.0;
+            const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const curDayKey = dayMap[nowDt.getDay()];
+            const curDayNum = nowDt.getDate();
+
             if (willTurnOn) {
                 item.last_turned_on_at = endedAt;
                 localStorage.removeItem('pf_shutoff_' + id);
 
-                // Smart Active Window Deduplication:
-                // If an existing routine covers or touches current time, avoid spawning duplicate ad-hoc block
-                const nowDt = new Date();
-                const curHour = nowDt.getHours() + (nowDt.getMinutes() / 60.0);
-                const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                const curDayKey = dayMap[nowDt.getDay()];
-                const curDayNum = nowDt.getDate();
+                // Spawn a new independent active session line starting at exact current time
+                const newBlock = {
+                    id: 'blk_session_' + Date.now(),
+                    applianceId: item.id,
+                    dayKey: curDayKey,
+                    dayNum: curDayNum,
+                    startHour: Math.round(curHour * 10000) / 10000,
+                    durationHours: 1.0, // default 1 hr window unless shut off early
+                    autoPower: Boolean(isAutomationCall),
+                    repeat: 'once',
+                    is_active_live: true
+                };
+                calendarScheduledBlocks.push(newBlock);
+                saveCalendarBlocks();
+                dbInsertCalendarEvent(newBlock);
 
-                const activeRunningBlock = calendarScheduledBlocks.find(b => 
-                    String(b.applianceId) === String(id) && 
-                    b.dayKey === curDayKey && 
-                    (isTimeInScheduleWindow(curHour, b.startHour, b.durationHours) || Math.abs(b.startHour - curHour) <= 0.25)
-                );
-
-                if (!activeRunningBlock) {
-                    const newBlock = {
-                        id: 'blk_adhoc_' + Date.now(),
-                        applianceId: item.id,
-                        dayKey: curDayKey,
-                        dayNum: curDayNum,
-                        startHour: curHour,
-                        durationHours: 1.0,
-                        autoPower: false,
-                        repeat: 'once'
-                    };
-                    calendarScheduledBlocks.push(newBlock);
-                    saveCalendarBlocks();
-                    dbInsertCalendarEvent(newBlock);
-                }
             } else if (startedAt) {
-                const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
-                const durationHours = Math.max(0.05, elapsedMs / 3600000.0); // minimum 3 minutes visible representation
-                
-                // Persist manual shutoff suppression until current schedule window ends
-                const curHour = new Date().getHours() + (new Date().getMinutes() / 60.0);
-                const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                const curDayKey = dayMap[new Date().getDay()];
-                const activeBlock = calendarScheduledBlocks.find(b => 
+                // Precision Truncation: find the active block for this appliance today and cut its bar off at exact shutoff time!
+                const activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
                     String(b.applianceId) === String(id) && 
-                    b.dayKey === curDayKey && 
-                    isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)
+                    b.dayKey === curDayKey &&
+                    (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
                 ) || calendarScheduledBlocks.slice().reverse().find(b => 
                     String(b.applianceId) === String(id) && 
                     b.dayKey === curDayKey
                 );
 
-                if (activeBlock && !isAutomationCall) {
-                    const endHour = activeBlock.startHour + activeBlock.durationHours;
-                    const endToday = new Date();
-                    endToday.setHours(Math.floor(endHour % 24), Math.round((endHour % 1) * 60), 0, 0);
-                    if (endHour > 24) endToday.setDate(endToday.getDate() + 1);
-                    localStorage.setItem('pf_shutoff_' + id, String(endToday.getTime()));
-                }
-                
-                // Update schedule block duration with exact duration
                 if (activeBlock) {
-                    if (activeBlock.id.startsWith('blk_adhoc_')) {
-                        activeBlock.durationHours = durationHours;
-                    }
+                    // Cut off duration to exact elapsed time from its startHour
+                    const exactElapsed = Math.max(0.0167, curHour - activeBlock.startHour); // minimum 1 min
+                    activeBlock.durationHours = Math.round(exactElapsed * 10000) / 10000;
+                    activeBlock.is_active_live = false;
+                    activeBlock.is_closed_session = true;
+
+                    // Log exact session to appliance_usage_logs in Supabase
+                    const durMinutes = Math.max(1, Math.round(exactElapsed * 60));
+                    const kwh = (item.watts * (item.qty || 1) * exactElapsed) / 1000.0;
+                    const totalRate = getEffectiveCalendarRate();
+                    const estCost = kwh * totalRate;
+                    const isPeak = checkSchedulePeakOverlap(activeBlock.startHour, exactElapsed).isPeak;
+                    
+                    dbLogApplianceUsageSession(item.id, startedAt, endedAt, durMinutes, kwh, isPeak, estCost);
+
                     saveCalendarBlocks();
                     if (activeBlock.id.startsWith('blk_')) {
                         dbInsertCalendarEvent(activeBlock);
@@ -7038,21 +7027,9 @@
                         })
                         .eq('id', item.id)
                         .eq('user_id', session.user.id);
-
-                    // If turning OFF, log usage session with second precision
-                    if (!willTurnOn && startedAt) {
-                        const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
-                        const durationMinutes = elapsedMs / 60000.0;
-                        const totalRate = getEffectiveCalendarRate();
-                        const kwhConsumed = (item.watts * (elapsedMs / 3600000.0)) / 1000.0;
-                        const estCost = kwhConsumed * totalRate;
-                        const isPeak = isPeakHour(new Date().getHours());
-
-                        await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
-                    }
                 }
             } catch (e) {
-                console.warn('Usage log session sync error:', e);
+                console.warn('toggleApplianceState DB error:', e);
             }
         }
 
@@ -7124,26 +7101,27 @@
                     track.appendChild(span);
                 });
             } else if (mode === '12h') {
-                for (let h = 0; h <= 24; h += 0.5) {
+                for (let totalMin = 0; totalMin <= 1440; totalMin += 30) {
                     const span = document.createElement('span');
-                    const hInt = Math.floor(h);
-                    const m = h % 1 === 0 ? ':00' : ':30';
-                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : 'PM');
-                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const h = Math.floor(totalMin / 60);
+                    const m = totalMin % 60;
+                    const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
+                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
+                    const mStr = m === 0 ? ':00' : ':30';
                     const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
 
-                    span.textContent = `${dispH}${m} ${ampm}`;
+                    span.textContent = `${dispH}${mStr} ${ampm}`;
                     span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px]' : 'text-slate-400 text-[9px]';
                     track.appendChild(span);
                 }
             } else if (mode === '6h') {
-                for (let h = 0; h <= 24; h += 0.25) {
+                for (let totalMin = 0; totalMin <= 1440; totalMin += 15) {
                     const span = document.createElement('span');
-                    const hInt = Math.floor(h);
-                    const mins = Math.round((h - hInt) * 60);
-                    const mStr = `:${String(mins).padStart(2, '0')}`;
-                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : 'PM');
-                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const h = Math.floor(totalMin / 60);
+                    const m = totalMin % 60;
+                    const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
+                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
+                    const mStr = `:${String(m).padStart(2, '0')}`;
                     const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
 
                     span.textContent = `${dispH}${mStr} ${ampm}`;
@@ -7151,12 +7129,12 @@
                     track.appendChild(span);
                 }
             } else if (mode === '1h') {
-                for (let h = 0; h <= 24; h += (5 / 60.0)) {
+                for (let totalMin = 0; totalMin <= 1440; totalMin += 5) {
                     const span = document.createElement('span');
-                    const hInt = Math.floor(h);
-                    const mins = Math.round((h - hInt) * 60);
-                    const mStr = `:${String(mins).padStart(2, '0')}`;
-                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const h = Math.floor(totalMin / 60);
+                    const m = totalMin % 60;
+                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
+                    const mStr = `:${String(m).padStart(2, '0')}`;
                     const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
 
                     span.textContent = `${dispH}${mStr}`;
@@ -7299,10 +7277,11 @@
         }
 
         function formatHour(h) {
-            const hNum = Math.floor(h);
-            const mins = Math.round((h - hNum) * 60);
+            const totalMinutes = Math.round(h * 60);
+            const hNum = Math.floor(totalMinutes / 60) % 24;
+            const mins = totalMinutes % 60;
             const minStr = mins > 0 ? `:${String(mins).padStart(2, '0')}` : ':00';
-            if (hNum === 0 || hNum === 24) return `12${minStr} am`;
+            if (hNum === 0) return `12${minStr} am`;
             if (hNum < 12) return `${hNum}${minStr} am`;
             if (hNum === 12) return `12${minStr} pm`;
             return `${hNum - 12}${minStr} pm`;
