@@ -2587,50 +2587,27 @@
             </section>
 
             <!-- PANEL 4: CALENDAR VIEW (ENHANCED LIVE SWITCHBOARD & SMART ENERGY CALENDAR) -->
-            <section id="view-calendar" class="view-panel hidden flex-col gap-6">
+            <section id="view-calendar" class="view-panel hidden flex-col gap-6 w-full">
                 <!-- Top Calendar Section Banner / Header -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 class="text-2xl font-extrabold t-primary flex items-center gap-2">
                             <span>📅</span> Household Utility & Real-Time Energy Calendar
                         </h2>
-                        <p class="text-sm t-muted">Monitor active appliance loads in real time, toggle usage sessions, track Meralco peak tariff windows, and plan schedules starting 2026.</p>
+                        <p class="text-sm t-muted">Monitor active appliance loads in real time, drag appliances to schedule timeline, and view live hourly burn rate.</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <button onclick="switchView('appliances')"
                             class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/60 text-xs font-bold flex items-center gap-1.5 transition-all">
                             <span>⚡</span> Manage Appliances
                         </button>
-                        <button onclick="openNewEventModal()"
-                            class="px-4 py-2 rounded-xl btn-primary text-xs font-semibold flex items-center gap-2 shadow-lg shadow-indigo-500/20">
-                            <span>➕</span> Schedule Event
-                        </button>
                     </div>
                 </div>
 
-                <!-- LIVE ENERGY & TARIFF MONITOR BANNER -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 p-4 rounded-3xl bento-card border border-indigo-500/20 shadow-xl bg-gradient-to-r from-indigo-950/40 via-slate-900/60 to-purple-950/30 backdrop-blur-md">
-                    <!-- Stat 1: Live Household Load -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg">
-                            ⚡
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Active Load</span>
-                            <span id="calLiveActiveWatts" class="text-base sm:text-lg font-black text-amber-400">0 Watts</span>
-                        </div>
-                    </div>
-
-                    <!-- Stat 2: Running Hourly Cost -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg">
-                            ₱
-                        </div>
-                        <div class="flex flex-col">
-                <!-- Top Live Energy & Tariff Monitor Banner -->
+                <!-- LIVE ENERGY & BURN RATE MONITOR BANNER (3 Cards) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <!-- Stat 1: Real-time Active Load -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                    <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-lg">
                         <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg">
                             ⚡
                         </div>
@@ -2641,7 +2618,7 @@
                     </div>
 
                     <!-- Stat 2: Real-time Burn Rate (Cost/Hour) -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                    <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-lg">
                         <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg font-bold">
                             ₱
                         </div>
@@ -2652,7 +2629,7 @@
                     </div>
 
                     <!-- Stat 3: Running Appliances Count -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                    <div class="flex items-center gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-lg">
                         <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-lg">
                             ⏱️
                         </div>
@@ -2664,7 +2641,7 @@
                 </div>
 
                 <!-- Main Calendar Dashboard Layout (Split Left Navigation Panel & Right View Grid) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
 
                     <!-- LEFT PANEL: Appliance Switchboard, Mini Calendar & Filters (4 Columns on LG) -->
                     <div class="lg:col-span-4 xl:col-span-4 flex flex-col gap-5">
