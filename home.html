@@ -4553,31 +4553,58 @@
                 }
 
                 if (data && Array.isArray(data)) {
-                    householdLoadList = data.map(row => ({
-                        id: row.id,
-                        source: row.source || 'manual_entry',
-                        name: row.name,
-                        category: row.category || 'General',
-                        brand: row.brand || '',
-                        model: row.model || '',
-                        control_no: row.control_no || '',
-                        watts: parseFloat(row.watts) || 0,
-                        voltage: parseFloat(row.voltage) || 230,
-                        qty: parseInt(row.quantity, 10) || 1,
-                        hours: parseFloat(row.hours_per_day) || 8,
-                        days: parseInt(row.days_per_month, 10) || 30,
-                        kwh: parseFloat(row.monthly_kwh) || 0,
-                        estCost: parseFloat(row.estimated_cost) || 0,
-                        energy_rating: row.energy_rating || '',
-                        room_location: row.room_location || 'General',
-                        is_active: row.is_active !== false,
-                        is_currently_on: Boolean(row.is_currently_on),
-                        last_turned_on_at: row.last_turned_on_at || null,
-                        ai_metadata: row.ai_metadata || {}
-                    }));
-                    renderHouseholdLoadList();
-                    renderCalendarApplianceSwitches();
-                    updateLiveEnergyMonitor();
+                    if (data.length === 0 && householdLoadList.length > 0) {
+                        // Uplink existing local appliances to Supabase
+                        for (const item of [...householdLoadList]) {
+                            await dbInsertAppliance(item);
+                        }
+                    } else {
+                        const oldIdMap = {};
+                        householdLoadList.forEach(oldItem => {
+                            if (oldItem.name) oldIdMap[oldItem.name.toLowerCase().trim()] = oldItem.id;
+                        });
+
+                        householdLoadList = data.map(row => ({
+                            id: row.id,
+                            source: row.source || 'manual_entry',
+                            name: row.name,
+                            category: row.category || 'General',
+                            brand: row.brand || '',
+                            model: row.model || '',
+                            control_no: row.control_no || '',
+                            watts: parseFloat(row.watts) || 0,
+                            voltage: parseFloat(row.voltage) || 230,
+                            qty: parseInt(row.quantity, 10) || 1,
+                            hours: parseFloat(row.hours_per_day) || 8,
+                            days: parseInt(row.days_per_month, 10) || 30,
+                            kwh: parseFloat(row.monthly_kwh) || 0,
+                            estCost: parseFloat(row.estimated_cost) || 0,
+                            energy_rating: row.energy_rating || '',
+                            room_location: row.room_location || 'General',
+                            is_active: row.is_active !== false,
+                            is_currently_on: Boolean(row.is_currently_on),
+                            last_turned_on_at: row.last_turned_on_at || null,
+                            ai_metadata: row.ai_metadata || {}
+                        }));
+
+                        // Reconcile local scheduled blocks if they referenced old temporary IDs
+                        let blocksChanged = false;
+                        calendarScheduledBlocks.forEach(b => {
+                            const matchingCloudApp = householdLoadList.find(app => {
+                                const oldId = oldIdMap[app.name.toLowerCase().trim()];
+                                return String(app.id) === String(b.applianceId) || (oldId && String(b.applianceId) === String(oldId));
+                            });
+                            if (matchingCloudApp && b.applianceId !== matchingCloudApp.id) {
+                                b.applianceId = matchingCloudApp.id;
+                                blocksChanged = true;
+                            }
+                        });
+                        if (blocksChanged) saveCalendarBlocks();
+
+                        renderHouseholdLoadList();
+                        renderCalendarApplianceSwitches();
+                        updateLiveEnergyMonitor();
+                    }
                 }
             } catch (e) {
                 console.warn('syncUserAppliancesFromDb exception:', e);
@@ -4623,7 +4650,18 @@
 
                 if (error) throw error;
                 if (data && data.id) {
+                    const oldId = item.id;
                     item.id = data.id;
+                    if (oldId && oldId !== data.id) {
+                        let blocksChanged = false;
+                        calendarScheduledBlocks.forEach(b => {
+                            if (String(b.applianceId) === String(oldId)) {
+                                b.applianceId = data.id;
+                                blocksChanged = true;
+                            }
+                        });
+                        if (blocksChanged) saveCalendarBlocks();
+                    }
                     renderHouseholdLoadList();
                     renderCalendarApplianceSwitches();
                 }
@@ -6421,24 +6459,33 @@
                     return;
                 }
 
-                if (data && Array.isArray(data) && data.length > 0) {
-                    const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-                    calendarScheduledBlocks = data.map(row => {
-                        const dayKey = (row.day || 'mon').toLowerCase();
-                        return {
-                            id: row.id,
-                            applianceId: row.appliance_id,
-                            dayKey: dayKey,
-                            dayNum: calendarState.selectedDay,
-                            startHour: parseFloat(row.hour) || 0,
-                            durationHours: parseFloat(row.duration_hours) || 1.0,
-                            autoPower: true,
-                            repeat: row.is_recurring ? 'daily' : 'once'
-                        };
-                    });
-                    saveCalendarBlocks();
-                    renderCalendarBlocks();
-                    renderCalendarApplianceSwitches();
+                if (data && Array.isArray(data)) {
+                    if (data.length === 0 && calendarScheduledBlocks.length > 0) {
+                        // Uplink local blocks that belong to actual household appliances
+                        for (const block of [...calendarScheduledBlocks]) {
+                            const validApp = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                            if (validApp) {
+                                await dbInsertCalendarEvent(block);
+                            }
+                        }
+                    } else if (data.length > 0) {
+                        calendarScheduledBlocks = data.map(row => {
+                            const dayKey = (row.day || 'mon').toLowerCase();
+                            return {
+                                id: row.id,
+                                applianceId: row.appliance_id,
+                                dayKey: dayKey,
+                                dayNum: calendarState.selectedDay,
+                                startHour: parseFloat(row.hour) || 0,
+                                durationHours: parseFloat(row.duration_hours) || 1.0,
+                                autoPower: true,
+                                repeat: row.is_recurring ? 'daily' : 'once'
+                            };
+                        });
+                        saveCalendarBlocks();
+                        renderCalendarBlocks();
+                        renderCalendarApplianceSwitches();
+                    }
                 }
             } catch (e) {
                 console.warn('syncUserCalendarEventsFromDb exception:', e);
@@ -6452,11 +6499,22 @@
                 const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
                 if (!session || !session.user) return;
 
-                const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                let item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                if (!item && block.title) {
+                    item = householdLoadList.find(a => a.name && a.name.toLowerCase() === block.title.toLowerCase());
+                }
+
+                // If appliance has not yet been saved to DB (has temporary id), ensure it is inserted first
+                if (item && (typeof item.id !== 'string' || item.id.startsWith('app_') || item.id.startsWith('mock_'))) {
+                    await dbInsertAppliance(item);
+                }
+
+                const validApplianceId = item && typeof item.id === 'string' && !item.id.startsWith('app_') && !item.id.startsWith('mock_') ? item.id : null;
+
                 const payload = {
                     user_id: session.user.id,
-                    appliance_id: (typeof block.applianceId === 'string' && !block.applianceId.startsWith('app_') && !block.applianceId.startsWith('mock_')) ? block.applianceId : null,
-                    title: item ? item.name : 'Scheduled Appliance',
+                    appliance_id: validApplianceId,
+                    title: item ? item.name : (block.title || 'Scheduled Appliance'),
                     category: 'appliance',
                     day: block.dayKey,
                     hour: Math.round((parseFloat(block.startHour) || 0) * 100) / 100,
@@ -6475,6 +6533,7 @@
                 if (data && data.id) {
                     const oldId = block.id;
                     block.id = data.id;
+                    if (validApplianceId) block.applianceId = validApplianceId;
                     if (activeEditingBlockId === oldId) {
                         activeEditingBlockId = data.id;
                     }
@@ -7268,11 +7327,13 @@
                 renderTimelineHeaderRuler();
             }
 
-            // Auto-clean orphaned schedule blocks whose appliance has been deleted from household inventory
-            const prevCount = calendarScheduledBlocks.length;
-            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => householdLoadList.some(item => String(item.id) === String(b.applianceId)));
-            if (calendarScheduledBlocks.length !== prevCount) {
-                saveCalendarBlocks();
+            // Auto-clean orphaned schedule blocks only if inventory is loaded and not during initial cloud sync
+            if (!window._isInitialDbSyncing && householdLoadList.length > 0) {
+                const prevCount = calendarScheduledBlocks.length;
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => householdLoadList.some(item => String(item.id) === String(b.applianceId)));
+                if (calendarScheduledBlocks.length !== prevCount) {
+                    saveCalendarBlocks();
+                }
             }
 
             layer.innerHTML = '';
@@ -8203,6 +8264,7 @@
         }
         updateLiveEnergyMonitor();
 
+        window._isInitialDbSyncing = true;
         // Initialize User Profile & Sync Data from Supabase
         async function initAuthUser() {
             try {
@@ -8233,6 +8295,14 @@
                 }
             } catch (e) {
                 console.warn('Auth init error:', e);
+            } finally {
+                window._isInitialDbSyncing = false;
+                if (typeof renderHouseholdLoadList === 'function') {
+                    renderHouseholdLoadList();
+                }
+                renderCalendarApplianceSwitches();
+                renderCalendarBlocks();
+                updateLiveEnergyMonitor();
             }
         }
         initAuthUser();
