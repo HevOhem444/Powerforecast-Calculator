@@ -6525,7 +6525,7 @@
             }
         }
 
-        // Usage Session Completion Logger to Supabase appliance_usage_logs
+        // Usage Session Completion Logger to Supabase appliance_usage_logs (Supports Sub-minute & Second Precision)
         async function dbLogApplianceUsageSession(applianceId, startedAt, endedAt, durationMinutes, kwh, isPeak, estCost) {
             try {
                 const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
@@ -6543,8 +6543,8 @@
                         appliance_id: validApplianceId,
                         started_at: startedAt,
                         ended_at: endedAt,
-                        duration_minutes: Math.round(durationMinutes * 10) / 10,
-                        kwh_consumed: Math.round(kwh * 1000) / 1000,
+                        duration_minutes: Math.round(durationMinutes * 100) / 100,
+                        kwh_consumed: Math.round(kwh * 10000) / 10000,
                         is_peak_window: Boolean(isPeak),
                         estimated_cost: Math.round(estCost * 100) / 100,
                         source: 'calendar_toggle',
@@ -6889,8 +6889,9 @@
                 item.last_turned_on_at = endedAt;
                 localStorage.removeItem('pf_shutoff_' + id);
             } else if (startedAt) {
-                const elapsedMs = Math.max(0, now - new Date(startedAt).getTime());
-                const elapsedSeconds = elapsedMs / 1000.0;
+                const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
+                const elapsedSeconds = Math.max(1, Math.round(elapsedMs / 1000.0));
+                const durationHours = elapsedMs / 3600000.0;
                 
                 // Persist manual shutoff suppression until current schedule window ends
                 const curHour = new Date().getHours() + (new Date().getMinutes() / 60.0);
@@ -6909,25 +6910,10 @@
                     localStorage.setItem('pf_shutoff_' + id, String(endToday.getTime()));
                 }
                 
-                // If stopped within 30 seconds -> Treat as accidental click / test toggle
-                if (elapsedSeconds < 30) {
-                    isQuickMicroToggle = true;
-                    const activeBlockIdx = calendarScheduledBlocks.findIndex(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey && b.id.startsWith('blk_'));
-                    if (activeBlockIdx !== -1) {
-                        const blk = calendarScheduledBlocks[activeBlockIdx];
-                        if (blk.repeat === 'once' && blk.durationHours <= 1.0) {
-                            calendarScheduledBlocks.splice(activeBlockIdx, 1);
-                            dbDeleteCalendarEvent(blk.id);
-                            saveCalendarBlocks();
-                        }
-                    }
-                } else {
-                    // Normal valid session >= 30 seconds
-                    const durationHours = elapsedMs / 3600000.0;
-                    if (activeBlock) {
-                        activeBlock.durationHours = durationHours;
-                        saveCalendarBlocks();
-                    }
+                // Update schedule block duration with exact second precision
+                if (activeBlock) {
+                    activeBlock.durationHours = durationHours;
+                    saveCalendarBlocks();
                 }
             }
 
@@ -6954,9 +6940,9 @@
                         .eq('id', item.id)
                         .eq('user_id', session.user.id);
 
-                    // If turning OFF and NOT a micro-toggle (<30s), log usage session
-                    if (!willTurnOn && startedAt && !isQuickMicroToggle) {
-                        const elapsedMs = Math.max(30000, now - new Date(startedAt).getTime());
+                    // If turning OFF, log usage session with second precision
+                    if (!willTurnOn && startedAt) {
+                        const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
                         const durationMinutes = elapsedMs / 60000.0;
                         const totalRate = getEffectiveCalendarRate();
                         const kwhConsumed = (item.watts * (elapsedMs / 3600000.0)) / 1000.0;
@@ -7398,7 +7384,11 @@
                 const totalEnd = block.startHour + block.durationHours;
                 const isOvernight = totalEnd > 24.0;
                 const endHour = totalEnd % 24;
-                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)}${isOvernight ? ` (+1 day on ${nextDayKey.toUpperCase()})` : ''} (${block.durationHours.toFixed(1)} hrs total)`;
+                const durSecs = Math.max(1, Math.round(block.durationHours * 3600));
+                const durLabel = block.durationHours >= 1 
+                    ? `${block.durationHours.toFixed(1)} hrs` 
+                    : (block.durationHours >= (1/60.0) ? `${Math.round(block.durationHours * 60)} mins` : `${durSecs} secs`);
+                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)}${isOvernight ? ` (+1 day on ${nextDayKey.toUpperCase()})` : ''} (${durLabel})`;
 
                 const sessionCost = (appWatts * block.durationHours / 1000.0) * totalRate;
                 const isAuto = Boolean(block.autoPower);
@@ -7614,10 +7604,21 @@
 
                 const appWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
                 const durHours = block ? block.durationHours : (receiptData ? receiptData.durationHours : 0.5);
+                const totalSecs = Math.max(1, Math.round(durHours * 3600));
                 const durMinutes = durHours * 60;
-                const durText = durHours >= 1 
-                    ? `${Math.floor(durHours)} hr ${Math.round((durHours % 1) * 60)} mins`
-                    : `${Math.max(1, Math.round(durMinutes))} mins`;
+                
+                let durText = '';
+                if (durHours >= 1) {
+                    const hrs = Math.floor(durHours);
+                    const mins = Math.round((durHours % 1) * 60);
+                    durText = mins > 0 ? `${hrs} hr ${mins} mins` : `${hrs} hr`;
+                } else if (durMinutes >= 1) {
+                    const mins = Math.floor(durMinutes);
+                    const secs = Math.round((durMinutes % 1) * 60);
+                    durText = secs > 0 ? `${mins} min ${secs} secs` : `${mins} mins`;
+                } else {
+                    durText = `${totalSecs} sec${totalSecs === 1 ? '' : 's'}`;
+                }
 
                 const totalRate = getEffectiveCalendarRate();
                 const kwh = (appWatts * durHours) / 1000.0;
@@ -7636,10 +7637,10 @@
                 const timeSpanEl = document.getElementById('receiptTimeSpan');
 
                 if (durEl) durEl.textContent = durText;
-                if (kwhEl) kwhEl.textContent = `${kwh.toFixed(3)} kWh`;
+                if (kwhEl) kwhEl.textContent = kwh < 0.01 ? `${kwh.toFixed(4)} kWh` : `${kwh.toFixed(3)} kWh`;
                 if (wattsEl) wattsEl.textContent = `${appWatts.toLocaleString()} Watts`;
                 if (rateEl) rateEl.textContent = `₱${totalRate.toFixed(2)} / kWh`;
-                if (costEl) costEl.textContent = `₱${cost.toFixed(2)}`;
+                if (costEl) costEl.textContent = (cost < 0.01 && cost > 0) ? `< ₱0.01` : `₱${cost.toFixed(2)}`;
                 if (peakBadge) {
                     peakBadge.textContent = isPeak ? '🔥 Peak Window Session' : '🟢 Off-Peak Session';
                     peakBadge.className = isPeak 
