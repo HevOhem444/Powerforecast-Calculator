@@ -864,11 +864,30 @@
             if (!errMsg) {
                 errMsg = document.createElement('p');
                 errMsg.id = 'login-error';
-                errMsg.style.cssText = 'color:#ff6b6b;font-size:0.85rem;text-align:center;margin-top:12px;font-weight:600;';
                 document.getElementById('login-btn').insertAdjacentElement('afterend', errMsg);
             }
+            errMsg.style.cssText = 'color:#ff6b6b;font-size:0.85rem;text-align:center;margin-top:12px;font-weight:600;';
             errMsg.textContent = message;
         }
+
+        function showSuccess(message) {
+            let successMsg = document.getElementById('login-error');
+            if (!successMsg) {
+                successMsg = document.createElement('p');
+                successMsg.id = 'login-error';
+                document.getElementById('login-btn').insertAdjacentElement('afterend', successMsg);
+            }
+            successMsg.style.cssText = 'color:#51cf66;font-size:0.85rem;text-align:center;margin-top:12px;font-weight:600;background:rgba(81,207,102,0.12);padding:10px 14px;border-radius:10px;border:1px solid rgba(81,207,102,0.3);';
+            successMsg.textContent = message;
+        }
+
+        // Check if redirected after password reset
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('reset') === 'success') {
+                showSuccess('✓ Password reset successfully! Please log in with your new password.');
+            }
+        });
 
         // Enter key handling
         document.getElementById('password-input').addEventListener('keydown', (e) => {
