@@ -3800,6 +3800,13 @@
             if (targetNav) {
                 targetNav.classList.add('active');
             }
+
+            if (viewName === 'calendar') {
+                if (typeof renderCalendarApplianceSwitches === 'function') renderCalendarApplianceSwitches();
+                if (typeof renderCalendarBlocks === 'function') renderCalendarBlocks();
+                if (typeof renderMiniCalendar === 'function') renderMiniCalendar();
+                if (typeof updateLiveEnergyMonitor === 'function') updateLiveEnergyMonitor();
+            }
         }
 
         function showConfirmModal(title, msg) {
@@ -6366,7 +6373,7 @@
                     applianceId: 'mock_panasonic_ac',
                     dayKey: curDayKey,
                     dayNum: curDayNum,
-                    startHour: 13, // 1:00 PM
+                    startHour: 13.0, // 1:00 PM
                     durationHours: 3.0, // 1:00 PM to 4:00 PM (3 hrs)
                     autoPower: true,
                     repeat: 'once'
@@ -6376,7 +6383,7 @@
                     applianceId: 'mock_tefal_cooktop',
                     dayKey: curDayKey,
                     dayNum: curDayNum,
-                    startHour: 18, // 6:00 PM
+                    startHour: 18.0, // 6:00 PM
                     durationHours: 1.5, // 6:00 PM to 7:30 PM (1.5 hrs)
                     autoPower: false,
                     repeat: 'once'
@@ -6388,6 +6395,12 @@
             try {
                 localStorage.setItem('powerforecast_calendar_blocks_v2', JSON.stringify(calendarScheduledBlocks));
             } catch (e) { }
+        }
+
+        function getEffectiveCalendarRate() {
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            return genRate + 3.50;
         }
 
         // Supabase Cloud Sync for Calendar Events
@@ -6409,16 +6422,20 @@
                 }
 
                 if (data && Array.isArray(data) && data.length > 0) {
-                    calendarScheduledBlocks = data.map(row => ({
-                        id: row.id,
-                        applianceId: row.appliance_id,
-                        dayKey: (row.day || 'mon').toLowerCase(),
-                        dayNum: calendarState.selectedDay,
-                        startHour: parseFloat(row.hour) || 0,
-                        durationHours: parseFloat(row.duration_hours) || 1.0,
-                        autoPower: true,
-                        repeat: row.is_recurring ? 'daily' : 'once'
-                    }));
+                    const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                    calendarScheduledBlocks = data.map(row => {
+                        const dayKey = (row.day || 'mon').toLowerCase();
+                        return {
+                            id: row.id,
+                            applianceId: row.appliance_id,
+                            dayKey: dayKey,
+                            dayNum: calendarState.selectedDay,
+                            startHour: parseFloat(row.hour) || 0,
+                            durationHours: parseFloat(row.duration_hours) || 1.0,
+                            autoPower: true,
+                            repeat: row.is_recurring ? 'daily' : 'once'
+                        };
+                    });
                     saveCalendarBlocks();
                     renderCalendarBlocks();
                     renderCalendarApplianceSwitches();
@@ -6442,8 +6459,8 @@
                     title: item ? item.name : 'Scheduled Appliance',
                     category: 'appliance',
                     day: block.dayKey,
-                    hour: Math.floor(block.startHour),
-                    duration_hours: block.durationHours,
+                    hour: Math.round((parseFloat(block.startHour) || 0) * 100) / 100,
+                    duration_hours: Math.round((parseFloat(block.durationHours) || 1.0) * 100) / 100,
                     is_recurring: block.repeat !== 'once',
                     notes: `Recurrence: ${block.repeat || 'once'}`
                 };
@@ -6479,8 +6496,8 @@
                     .from('user_calendar_events')
                     .update({
                         day: block.dayKey,
-                        hour: Math.floor(block.startHour),
-                        duration_hours: block.durationHours,
+                        hour: Math.round((parseFloat(block.startHour) || 0) * 100) / 100,
+                        duration_hours: Math.round((parseFloat(block.durationHours) || 1.0) * 100) / 100,
                         is_recurring: block.repeat !== 'once',
                         updated_at: new Date().toISOString()
                     })
@@ -6579,9 +6596,7 @@
 
             const selectedKey = calendarState.selectedDayKey;
             const { prevDayKey } = getAdjacentDays(selectedKey);
-
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            const totalRate = getEffectiveCalendarRate();
 
             let totalDayKwh = 0;
             let totalDayCost = 0;
@@ -6599,7 +6614,7 @@
                 // Portion of hours that fall on this day
                 const dayHours = Math.min(block.durationHours, Math.max(0, 24.0 - block.startHour));
                 const blockKwh = (watts * dayHours) / 1000.0;
-                const blockCost = blockKwh * (genRate + 3.5);
+                const blockCost = blockKwh * totalRate;
 
                 totalDayKwh += blockKwh;
                 totalDayCost += blockCost;
@@ -6624,7 +6639,7 @@
                     const watts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
 
                     const blockKwh = (watts * rolloverHours) / 1000.0;
-                    const blockCost = blockKwh * (genRate + 3.5);
+                    const blockCost = blockKwh * totalRate;
 
                     totalDayKwh += blockKwh;
                     totalDayCost += blockCost;
@@ -6735,10 +6750,9 @@
                     const elapsedMs = Math.max(0, now - new Date(item.last_turned_on_at).getTime());
                     const mins = Math.floor(elapsedMs / 60000);
                     const secs = Math.floor((elapsedMs % 60000) / 1000);
-                    const genInput = document.getElementById('genRateInput');
-                    const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+                    const totalRate = getEffectiveCalendarRate();
                     const runKwh = (item.watts * (elapsedMs / 3600000)) / 1000;
-                    const runCost = runKwh * (genRate + 3.5);
+                    const runCost = runKwh * totalRate;
                     runningLabel = `🟢 Running: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} (₱${runCost.toFixed(2)})`;
                 }
 
@@ -6756,7 +6770,7 @@
                             </div>
                         </div>
 
-                        <!-- Switch Toggle: Opens Modal on first schedule add, or toggles power directly -->
+                        <!-- Switch Toggle -->
                         <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                             ${isCooldown ? `
                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold animate-pulse">
@@ -6824,9 +6838,8 @@
                 }
             });
 
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-            const liveHourlyCost = (totalActiveWatts / 1000) * (genRate + 3.5);
+            const totalRate = getEffectiveCalendarRate();
+            const liveHourlyCost = (totalActiveWatts / 1000) * totalRate;
 
             const wattsEl = document.getElementById('calLiveActiveWatts');
             const costEl = document.getElementById('calLiveHourlyCost');
@@ -6847,7 +6860,7 @@
         setInterval(updateLiveEnergyMonitor, 1000);
 
         // Appliance State Toggle Controller (with Surge Cooldown, Safety Modals & Supabase Logging)
-        async function toggleApplianceState(id, bypassConfirm = false) {
+        async function toggleApplianceState(id, bypassConfirm = false, isAutomationCall = false) {
             const item = householdLoadList.find(a => String(a.id) === String(id));
             if (!item) return;
 
@@ -6869,6 +6882,7 @@
             // Apply Toggle State
             item.is_currently_on = willTurnOn;
             item.manual_override_until = now + 60000; // 1-minute automation debounce
+            item.auto_powered = Boolean(isAutomationCall && willTurnOn);
             
             let isQuickMicroToggle = false;
             if (willTurnOn) {
@@ -6887,7 +6901,7 @@
                     b.dayKey === curDayKey && 
                     isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)
                 );
-                if (activeBlock) {
+                if (activeBlock && !isAutomationCall) {
                     const endHour = activeBlock.startHour + activeBlock.durationHours;
                     const endToday = new Date();
                     endToday.setHours(Math.floor(endHour % 24), Math.round((endHour % 1) * 60), 0, 0);
@@ -6895,10 +6909,9 @@
                     localStorage.setItem('pf_shutoff_' + id, String(endToday.getTime()));
                 }
                 
-                // If stopped within 30 seconds -> Treat as accidental click / test toggle!
+                // If stopped within 30 seconds -> Treat as accidental click / test toggle
                 if (elapsedSeconds < 30) {
                     isQuickMicroToggle = true;
-                    // Clean up any ephemeral block created on today's calendar for this immediate run
                     const activeBlockIdx = calendarScheduledBlocks.findIndex(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey && b.id.startsWith('blk_'));
                     if (activeBlockIdx !== -1) {
                         const blk = calendarScheduledBlocks[activeBlockIdx];
@@ -6908,7 +6921,6 @@
                             saveCalendarBlocks();
                         }
                     }
-                    showToast("Quick Toggle (<30s)", "Discarded test toggle. Slot is clear.", "info");
                 } else {
                     // Normal valid session >= 30 seconds
                     const durationHours = elapsedMs / 3600000.0;
@@ -6946,10 +6958,9 @@
                     if (!willTurnOn && startedAt && !isQuickMicroToggle) {
                         const elapsedMs = Math.max(30000, now - new Date(startedAt).getTime());
                         const durationMinutes = elapsedMs / 60000.0;
-                        const genInput = document.getElementById('genRateInput');
-                        const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+                        const totalRate = getEffectiveCalendarRate();
                         const kwhConsumed = (item.watts * (elapsedMs / 3600000.0)) / 1000.0;
-                        const estCost = kwhConsumed * (genRate + 3.5);
+                        const estCost = kwhConsumed * totalRate;
                         const isPeak = isPeakHour(new Date().getHours());
 
                         await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
@@ -7028,12 +7039,11 @@
                     track.appendChild(span);
                 });
             } else if (mode === '12h') {
-                // 30-minute ticks (48 marks)
                 for (let h = 0; h <= 24; h += 0.5) {
                     const span = document.createElement('span');
                     const hInt = Math.floor(h);
                     const m = h % 1 === 0 ? ':00' : ':30';
-                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : (hInt === 12 ? 'PM' : 'PM'));
+                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : 'PM');
                     const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
                     const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
 
@@ -7042,13 +7052,12 @@
                     track.appendChild(span);
                 }
             } else if (mode === '6h') {
-                // 15-minute ticks (96 marks)
                 for (let h = 0; h <= 24; h += 0.25) {
                     const span = document.createElement('span');
                     const hInt = Math.floor(h);
                     const mins = Math.round((h - hInt) * 60);
                     const mStr = `:${String(mins).padStart(2, '0')}`;
-                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : (hInt === 12 ? 'PM' : 'PM'));
+                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : 'PM');
                     const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
                     const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
 
@@ -7057,7 +7066,6 @@
                     track.appendChild(span);
                 }
             } else if (mode === '1h') {
-                // 5-minute ticks (288 marks)
                 for (let h = 0; h <= 24; h += (5 / 60.0)) {
                     const span = document.createElement('span');
                     const hInt = Math.floor(h);
@@ -7114,14 +7122,22 @@
         }
 
         function getSelectedCalendarDateString() {
-            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-            const now = new Date();
-            const currentDayOfWeek = now.getDay();
-            const diffToMon = (currentDayOfWeek + 6) % 7;
-            const monDate = new Date(now);
-            monDate.setDate(now.getDate() - diffToMon);
+            const y = calendarState.year;
+            const m = String(calendarState.month + 1).padStart(2, '0');
+            const d = String(calendarState.selectedDay).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
 
-            const dayIdx = weekDayKeys.indexOf(calendarState.selectedDayKey);
+        function getBlockDateString(block) {
+            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const viewDate = new Date(calendarState.year, calendarState.month, calendarState.selectedDay);
+            const currentDayOfWeek = viewDate.getDay();
+            const diffToMon = (currentDayOfWeek + 6) % 7;
+            const monDate = new Date(viewDate);
+            monDate.setDate(viewDate.getDate() - diffToMon);
+
+            const targetKey = block ? block.dayKey : calendarState.selectedDayKey;
+            const dayIdx = weekDayKeys.indexOf(targetKey);
             const targetDate = new Date(monDate);
             targetDate.setDate(monDate.getDate() + (dayIdx >= 0 ? dayIdx : 0));
 
@@ -7143,24 +7159,23 @@
             const currentHour = now.getHours() + (now.getMinutes() / 60.0);
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
             const isRunning = Boolean(item && item.is_currently_on);
+            const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
 
-            const endHour = block.startHour + block.durationHours;
-
-            // If appliance is actively ON and current time is at/past start time -> RUNNING takes absolute precedence
-            if (isRunning && currentHour >= block.startHour) {
+            if (isRunning && inWindow) {
                 return 'running';
             }
 
-            if (endHour <= currentHour) {
+            const endHour = block.startHour + block.durationHours;
+            if (endHour <= 24 && endHour <= currentHour) {
                 return 'past';
-            } else if (currentHour >= block.startHour) {
+            } else if (currentHour >= block.startHour && endHour <= 24) {
                 return isRunning ? 'running' : 'past';
             } else {
-                return 'future';
+                return inWindow && isRunning ? 'running' : 'future';
             }
         }
 
-        // Draft-First Schedule Creator (Zero Phantom Blocks on Cancel)
+        // Draft-First Schedule Creator
         let activeEditingDraft = null;
 
         function openNewScheduleForAppliance(applianceId) {
@@ -7176,7 +7191,7 @@
             }
 
             const now = new Date();
-            const startHour = now.getHours() + (now.getMinutes() / 60.0);
+            const startHour = Math.floor(now.getHours() + (now.getMinutes() / 60.0));
             const durationHours = 1.0;
 
             activeEditingDraft = {
@@ -7213,7 +7228,7 @@
             }
         }
 
-        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Temporal Protections & Zoom Support)
+        // Render Horizontal Roadmap Timeline Representation
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineRoadmapRowsLayer');
             if (!layer) return;
@@ -7255,8 +7270,7 @@
                 return;
             }
 
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            const totalRate = getEffectiveCalendarRate();
 
             // 1. Render Incoming Rollover Blocks
             incomingRolloverBlocks.forEach(block => {
@@ -7279,7 +7293,7 @@
                 const endHour = totalEnd % 24;
 
                 const timeSpanLabel = `12:00 AM – ${formatHour(endHour)} (${rolloverHours.toFixed(1)} hrs overnight rollover from ${prevDayKey.toUpperCase()})`;
-                const sessionCost = (appWatts * rolloverHours / 1000.0) * (genRate + 3.5);
+                const sessionCost = (appWatts * rolloverHours / 1000.0) * totalRate;
                 const isAuto = Boolean(block.autoPower);
 
                 const leftPercent = 0;
@@ -7380,7 +7394,7 @@
                 const endHour = totalEnd % 24;
                 const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)}${isOvernight ? ` (+1 day on ${nextDayKey.toUpperCase()})` : ''} (${block.durationHours.toFixed(1)} hrs total)`;
 
-                const sessionCost = (appWatts * block.durationHours / 1000.0) * (genRate + 3.5);
+                const sessionCost = (appWatts * block.durationHours / 1000.0) * totalRate;
                 const isAuto = Boolean(block.autoPower);
                 const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
                 const isPeak = overlap.isPeak;
@@ -7474,7 +7488,7 @@
             });
         }
 
-        // Delete Scheduled Timeline Block or Entire Recurring Series (and power off appliance completely)
+        // Delete Scheduled Timeline Block or Entire Recurring Series
         function deleteCalendarBlock(blockId, deleteAllSeries = false) {
             const block = calendarScheduledBlocks.find(b => b.id === blockId);
             if (!block) return;
@@ -7497,9 +7511,14 @@
                 showToast("Block Removed", "Removed schedule block from timeline.", "info");
             }
 
-            // Power OFF appliance completely if it was currently running
+            // Power OFF appliance ONLY if it was auto-turned on for THIS specific active window today
+            const now = new Date();
+            const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+            const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const todayKey = dayMap[now.getDay()];
             const appItem = householdLoadList.find(a => String(a.id) === String(targetApplianceId));
-            if (appItem && appItem.is_currently_on) {
+            
+            if (appItem && appItem.is_currently_on && appItem.auto_powered && block.dayKey === todayKey && isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours)) {
                 delete applianceSwitchCooldowns[targetApplianceId];
                 toggleApplianceState(targetApplianceId, true);
             }
@@ -7512,24 +7531,6 @@
         // ===== BENTO BLOCK SETTINGS MODAL HANDLERS =====
         let activeEditingBlockId = null;
         let activeEditingApplianceId = null;
-
-        function getBlockDateString(block) {
-            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-            const now = new Date();
-            const currentDayOfWeek = now.getDay();
-            const diffToMon = (currentDayOfWeek + 6) % 7;
-            const monDate = new Date(now);
-            monDate.setDate(now.getDate() - diffToMon);
-
-            const dayIdx = weekDayKeys.indexOf(block ? block.dayKey : calendarState.selectedDayKey);
-            const targetDate = new Date(monDate);
-            targetDate.setDate(monDate.getDate() + (dayIdx >= 0 ? dayIdx : 0));
-
-            const y = targetDate.getFullYear();
-            const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-            const d = String(targetDate.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        }
 
         function onModalStartDateChange() {
             const dateInput = document.getElementById('bentoSettingStartDate');
@@ -7573,7 +7574,6 @@
             const endInput = document.getElementById('bentoSettingEndTime');
             const repeatSelect = document.getElementById('bentoSettingRepeat');
             const startLockBadge = document.getElementById('bentoStartLockBadge');
-            const timeWarning = document.getElementById('bentoModalTimeWarning');
             const readOnlyNotice = document.getElementById('bentoModalReadOnlyNotice');
             const delSingleBtn = document.getElementById('bentoDeleteSingleBtn');
             const delSeriesBtn = document.getElementById('bentoDeleteSeriesBtn');
@@ -7598,9 +7598,7 @@
                     ? `${Math.floor(durHours)} hr ${Math.round((durHours % 1) * 60)} mins`
                     : `${Math.max(1, Math.round(durMinutes))} mins`;
 
-                const genInput = document.getElementById('genRateInput');
-                const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-                const totalRate = genRate + 3.5;
+                const totalRate = getEffectiveCalendarRate();
                 const kwh = (appWatts * durHours) / 1000.0;
                 const cost = kwh * totalRate;
 
@@ -7760,9 +7758,8 @@
 
             const item = block ? householdLoadList.find(a => String(a.id) === String(block.applianceId)) : (activeEditingApplianceId ? householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId)) : null);
             const watts = item ? item.watts : 1000;
-            const genInput = document.getElementById('genRateInput');
-            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-            const estCost = (watts * duration / 1000) * (genRate + 3.5);
+            const totalRate = getEffectiveCalendarRate();
+            const estCost = (watts * duration / 1000) * totalRate;
 
             const isPeak = checkSchedulePeakOverlap(startVal, duration).isPeak;
             if (costLabel) {
@@ -7810,6 +7807,7 @@
             const duration = Math.max(0.1, endVal - startVal);
 
             // Validate date picker (no past dates)
+            let chosenTargetDate = null;
             if (dateInput && dateInput.value) {
                 const todayStr = getTodayDateString();
                 if (dateInput.value < todayStr) {
@@ -7817,9 +7815,9 @@
                     return;
                 }
                 const [y, m, d] = dateInput.value.split('-').map(Number);
-                const targetDate = new Date(y, m - 1, d);
+                chosenTargetDate = new Date(y, m - 1, d);
                 const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                block.dayKey = dayMap[targetDate.getDay()];
+                block.dayKey = dayMap[chosenTargetDate.getDay()];
                 block.dayNum = d;
             }
 
@@ -7833,7 +7831,7 @@
             block.seriesId = seriesId;
 
             if (!activeEditingBlockId) {
-                // Draft Commit: Assign ID and save
+                // Draft Commit
                 block.id = 'blk_' + Date.now();
                 calendarScheduledBlocks.push(block);
                 dbInsertCalendarEvent(block);
@@ -7845,7 +7843,7 @@
                 }
             }
 
-            // Handle Repeat Replication across other days with STRICT single block per appliance
+            // Handle Repeat Replication across target days
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
             if (repeatMode === 'daily') targetDays = weekDayKeys;
@@ -7853,11 +7851,11 @@
             else if (repeatMode === 'weekends') targetDays = ['sat', 'sun'];
 
             if (targetDays.length > 0) {
-                const now = new Date();
-                const currentDayOfWeek = now.getDay();
+                const baseTarget = chosenTargetDate || new Date(calendarState.year, calendarState.month, calendarState.selectedDay);
+                const currentDayOfWeek = baseTarget.getDay();
                 const diffToMon = (currentDayOfWeek + 6) % 7;
-                const monDate = new Date(now);
-                monDate.setDate(now.getDate() - diffToMon);
+                const monDate = new Date(baseTarget);
+                monDate.setDate(baseTarget.getDate() - diffToMon);
 
                 targetDays.forEach(day => {
                     if (day !== block.dayKey) {
@@ -7907,6 +7905,17 @@
                 block.seriesId = null;
             }
 
+            // Navigate view to the scheduled block's date so it appears immediately
+            if (chosenTargetDate) {
+                calendarState.year = chosenTargetDate.getFullYear();
+                calendarState.month = chosenTargetDate.getMonth();
+                calendarState.selectedDay = block.dayNum;
+                calendarState.selectedDayKey = block.dayKey;
+                updateDayStripDates(chosenTargetDate);
+                selectCalendarDay(block.dayKey, block.dayNum);
+                renderMiniCalendar();
+            }
+
             saveCalendarBlocks();
             renderCalendarBlocks();
             renderCalendarApplianceSwitches();
@@ -7926,7 +7935,7 @@
             closeBentoSettingsModal();
         }
 
-        // Automated Power Scheduler Engine (Checks active time windows for auto-power blocks with persistent shutoff protection)
+        // Automated Power Scheduler Engine
         function checkAutomatedApplianceSchedules() {
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60.0);
@@ -7939,13 +7948,13 @@
                     const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                     if (!item) return;
 
-                    // Respect persistent manual shutoff suppression across page refreshes
+                    // Respect persistent manual shutoff suppression
                     const shutoffUntil = parseInt(localStorage.getItem('pf_shutoff_' + item.id) || '0', 10);
                     if (shutoffUntil && shutoffUntil > nowMs) {
-                        return; // User turned off manually early. DO NOT auto-power ON!
+                        return;
                     }
 
-                    // Respect manual override debounce (prevents toggling back immediately after manual switch)
+                    // Respect manual override debounce
                     if (item.manual_override_until && item.manual_override_until > nowMs) {
                         return;
                     }
@@ -7953,17 +7962,18 @@
                     const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
 
                     if (inWindow && !item.is_currently_on) {
-                        toggleApplianceState(item.id, true);
+                        toggleApplianceState(item.id, true, true);
                         showToast("Smart Automation", `Auto-turned ON "${item.name}" per schedule!`, "info");
-                    } else if (!inWindow && item.is_currently_on) {
-                        // Check if other active blocks exist for this appliance before turning off
+                    } else if (!inWindow && item.is_currently_on && item.auto_powered) {
+                        // Only auto-turn OFF if it was auto-powered ON and no other active autoPower block is running
                         const otherActive = calendarScheduledBlocks.some(b => 
+                            b.autoPower &&
                             String(b.applianceId) === String(item.id) && 
                             b.dayKey === todayKey && 
                             isTimeInScheduleWindow(currentHour, b.startHour, b.durationHours)
                         );
                         if (!otherActive) {
-                            toggleApplianceState(item.id, true);
+                            toggleApplianceState(item.id, true, true);
                             showToast("Smart Automation", `Auto-turned OFF "${item.name}" (session complete)!`, "info");
                         }
                     }
@@ -8048,7 +8058,7 @@
             // Current month days
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('button');
-                const isSelected = (day === calendarState.selectedDay && calendarState.year === now.getFullYear() && calendarState.month === now.getMonth());
+                const isSelected = (day === calendarState.selectedDay);
                 const isToday = (day === now.getDate() && calendarState.year === now.getFullYear() && calendarState.month === now.getMonth());
 
                 let classes = 'py-1 rounded-full text-xs font-semibold transition-all hover:bg-indigo-500/30 hover:text-white flex items-center justify-center mx-auto w-7 h-7 ';
@@ -8102,6 +8112,16 @@
                 calendarState.month = 0;
             }
 
+            const daysInMonth = new Date(calendarState.year, calendarState.month + 1, 0).getDate();
+            if (calendarState.selectedDay > daysInMonth) {
+                calendarState.selectedDay = daysInMonth;
+            }
+
+            const targetDate = new Date(calendarState.year, calendarState.month, calendarState.selectedDay);
+            const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            calendarState.selectedDayKey = dayMap[targetDate.getDay()];
+            updateDayStripDates(targetDate);
+            selectCalendarDay(calendarState.selectedDayKey, calendarState.selectedDay);
             renderMiniCalendar();
         }
 
@@ -8109,11 +8129,11 @@
             const now = new Date();
             calendarState.year = now.getFullYear();
             calendarState.month = now.getMonth();
+            calendarState.selectedDay = now.getDate();
             const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-            const curDayKey = dayMap[now.getDay()];
-            const curDayNum = now.getDate();
+            calendarState.selectedDayKey = dayMap[now.getDay()];
             updateDayStripDates(now);
-            selectCalendarDay(curDayKey, curDayNum);
+            selectCalendarDay(calendarState.selectedDayKey, calendarState.selectedDay);
             renderMiniCalendar();
         }
 
