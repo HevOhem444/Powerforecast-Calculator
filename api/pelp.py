@@ -23,10 +23,16 @@ _PELP_DATA_CACHE: Optional[Dict[str, List[Dict[str, Any]]]] = None
 
 
 def find_pelp_json_dir() -> str:
-    """Locate the parsed_json directory in the workspace."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    """Locate the parsed_json directory in the workspace or Vercel lambda runtime."""
+    file_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(file_dir)
+    cwd = os.getcwd()
     candidates = [
         os.path.join(base_dir, "pelp_data", "parsed_json"),
+        os.path.join(cwd, "pelp_data", "parsed_json"),
+        os.path.join(file_dir, "pelp_data", "parsed_json"),
+        os.path.join(file_dir, "..", "pelp_data", "parsed_json"),
+        os.path.join("/var/task", "pelp_data", "parsed_json"),
         os.path.join(base_dir, "data", "parsed_json"),
         os.path.join(base_dir, "Appliances_PELP", "data", "parsed_json"),
         os.path.join(base_dir, "..", "Appliances_PELP", "data", "parsed_json"),
@@ -291,11 +297,23 @@ class handler(BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         try:
-            if path in ['/api/pelp', '/api/pelp/health']:
-                res = get_pelp_health()
-            elif path == '/api/pelp/categories':
-                res = {"categories": get_pelp_categories()}
-            elif path in ['/api/pelp/search', '/api/pelp/appliances/search']:
+            is_search = (
+                path in ['/api/pelp/search', '/api/pelp/appliances/search', '/search']
+                or path.endswith('/search')
+                or 'q' in params
+                or 'search_query' in params
+                or 'brand' in params
+                or 'model' in params
+            )
+            is_categories = (
+                path in ['/api/pelp/categories', '/categories']
+                or path.endswith('/categories')
+            )
+            is_category_slug = (
+                '/category/' in path or '/appliances/' in path
+            )
+
+            if is_search:
                 q = params.get('q', params.get('search_query', [None]))[0]
                 brand = params.get('brand', [None])[0]
                 model = params.get('model', [None])[0]
@@ -311,7 +329,9 @@ class handler(BaseHTTPRequestHandler):
                     category=category,
                     limit=limit
                 )
-            elif path.startswith('/api/pelp/category/') or path.startswith('/api/pelp/appliances/'):
+            elif is_categories:
+                res = {"categories": get_pelp_categories()}
+            elif is_category_slug:
                 parts = path.split('/')
                 slug = parts[-1]
                 try:

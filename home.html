@@ -4857,7 +4857,7 @@
             } catch (err) {
                 if (listEl) {
                     listEl.innerHTML = `
-                        <div class="p-6 rounded-xl bg-red-950/20 border border-red-500/30 text-center text-xs text-red-300">
+                        <div class="p-6 rounded-2xl bento-note-box border border-red-500/30 text-center text-xs text-red-600 dark:text-red-300">
                             Failed to load certified appliance registry. Please ensure backend server is running.
                         </div>
                     `;
@@ -4872,7 +4872,7 @@
             if (pelpState.results.length === 0) {
                 const query = pelpState.searchQuery ? pelpState.searchQuery.replace(/"/g, '&quot;') : '';
                 listEl.innerHTML = `
-                    <div class="flex flex-col items-center justify-center p-8 text-center gap-3 bg-indigo-950/20 rounded-2xl border border-indigo-500/20">
+                    <div class="flex flex-col items-center justify-center p-8 text-center gap-3 bento-sub-card rounded-2xl border-2 border-dashed border-indigo-400/30">
                         <span class="text-3xl">🔍</span>
                         <div>
                             <p class="text-xs font-bold t-primary">${query ? `No certified models found for "${query}"` : 'No certified appliances found'}</p>

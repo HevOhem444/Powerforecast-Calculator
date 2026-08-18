@@ -3,9 +3,8 @@ server.js
 scrape_pelp.py
 meralco_parser.py
 test_appliance_integration.py
-pelp/
-pelp_data/
-pelp_ui/
+pelp_data/raw_pdfs/
 .cache/
 .github/
 *.md
+*.pdf
