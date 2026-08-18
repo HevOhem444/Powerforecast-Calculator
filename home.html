@@ -2941,10 +2941,15 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
-                            <button onclick="deleteCurrentBentoBlockFromModal()" class="px-4 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all">
-                                🗑️ Delete Block
-                            </button>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                            <div class="flex items-center gap-2">
+                                <button id="bentoDeleteSingleBtn" onclick="deleteCurrentBentoBlockFromModal(false)" class="px-3.5 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all border border-rose-500/20 cursor-pointer">
+                                    🗑️ Delete This Day
+                                </button>
+                                <button id="bentoDeleteSeriesBtn" onclick="deleteCurrentBentoBlockFromModal(true)" class="hidden px-3.5 py-2 rounded-xl text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 text-xs font-bold transition-all border border-rose-500/40 cursor-pointer" title="Delete this routine from all recurring days">
+                                    🗑️ Delete All Recurring Days
+                                </button>
+                            </div>
                             <div class="flex items-center gap-2">
                                 <button onclick="closeBentoSettingsModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold">
                                     Cancel
@@ -6454,7 +6459,16 @@
             };
         }
 
-        // Daily Projected Consumption & Peak Concurrency Diagnostics Engine
+        // Helper: Get previous and next day keys in cyclic week
+        function getAdjacentDays(dayKey) {
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const idx = days.indexOf(dayKey);
+            const prevDayKey = days[(idx + 6) % 7];
+            const nextDayKey = days[(idx + 1) % 7];
+            return { prevDayKey, nextDayKey };
+        }
+
+        // Daily Projected Consumption & Peak Concurrency Diagnostics Engine (Supports Overnight Rollover)
         function updateDailyCalendarSummary() {
             const totalKwhEl = document.getElementById('calDayTotalKwh');
             const totalCostEl = document.getElementById('calDayTotalCost');
@@ -6463,7 +6477,9 @@
 
             if (!totalKwhEl) return;
 
-            const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
+            const selectedKey = calendarState.selectedDayKey;
+            const { prevDayKey } = getAdjacentDays(selectedKey);
+
             const genInput = document.getElementById('genRateInput');
             const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
 
@@ -6474,24 +6490,52 @@
             // 24-hour hourly concurrency simulation array (0..23)
             const hourlySimWatts = new Array(24).fill(0);
 
-            dayBlocks.forEach(block => {
+            // 1. Blocks starting on selected day
+            const startingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+            startingBlocks.forEach(block => {
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const watts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
-                const blockKwh = (watts * block.durationHours) / 1000.0;
+                
+                // Portion of hours that fall on this day
+                const dayHours = Math.min(block.durationHours, Math.max(0, 24.0 - block.startHour));
+                const blockKwh = (watts * dayHours) / 1000.0;
                 const blockCost = blockKwh * (genRate + 3.5);
 
                 totalDayKwh += blockKwh;
                 totalDayCost += blockCost;
 
-                const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
+                const overlap = checkSchedulePeakOverlap(block.startHour, dayHours);
                 peakKwh += blockKwh * overlap.peakFraction;
 
-                // Populate 24-hour concurrency track
                 const startInt = Math.floor(block.startHour);
-                const endInt = Math.ceil(block.startHour + block.durationHours);
+                const endInt = Math.min(24, Math.ceil(block.startHour + dayHours));
                 for (let h = startInt; h < endInt; h++) {
-                    const simH = h % 24;
-                    hourlySimWatts[simH] += watts;
+                    hourlySimWatts[h % 24] += watts;
+                }
+            });
+
+            // 2. Rollover blocks starting on previous day that spill into today
+            const prevBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey);
+            prevBlocks.forEach(block => {
+                const totalEnd = block.startHour + block.durationHours;
+                if (totalEnd > 24.0) {
+                    const rolloverHours = Math.min(24.0, totalEnd - 24.0);
+                    const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                    const watts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
+
+                    const blockKwh = (watts * rolloverHours) / 1000.0;
+                    const blockCost = blockKwh * (genRate + 3.5);
+
+                    totalDayKwh += blockKwh;
+                    totalDayCost += blockCost;
+
+                    const overlap = checkSchedulePeakOverlap(0, rolloverHours);
+                    peakKwh += blockKwh * overlap.peakFraction;
+
+                    const endInt = Math.min(24, Math.ceil(rolloverHours));
+                    for (let h = 0; h < endInt; h++) {
+                        hourlySimWatts[h % 24] += watts;
+                    }
                 }
             });
 
@@ -6721,7 +6765,7 @@
                 const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
                 const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
 
-                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_') && !item.id.startsWith('mock_')) {
+                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_')) {
                     await client
                         .from('user_appliances')
                         .update({
@@ -6830,7 +6874,7 @@
             }
         }
 
-        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance)
+        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Overnight Multi-Day Rollover)
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineRoadmapRowsLayer');
             if (!layer) return;
@@ -6843,16 +6887,23 @@
             }
 
             layer.innerHTML = '';
-            const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
+            const selectedKey = calendarState.selectedDayKey;
+            const { prevDayKey, nextDayKey } = getAdjacentDays(selectedKey);
+
+            // Gathers blocks to render for selected day:
+            // 1) Blocks that start on selectedKey
+            // 2) Rollover blocks from prevDayKey that span past midnight (> 24.0)
+            const dayStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+            const incomingRolloverBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey && (b.startHour + b.durationHours) > 24.0);
 
             updateDailyCalendarSummary();
 
-            if (dayBlocks.length === 0) {
+            if (dayStartingBlocks.length === 0 && incomingRolloverBlocks.length === 0) {
                 layer.innerHTML = `
                     <div class="p-8 rounded-2xl bg-slate-950/40 border border-slate-800/80 text-center flex flex-col items-center justify-center gap-3 my-4">
                         <span class="text-3xl">📅</span>
                         <div class="flex flex-col">
-                            <h4 class="text-sm font-bold text-white">No Scheduled Routines for ${calendarState.selectedDayKey.toUpperCase()}</h4>
+                            <h4 class="text-sm font-bold text-white">No Scheduled Routines for ${selectedKey.toUpperCase()}</h4>
                             <p class="text-xs t-muted mt-0.5">Click any appliance on the left inventory to configure its operating window.</p>
                         </div>
                     </div>
@@ -6860,7 +6911,11 @@
                 return;
             }
 
-            dayBlocks.forEach(block => {
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+
+            // 1. Render Incoming Rollover Blocks (Spilling over from previous day)
+            incomingRolloverBlocks.forEach(block => {
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const appName = item ? item.name : 'Scheduled Appliance';
                 const appWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
@@ -6875,27 +6930,25 @@
                 else if (catLower.includes('wash') || catLower.includes('laundry')) categoryIcon = '🧺';
                 else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
 
-                const endHour = block.startHour + block.durationHours;
-                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour % 24)} (${block.durationHours.toFixed(1)} hrs)`;
+                const totalEnd = block.startHour + block.durationHours;
+                const rolloverHours = Math.min(24.0, totalEnd - 24.0);
+                const endHour = totalEnd % 24;
 
-                const genInput = document.getElementById('genRateInput');
-                const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
-                const sessionCost = (appWatts * block.durationHours / 1000.0) * (genRate + 3.5);
-
+                const timeSpanLabel = `12:00 AM – ${formatHour(endHour)} (${rolloverHours.toFixed(1)} hrs overnight rollover from ${prevDayKey.toUpperCase()})`;
+                const sessionCost = (appWatts * rolloverHours / 1000.0) * (genRate + 3.5);
                 const isAuto = Boolean(block.autoPower);
-                const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
+
+                const leftPercent = 0;
+                const widthPercent = Math.max(3, Math.min(100, (rolloverHours / 24.0) * 100));
+
+                const overlap = checkSchedulePeakOverlap(0, rolloverHours);
                 const isPeak = overlap.isPeak;
 
-                // Calculate horizontal percentage on exact 24-hour axis (clamped to 100%)
-                const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
-                const widthPercent = Math.max(3, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
-
                 const row = document.createElement('div');
-                row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all';
+                row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 hover:border-indigo-400 transition-all';
 
                 row.innerHTML = `
-                    <!-- Left Appliance Info Card (Clean info, No redundant toggle switch) -->
-                    <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-indigo-500/30">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="text-base shrink-0">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
@@ -6903,16 +6956,13 @@
                                 <div class="flex items-center gap-1.5 text-[10px]">
                                     <span class="font-bold text-amber-400">${appWatts}W</span>
                                     <span class="text-slate-500">•</span>
-                                    <span class="${isOn ? 'text-emerald-400 font-bold' : 'text-slate-500'}">${isOn ? '🟢 ON' : '⚪ OFF'}</span>
+                                    <span class="text-indigo-300 font-bold text-[9px]">🌅 Rollover</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right 24-Hour Roadmap Bar Track (Exact 24-Hour Grid with Peak Window Highlights) -->
                     <div class="flex-1 relative h-11 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center select-none overflow-hidden">
-                        
-                        <!-- 12-Segment Subtle Background Grid (2 Hours Per Segment) -->
                         <div class="absolute inset-0 grid grid-cols-12 pointer-events-none opacity-15 h-full">
                             <div class="border-r border-slate-400 h-full"></div>
                             <div class="border-r border-slate-400 h-full"></div>
@@ -6929,27 +6979,22 @@
                         </div>
 
                         <!-- Highlight Overlays for Meralco Peak Hours -->
-                        <!-- Peak 1: 11 AM - 4 PM (45.83% to 66.66%) -->
-                        <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0"
-                             style="left: 45.83%; width: 20.83%;" title="Meralco Peak Window: 11 AM – 4 PM"></div>
-                        <!-- Peak 2: 6 PM - 9 PM (75% to 87.5%) -->
-                        <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0"
-                             style="left: 75%; width: 12.5%;" title="Meralco Peak Window: 6 PM – 9 PM"></div>
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0" style="left: 45.83%; width: 20.83%;"></div>
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0" style="left: 75%; width: 12.5%;"></div>
 
-                        <!-- Roadmap Timeline Bar Representation -->
-                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
+                        <!-- Rollover Bar Representation -->
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 border border-purple-400/80 text-white hover:brightness-110"
                              style="left: ${leftPercent}%; width: ${widthPercent}%;"
                              onclick="openBentoSettingsModal('${block.id}')"
-                             title="Click to edit schedule (${timeSpanLabel})${isPeak ? ' • ⚠️ Meralco Peak Window' : ''}">
+                             title="Click to edit schedule (${timeSpanLabel})">
                             
-                            <!-- Inside Bar Cost & Auto Badges -->
                             <div class="flex items-center gap-1.5 min-w-0">
-                                <span class="font-extrabold text-[10px] truncate">~₱${sessionCost.toFixed(2)}</span>
+                                <span class="font-extrabold text-[10px] truncate">🌅 ~₱${sessionCost.toFixed(2)}</span>
+                                <span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>
                                 ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
-                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0" title="Scheduled during Meralco Peak Hours">🔥 Peak</span>` : ''}
+                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
                             </div>
 
-                            <!-- Inside Bar Action Buttons -->
                             <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
                                 <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
                                     ⚙️
@@ -6958,9 +7003,105 @@
                                     ✕
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                `;
 
+                layer.appendChild(row);
+            });
+
+            // 2. Render Starting Blocks on Selected Day
+            dayStartingBlocks.forEach(block => {
+                const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                const appName = item ? item.name : 'Scheduled Appliance';
+                const appWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
+                const isOn = item ? Boolean(item.is_currently_on) : false;
+
+                let categoryIcon = '⚡';
+                const catLower = (item ? item.category || '' : '').toLowerCase();
+                if (catLower.includes('air') || catLower.includes('cooling')) categoryIcon = '❄️';
+                else if (catLower.includes('refrigerat') || catLower.includes('freez')) categoryIcon = '🧊';
+                else if (catLower.includes('light')) categoryIcon = '💡';
+                else if (catLower.includes('cook') || catLower.includes('oven') || catLower.includes('stove')) categoryIcon = '🍳';
+                else if (catLower.includes('wash') || catLower.includes('laundry')) categoryIcon = '🧺';
+                else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
+
+                const totalEnd = block.startHour + block.durationHours;
+                const isOvernight = totalEnd > 24.0;
+                const endHour = totalEnd % 24;
+                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)}${isOvernight ? ` (+1 day on ${nextDayKey.toUpperCase()})` : ''} (${block.durationHours.toFixed(1)} hrs total)`;
+
+                const sessionCost = (appWatts * block.durationHours / 1000.0) * (genRate + 3.5);
+                const isAuto = Boolean(block.autoPower);
+                const overlap = checkSchedulePeakOverlap(block.startHour, block.durationHours);
+                const isPeak = overlap.isPeak;
+
+                // Clamped to 24-hour axis
+                const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
+                const widthPercent = isOvernight
+                    ? Math.max(3, 100 - leftPercent)
+                    : Math.max(3, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all';
+
+                row.innerHTML = `
+                    <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-base shrink-0">${categoryIcon}</span>
+                            <div class="flex flex-col min-w-0">
+                                <span class="font-extrabold text-xs text-white truncate max-w-[100px]" title="${appName}">${appName}</span>
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="font-bold text-amber-400">${appWatts}W</span>
+                                    <span class="text-slate-500">•</span>
+                                    <span class="${isOn ? 'text-emerald-400 font-bold' : 'text-slate-500'}">${isOn ? '🟢 ON' : '⚪ OFF'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 relative h-11 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center select-none overflow-hidden">
+                        <div class="absolute inset-0 grid grid-cols-12 pointer-events-none opacity-15 h-full">
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="border-r border-slate-400 h-full"></div>
+                            <div class="h-full"></div>
                         </div>
 
+                        <!-- Highlight Overlays for Meralco Peak Hours -->
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-amber-500/10 border-x border-amber-500/20 z-0" style="left: 45.83%; width: 20.83%;"></div>
+                        <div class="absolute top-0 bottom-0 pointer-events-none bg-rose-500/10 border-x border-rose-500/20 z-0" style="left: 75%; width: 12.5%;"></div>
+
+                        <!-- Roadmap Timeline Bar Representation -->
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md z-10 ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
+                             style="left: ${leftPercent}%; width: ${widthPercent}%;"
+                             onclick="openBentoSettingsModal('${block.id}')"
+                             title="Click to edit schedule (${timeSpanLabel})${isPeak ? ' • ⚠️ Meralco Peak Window' : ''}">
+                            
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="font-extrabold text-[10px] truncate">~₱${sessionCost.toFixed(2)}</span>
+                                ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
+                                ${isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0" title="Spans overnight into ${nextDayKey.toUpperCase()}">🌙 Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
+                                ${isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0" title="Scheduled during Meralco Peak Hours">🔥 Peak</span>` : ''}
+                            </div>
+
+                            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
+                                    ⚙️
+                                </button>
+                                <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -6968,14 +7109,30 @@
             });
         }
 
-        // Delete Scheduled Timeline Block
-        function deleteCalendarBlock(blockId) {
-            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
+        // Delete Scheduled Timeline Block or Entire Recurring Series
+        function deleteCalendarBlock(blockId, deleteAllSeries = false) {
+            const block = calendarScheduledBlocks.find(b => b.id === blockId);
+            if (!block) return;
+
+            if (deleteAllSeries && block.seriesId) {
+                const toDelete = calendarScheduledBlocks.filter(b => b.seriesId === block.seriesId);
+                toDelete.forEach(b => dbDeleteCalendarEvent(b.id));
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.seriesId !== block.seriesId);
+                showToast("Series Removed", "Removed all recurring days for this routine.", "info");
+            } else if (deleteAllSeries && (!block.seriesId && block.repeat && block.repeat !== 'once')) {
+                const toDelete = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(block.applianceId) && b.repeat === block.repeat);
+                toDelete.forEach(b => dbDeleteCalendarEvent(b.id));
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => !(String(b.applianceId) === String(block.applianceId) && b.repeat === block.repeat));
+                showToast("Series Removed", "Removed all recurring days for this routine.", "info");
+            } else {
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
+                dbDeleteCalendarEvent(blockId);
+                showToast("Block Removed", "Removed schedule block from timeline.", "info");
+            }
+
             saveCalendarBlocks();
             renderCalendarBlocks();
             renderCalendarApplianceSwitches();
-            dbDeleteCalendarEvent(blockId);
-            showToast("Block Removed", "Removed schedule block from timeline.", "info");
         }
 
         // ===== BENTO BLOCK SETTINGS MODAL HANDLERS =====
@@ -6995,6 +7152,13 @@
             const startInput = document.getElementById('bentoSettingStartTime');
             const endInput = document.getElementById('bentoSettingEndTime');
             const repeatSelect = document.getElementById('bentoSettingRepeat');
+
+            const delSingleBtn = document.getElementById('bentoDeleteSingleBtn');
+            const delSeriesBtn = document.getElementById('bentoDeleteSeriesBtn');
+
+            const isRecurring = Boolean(block.seriesId || (block.repeat && block.repeat !== 'once'));
+            if (delSingleBtn) delSingleBtn.textContent = isRecurring ? '🗑️ Delete This Day' : '🗑️ Delete Block';
+            if (delSeriesBtn) delSeriesBtn.classList.toggle('hidden', !isRecurring);
 
             if (titleEl) titleEl.textContent = `${item ? item.name : 'Appliance'} Schedule Settings`;
             if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
@@ -7084,13 +7248,16 @@
             if (endVal <= startVal) endVal += 24;
             const duration = Math.max(0.5, endVal - startVal);
 
+            const repeatMode = repeatSelect ? repeatSelect.value : 'once';
+            const seriesId = repeatMode !== 'once' ? (block.seriesId || ('series_' + Date.now())) : null;
+
             block.startHour = startVal;
             block.durationHours = duration;
             block.autoPower = Boolean(autoPowerCb && autoPowerCb.checked);
-            const repeatMode = repeatSelect ? repeatSelect.value : 'once';
             block.repeat = repeatMode;
+            block.seriesId = seriesId;
 
-            // Handle Repeat Replication across other days with correct dynamic day numbers
+            // Handle Repeat Replication across other days with correct dynamic day numbers and shared seriesId
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
             if (repeatMode === 'daily') {
@@ -7115,12 +7282,16 @@
                         targetDate.setDate(monDate.getDate() + dayIdx);
                         const targetDayNum = targetDate.getDate();
 
-                        const existingIdx = calendarScheduledBlocks.findIndex(b => String(b.applianceId) === String(block.applianceId) && b.dayKey === day);
+                        const existingIdx = calendarScheduledBlocks.findIndex(b => 
+                            (b.seriesId && b.seriesId === seriesId && b.dayKey === day) ||
+                            (String(b.applianceId) === String(block.applianceId) && b.dayKey === day)
+                        );
                         if (existingIdx !== -1) {
                             calendarScheduledBlocks[existingIdx].startHour = block.startHour;
                             calendarScheduledBlocks[existingIdx].durationHours = block.durationHours;
                             calendarScheduledBlocks[existingIdx].autoPower = block.autoPower;
                             calendarScheduledBlocks[existingIdx].repeat = repeatMode;
+                            calendarScheduledBlocks[existingIdx].seriesId = seriesId;
                             calendarScheduledBlocks[existingIdx].dayNum = targetDayNum;
                             dbUpdateCalendarEvent(calendarScheduledBlocks[existingIdx]);
                         } else {
@@ -7132,13 +7303,17 @@
                                 startHour: block.startHour,
                                 durationHours: block.durationHours,
                                 autoPower: block.autoPower,
-                                repeat: repeatMode
+                                repeat: repeatMode,
+                                seriesId: seriesId
                             };
                             calendarScheduledBlocks.push(newRepBlock);
                             dbInsertCalendarEvent(newRepBlock);
                         }
                     }
                 });
+            } else if (repeatMode === 'once' && block.seriesId) {
+                // If converted from recurring to once, clean seriesId
+                block.seriesId = null;
             }
 
             saveCalendarBlocks();
@@ -7148,9 +7323,9 @@
             showToast("Settings Applied", `Saved operating window and recurrence (${repeatMode.toUpperCase()})!`, "success");
         }
 
-        function deleteCurrentBentoBlockFromModal() {
+        function deleteCurrentBentoBlockFromModal(deleteAllSeries = false) {
             if (!activeEditingBlockId) return;
-            deleteCalendarBlock(activeEditingBlockId);
+            deleteCalendarBlock(activeEditingBlockId, deleteAllSeries);
             closeBentoSettingsModal();
         }
 
