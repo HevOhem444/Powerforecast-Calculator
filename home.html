@@ -7191,7 +7191,13 @@
             }
 
             const now = new Date();
-            const startHour = Math.floor(now.getHours() + (now.getMinutes() / 60.0));
+            const dateStr = getSelectedCalendarDateString();
+            const isToday = (dateStr === getTodayDateString());
+
+            let startHour = 8.0; // Default for future days: 8:00 AM
+            if (isToday) {
+                startHour = now.getHours() + (now.getMinutes() / 60.0);
+            }
             const durationHours = 1.0;
 
             activeEditingDraft = {
@@ -7535,12 +7541,26 @@
         function onModalStartDateChange() {
             const dateInput = document.getElementById('bentoSettingStartDate');
             const badgeEl = document.getElementById('bentoModalDayBadge');
+            const startInput = document.getElementById('bentoSettingStartTime');
+            const endInput = document.getElementById('bentoSettingEndTime');
             if (!dateInput || !dateInput.value) return;
 
             const todayStr = getTodayDateString();
             if (dateInput.value < todayStr) {
                 dateInput.value = todayStr;
                 showToast("Past Date Blocked", "Schedules cannot start in the past.", "warning");
+            }
+
+            // If day is today and creating a new routine, ensure start time is current time
+            if (dateInput.value === todayStr && !activeEditingBlockId) {
+                const now = new Date();
+                const curH = now.getHours();
+                const curM = now.getMinutes();
+                if (startInput) startInput.value = `${String(curH).padStart(2, '0')}:${String(curM).padStart(2, '0')}`;
+                if (endInput) {
+                    const endH = (curH + 1) % 24;
+                    endInput.value = `${String(endH).padStart(2, '0')}:${String(curM).padStart(2, '0')}`;
+                }
             }
 
             const [y, m, d] = dateInput.value.split('-').map(Number);
@@ -7550,6 +7570,7 @@
             if (badgeEl) {
                 badgeEl.textContent = `${daysFull[targetDate.getDay()]}, ${monthsShort[targetDate.getMonth()]} ${d}`;
             }
+            recalcModalDuration();
         }
 
         function openBentoSettingsModal(blockId, receiptData = null) {
@@ -7633,12 +7654,24 @@
                 if (receiptContainer) receiptContainer.classList.add('hidden');
                 if (readOnlyNotice) readOnlyNotice.classList.add('hidden');
 
+                const todayStr = getTodayDateString();
+                const initDateStr = blockId ? getBlockDateString(block) : (dateStr >= todayStr ? dateStr : todayStr);
+
                 if (dateInput) {
-                    const todayStr = getTodayDateString();
                     dateInput.min = todayStr;
-                    dateInput.value = blockId ? getBlockDateString(block) : (dateStr >= todayStr ? dateStr : todayStr);
+                    dateInput.value = initDateStr;
                     dateInput.disabled = false;
                     onModalStartDateChange();
+                }
+
+                // If day is today and creating a new draft, initialize start time to exact current time
+                const isToday = (initDateStr === todayStr);
+                if (!blockId && isToday) {
+                    const now = new Date();
+                    const curH = now.getHours();
+                    const curM = now.getMinutes();
+                    block.startHour = curH + (curM / 60.0);
+                    block.durationHours = 1.0;
                 }
 
                 if (titleEl) {
@@ -7722,6 +7755,7 @@
         }
 
         function recalcModalDuration() {
+            const dateInput = document.getElementById('bentoSettingStartDate');
             const startInput = document.getElementById('bentoSettingStartTime');
             const endInput = document.getElementById('bentoSettingEndTime');
             const durLabel = document.getElementById('bentoModalDurationLabel');
@@ -7742,13 +7776,19 @@
             const temporalStatus = block ? getScheduleTemporalStatus(block, dateStr) : 'future';
 
             let hasWarning = false;
+            const now = new Date();
+            const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+            const isToday = (dateInput ? dateInput.value : dateStr) === getTodayDateString();
+
             if (temporalStatus === 'running') {
-                const now = new Date();
-                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
                 const minAllowedEnd = currentHour + (5 / 60.0);
                 if (endVal < minAllowedEnd && (endVal + 24) < minAllowedEnd) {
                     hasWarning = true;
+                    if (timeWarning) timeWarning.textContent = '⚠️ Minimum end time is 5 minutes ahead of current time.';
                 }
+            } else if (isToday && !activeEditingBlockId && startVal < currentHour - (1 / 60.0)) {
+                hasWarning = true;
+                if (timeWarning) timeWarning.textContent = '⚠️ Start time cannot be set in the past for today.';
             }
 
             if (timeWarning) timeWarning.classList.toggle('hidden', !hasWarning);
@@ -7783,28 +7823,12 @@
             const [sh, sm] = (startInput ? startInput.value : '00:00').split(':').map(Number);
             let [eh, em] = (endInput ? endInput.value : '02:00').split(':').map(Number);
 
-            const startVal = sh + (sm / 60);
+            let startVal = sh + (sm / 60);
             let endVal = eh + (em / 60);
             if (endVal <= startVal) endVal += 24;
 
             const dateStr = getSelectedCalendarDateString();
             const temporalStatus = activeEditingBlockId ? getScheduleTemporalStatus(block, dateStr) : 'future';
-
-            // Enforce minimum 5 minutes ahead of now for running sessions
-            if (temporalStatus === 'running') {
-                const now = new Date();
-                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
-                const minAllowedEnd = currentHour + (5 / 60.0);
-                if (endVal < minAllowedEnd && (endVal + 24) < minAllowedEnd) {
-                    endVal = minAllowedEnd;
-                    const newEh = Math.floor(endVal % 24);
-                    const newEm = Math.round((endVal - Math.floor(endVal)) * 60);
-                    if (endInput) endInput.value = `${String(newEh).padStart(2, '0')}:${String(newEm).padStart(2, '0')}`;
-                    showToast("Adjusted End Time", "End time adjusted to minimum +5 minutes from now.", "info");
-                }
-            }
-
-            const duration = Math.max(0.1, endVal - startVal);
 
             // Validate date picker (no past dates)
             let chosenTargetDate = null;
@@ -7820,6 +7844,40 @@
                 block.dayKey = dayMap[chosenTargetDate.getDay()];
                 block.dayNum = d;
             }
+
+            const isToday = (dateInput ? dateInput.value : dateStr) === getTodayDateString();
+
+            // Enforce minimum 5 minutes ahead of now for running sessions
+            if (temporalStatus === 'running') {
+                const now = new Date();
+                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+                const minAllowedEnd = currentHour + (5 / 60.0);
+                if (endVal < minAllowedEnd && (endVal + 24) < minAllowedEnd) {
+                    endVal = minAllowedEnd;
+                    const newEh = Math.floor(endVal % 24);
+                    const newEm = Math.round((endVal - Math.floor(endVal)) * 60);
+                    if (endInput) endInput.value = `${String(newEh).padStart(2, '0')}:${String(newEm).padStart(2, '0')}`;
+                    showToast("Adjusted End Time", "End time adjusted to minimum +5 minutes from now.", "info");
+                }
+            } else if (isToday && !activeEditingBlockId) {
+                // Ensure new routines scheduled for today start at or after current time
+                const now = new Date();
+                const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+                if (startVal < currentHour - (1 / 60.0)) {
+                    const diff = endVal - startVal;
+                    startVal = currentHour;
+                    endVal = startVal + diff;
+                    const curH = now.getHours();
+                    const curM = now.getMinutes();
+                    if (startInput) startInput.value = `${String(curH).padStart(2, '0')}:${String(curM).padStart(2, '0')}`;
+                    const newEh = Math.floor(endVal % 24);
+                    const newEm = Math.round((endVal - Math.floor(endVal)) * 60);
+                    if (endInput) endInput.value = `${String(newEh).padStart(2, '0')}:${String(newEm).padStart(2, '0')}`;
+                    showToast("Adjusted Start Time", "Start time adjusted to current live time.", "info");
+                }
+            }
+
+            const duration = Math.max(0.1, endVal - startVal);
 
             const repeatMode = repeatSelect ? repeatSelect.value : 'once';
             const seriesId = repeatMode !== 'once' ? (block.seriesId || ('series_' + Date.now())) : null;
