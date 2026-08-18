@@ -6360,7 +6360,11 @@
 
                 if (error) throw error;
                 if (data && data.id) {
+                    const oldId = block.id;
                     block.id = data.id;
+                    if (activeEditingBlockId === oldId) {
+                        activeEditingBlockId = data.id;
+                    }
                     saveCalendarBlocks();
                 }
             } catch (e) {
@@ -6846,7 +6850,6 @@
                 calendarScheduledBlocks.push(block);
                 saveCalendarBlocks();
                 renderCalendarBlocks();
-                dbInsertCalendarEvent(block);
             }
 
             openBentoSettingsModal(block.id);
@@ -7137,12 +7140,14 @@
 
         // ===== BENTO BLOCK SETTINGS MODAL HANDLERS =====
         let activeEditingBlockId = null;
+        let activeEditingApplianceId = null;
 
         function openBentoSettingsModal(blockId) {
             const block = calendarScheduledBlocks.find(b => b.id === blockId);
             if (!block) return;
 
-            activeEditingBlockId = blockId;
+            activeEditingBlockId = block.id;
+            activeEditingApplianceId = block.applianceId;
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
 
             const modal = document.getElementById('bentoSettingsModal');
@@ -7196,6 +7201,7 @@
                 if (inner) inner.classList.add('scale-95');
             }
             activeEditingBlockId = null;
+            activeEditingApplianceId = null;
         }
 
         function recalcModalDuration() {
@@ -7213,11 +7219,14 @@
             let endVal = eh + (em / 60);
             if (endVal <= startVal) endVal += 24; // spans past midnight
 
-            const duration = Math.max(0.5, endVal - startVal);
+            const duration = Math.max(0.1, endVal - startVal);
             if (durLabel) durLabel.textContent = `${duration.toFixed(1)} hrs`;
 
-            const block = calendarScheduledBlocks.find(b => b.id === activeEditingBlockId);
-            const item = block ? householdLoadList.find(a => String(a.id) === String(block.applianceId)) : null;
+            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
+            if (!block && activeEditingApplianceId) {
+                block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
+            }
+            const item = block ? householdLoadList.find(a => String(a.id) === String(block.applianceId)) : (activeEditingApplianceId ? householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId)) : null);
             const watts = item ? item.watts : 1000;
             const genInput = document.getElementById('genRateInput');
             const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
@@ -7230,10 +7239,14 @@
         }
 
         function saveBentoSettingsModal() {
-            if (!activeEditingBlockId) return;
-
-            const block = calendarScheduledBlocks.find(b => b.id === activeEditingBlockId);
-            if (!block) return;
+            let block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
+            if (!block && activeEditingApplianceId) {
+                block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
+            }
+            if (!block) {
+                closeBentoSettingsModal();
+                return;
+            }
 
             const autoPowerCb = document.getElementById('bentoSettingAutoPower');
             const startInput = document.getElementById('bentoSettingStartTime');
@@ -7246,7 +7259,7 @@
             const startVal = sh + (sm / 60);
             let endVal = eh + (em / 60);
             if (endVal <= startVal) endVal += 24;
-            const duration = Math.max(0.5, endVal - startVal);
+            const duration = Math.max(0.1, endVal - startVal);
 
             const repeatMode = repeatSelect ? repeatSelect.value : 'once';
             const seriesId = repeatMode !== 'once' ? (block.seriesId || ('series_' + Date.now())) : null;
@@ -7293,7 +7306,11 @@
                             calendarScheduledBlocks[existingIdx].repeat = repeatMode;
                             calendarScheduledBlocks[existingIdx].seriesId = seriesId;
                             calendarScheduledBlocks[existingIdx].dayNum = targetDayNum;
-                            dbUpdateCalendarEvent(calendarScheduledBlocks[existingIdx]);
+                            if (calendarScheduledBlocks[existingIdx].id.startsWith('blk_')) {
+                                dbInsertCalendarEvent(calendarScheduledBlocks[existingIdx]);
+                            } else {
+                                dbUpdateCalendarEvent(calendarScheduledBlocks[existingIdx]);
+                            }
                         } else {
                             const newRepBlock = {
                                 id: 'blk_' + Date.now() + '_' + day,
@@ -7312,20 +7329,30 @@
                     }
                 });
             } else if (repeatMode === 'once' && block.seriesId) {
-                // If converted from recurring to once, clean seriesId
                 block.seriesId = null;
             }
 
             saveCalendarBlocks();
-            dbUpdateCalendarEvent(block);
+            if (block.id.startsWith('blk_')) {
+                dbInsertCalendarEvent(block);
+            } else {
+                dbUpdateCalendarEvent(block);
+            }
             renderCalendarBlocks();
+            renderCalendarApplianceSwitches();
             closeBentoSettingsModal();
             showToast("Settings Applied", `Saved operating window and recurrence (${repeatMode.toUpperCase()})!`, "success");
         }
 
         function deleteCurrentBentoBlockFromModal(deleteAllSeries = false) {
-            if (!activeEditingBlockId) return;
-            deleteCalendarBlock(activeEditingBlockId, deleteAllSeries);
+            let blockId = activeEditingBlockId;
+            if (!blockId && activeEditingApplianceId) {
+                const block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(activeEditingApplianceId) && b.dayKey === calendarState.selectedDayKey);
+                if (block) blockId = block.id;
+            }
+            if (blockId) {
+                deleteCalendarBlock(blockId, deleteAllSeries);
+            }
             closeBentoSettingsModal();
         }
 
