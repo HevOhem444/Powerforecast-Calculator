@@ -2627,6 +2627,25 @@
                             ₱
                         </div>
                         <div class="flex flex-col">
+                <!-- Top Live Energy & Tariff Monitor Banner -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Stat 1: Real-time Active Load -->
+                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg">
+                            ⚡
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Active Load</span>
+                            <span id="calLiveActiveWatts" class="text-base sm:text-lg font-black text-amber-400">0 Watts</span>
+                        </div>
+                    </div>
+
+                    <!-- Stat 2: Real-time Burn Rate (Cost/Hour) -->
+                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg font-bold">
+                            ₱
+                        </div>
+                        <div class="flex flex-col">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Burn Rate</span>
                             <span id="calLiveHourlyCost" class="text-base sm:text-lg font-black text-emerald-400">₱0.00 / hr</span>
                         </div>
@@ -2642,17 +2661,6 @@
                             <span id="calLiveActiveCount" class="text-base sm:text-lg font-black text-indigo-300">0 Running</span>
                         </div>
                     </div>
-
-                    <!-- Stat 4: Peak Rate Window Status -->
-                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                        <div id="calTariffIcon" class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-lg">
-                            🟢
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tariff Window</span>
-                            <span id="calTariffStatusBadge" class="text-xs sm:text-sm font-extrabold text-cyan-300">Off-Peak (Eco)</span>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Main Calendar Dashboard Layout (Split Left Navigation Panel & Right View Grid) -->
@@ -2661,23 +2669,24 @@
                     <!-- LEFT PANEL: Appliance Switchboard, Mini Calendar & Filters (4 Columns on LG) -->
                     <div class="lg:col-span-4 xl:col-span-4 flex flex-col gap-5">
 
-                        <!-- 1. APPLIANCE LIVE SWITCHBOARD CARD -->
+                        <!-- 1. APPLIANCE LIVE SWITCHBOARD & DRAG INVENTORY CARD -->
                         <div class="glass-card rounded-3xl p-5 flex flex-col gap-4 shadow-xl border border-indigo-500/30 bg-slate-900/80">
                             <div class="flex justify-between items-center px-1 pb-1 border-b border-slate-800">
                                 <div class="flex items-center gap-2">
                                     <span class="text-amber-400 text-sm">⚡</span>
-                                    <h3 class="text-sm font-extrabold t-primary">Appliance Switchboard</h3>
+                                    <h3 class="text-sm font-extrabold t-primary">Appliance Inventory</h3>
                                 </div>
                                 <span id="calApplianceCountBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                                     0 Appliances
                                 </span>
                             </div>
 
-                            <p class="text-[11px] t-muted px-1">
-                                Toggle appliances to record real-time runtime, calculate metered kWh, and feed AI analytics.
+                            <p class="text-[11px] t-muted px-1 flex items-center gap-1.5">
+                                <span>⠿</span>
+                                <span><strong>Drag appliances</strong> into the calendar timeline or toggle directly.</span>
                             </p>
 
-                            <!-- Live Appliance Switch Items Container -->
+                            <!-- Live Appliance Switch & Draggable Items Container -->
                             <div id="calendarApplianceSwitchList" class="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
                                 <!-- Populated dynamically by JS -->
                                 <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center flex flex-col items-center gap-2">
@@ -2718,48 +2727,15 @@
                             <div id="miniCalendarDays" class="grid grid-cols-7 gap-1 text-center text-xs">
                                 <!-- Populated dynamically by JS -->
                             </div>
-
-                            <!-- Divider -->
-                            <div class="border-t border-slate-700/30 my-1"></div>
-
-                            <!-- My Calendars Filter Checkboxes -->
-                            <div class="flex flex-col gap-2.5">
-                                <div class="flex justify-between items-center text-xs font-bold text-slate-300 tracking-wide uppercase px-1">
-                                    <span>Calendar Filters</span>
-                                    <i class="fa-solid fa-filter text-[10px] text-slate-500"></i>
-                                </div>
-                                <div class="flex flex-col gap-2 text-xs">
-                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
-                                        <input type="checkbox" checked onchange="filterEvents()"
-                                            class="accent-indigo-500 rounded w-3.5 h-3.5" data-category="billing">
-                                        <span>Meralco Bill Due Dates</span>
-                                    </label>
-                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
-                                        <input type="checkbox" checked onchange="filterEvents()"
-                                            class="accent-amber-400 rounded w-3.5 h-3.5" data-category="peak">
-                                        <span>Peak Tariff Hours (11am-4pm, 6pm-9pm)</span>
-                                    </label>
-                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
-                                        <input type="checkbox" checked onchange="filterEvents()"
-                                            class="accent-emerald-400 rounded w-3.5 h-3.5" data-category="appliance">
-                                        <span>Appliance Schedules</span>
-                                    </label>
-                                    <label class="flex items-center gap-2.5 cursor-pointer text-slate-300 hover:text-white transition-colors">
-                                        <input type="checkbox" checked onchange="filterEvents()"
-                                            class="accent-sky-400 rounded w-3.5 h-3.5" data-category="audit">
-                                        <span>Solar & Energy Audits</span>
-                                    </label>
-                                </div>
-                            </div>
                         </div>
 
                     </div>
 
                     <!-- RIGHT PANEL: Main Calendar View & Hourly Timeline (8 Columns on LG) -->
                     <div class="lg:col-span-8 xl:col-span-8 flex flex-col gap-5">
-                        <div class="glass-card rounded-3xl p-5 flex flex-col gap-5 shadow-2xl border border-slate-700/40 relative min-h-[650px] overflow-hidden">
+                        <div class="glass-card rounded-3xl p-5 flex flex-col gap-4 shadow-2xl border border-slate-700/40 relative min-h-[680px]">
 
-                            <!-- Main Header Navigation & View Selector Toolbar -->
+                            <!-- Main Header Navigation -->
                             <div class="flex flex-wrap justify-between items-center gap-4 pb-2 border-b border-slate-700/30">
                                 <!-- Left: Month Title + Navigation -->
                                 <div class="flex items-center gap-3">
@@ -2782,235 +2758,76 @@
                                     </div>
                                 </div>
 
-                                <!-- Right: View Mode Selector Pills & Action Button -->
-                                <div class="flex items-center gap-3">
-                                    <div class="flex bg-slate-900/80 p-1 rounded-2xl border border-slate-800/80 text-xs font-semibold">
-                                        <button onclick="switchCalendarView('month')" id="calViewBtn-month"
-                                            class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
-                                            Month
-                                        </button>
-                                        <button onclick="switchCalendarView('week')" id="calViewBtn-week"
-                                            class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow transition-all">
-                                            Week
-                                        </button>
-                                        <button onclick="switchCalendarView('day')" id="calViewBtn-day"
-                                            class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
-                                            Day
-                                        </button>
-                                    </div>
-
-                                    <button onclick="openNewEventModal()"
-                                        class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5">
-                                        <span>➕</span> Schedule
-                                    </button>
+                                <!-- Right: Instructional Drag Badge -->
+                                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-900/70 border border-slate-800 px-3 py-1.5 rounded-xl">
+                                    <span class="text-amber-400">💡</span>
+                                    <span>Drag & drop appliance onto hour, then stretch to resize!</span>
                                 </div>
                             </div>
 
-                            <!-- Week Days Header Strip with GMT+8 Tag -->
-                            <div class="grid grid-cols-8 gap-2 items-center text-center text-xs font-medium py-1.5 px-2 bg-slate-900/40 rounded-2xl border border-slate-800/40">
-                                <div class="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1 px-1.5">
+                            <!-- Single Day Header Selector Strip (Only 1 Active Day) -->
+                            <div class="grid grid-cols-8 gap-2 items-center text-center text-xs font-medium py-1.5 px-2 bg-slate-900/50 rounded-2xl border border-slate-800/50">
+                                <div class="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1.5 px-1">
                                     GMT+8
                                 </div>
                                 <div id="dayStrip-mon"
-                                    class="flex flex-col py-1.5 rounded-xl bg-lime-400/20 text-lime-300 border border-lime-400/40 font-bold transition-all cursor-pointer hover:scale-105"
-                                    onclick="selectCalendarDay('mon')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('mon', 17)">
                                     <span class="text-[10px] uppercase tracking-wider">mon</span>
-                                    <span id="dayNum-mon" class="text-lg font-extrabold">17</span>
+                                    <span id="dayNum-mon" class="text-base font-bold">17</span>
                                 </div>
                                 <div id="dayStrip-tue"
-                                    class="flex flex-col py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold transition-all cursor-pointer hover:scale-105"
-                                    onclick="selectCalendarDay('tue')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('tue', 18)">
                                     <span class="text-[10px] uppercase tracking-wider">tue</span>
-                                    <span id="dayNum-tue" class="text-lg font-extrabold">18</span>
+                                    <span id="dayNum-tue" class="text-base font-bold">18</span>
                                 </div>
                                 <div id="dayStrip-wed"
-                                    class="flex flex-col py-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold transition-all cursor-pointer hover:scale-105"
-                                    onclick="selectCalendarDay('wed')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('wed', 19)">
                                     <span class="text-[10px] uppercase tracking-wider">wed</span>
-                                    <span id="dayNum-wed" class="text-lg font-extrabold">19</span>
+                                    <span id="dayNum-wed" class="text-base font-bold">19</span>
                                 </div>
                                 <div id="dayStrip-thu"
-                                    class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
-                                    onclick="selectCalendarDay('thu')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('thu', 20)">
                                     <span class="text-[10px] uppercase tracking-wider">thu</span>
-                                    <span id="dayNum-thu" class="text-base font-bold text-slate-200">20</span>
+                                    <span id="dayNum-thu" class="text-base font-bold">20</span>
                                 </div>
                                 <div id="dayStrip-fri"
-                                    class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
-                                    onclick="selectCalendarDay('fri')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('fri', 21)">
                                     <span class="text-[10px] uppercase tracking-wider">fri</span>
-                                    <span id="dayNum-fri" class="text-base font-bold text-slate-200">21</span>
+                                    <span id="dayNum-fri" class="text-base font-bold">21</span>
                                 </div>
                                 <div id="dayStrip-sat"
-                                    class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
-                                    onclick="selectCalendarDay('sat')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('sat', 22)">
                                     <span class="text-[10px] uppercase tracking-wider">sat</span>
-                                    <span id="dayNum-sat" class="text-base font-bold text-slate-200">22</span>
+                                    <span id="dayNum-sat" class="text-base font-bold">22</span>
                                 </div>
                                 <div id="dayStrip-sun"
-                                    class="flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
-                                    onclick="selectCalendarDay('sun')">
+                                    class="day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer"
+                                    onclick="selectCalendarDay('sun', 23)">
                                     <span class="text-[10px] uppercase tracking-wider">sun</span>
-                                    <span id="dayNum-sun" class="text-base font-bold text-slate-200">23</span>
+                                    <span id="dayNum-sun" class="text-base font-bold">23</span>
                                 </div>
                             </div>
 
-                            <!-- Main Hourly Schedule View Area with Peak Window Badges -->
-                            <div id="mainScheduleViewArea"
-                                class="flex-1 overflow-y-auto max-h-[500px] relative pr-2 flex flex-col gap-1">
-
-                                <!-- Hourly Rows (6 AM to 10 PM) -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(8)">
-                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">8 am</span>
-                                    <div id="slot-hour-8" class="col-span-7 h-full relative flex items-center"></div>
+                            <!-- Main 24-Hour Timeline Area (Drop Targets & Resizable Bento Blocks) -->
+                            <div id="mainScheduleTimelineContainer" class="flex-1 overflow-y-auto max-h-[520px] relative pr-1 border border-slate-800/60 rounded-2xl bg-slate-950/40">
+                                
+                                <!-- Background Hourly Drop Slots (12 AM to 11 PM) -->
+                                <div id="timelineSlotsGrid" class="flex flex-col relative w-full select-none">
+                                    <!-- Populated by generateHourlySlots() -->
                                 </div>
 
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(9)">
-                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">9 am</span>
-                                    <div id="slot-hour-9" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(10)">
-                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">10 am</span>
-                                    <div id="slot-hour-10" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 11 AM: PEAK WINDOW START -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(11)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">11 am</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-11" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 12 PM: PEAK WINDOW -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(12)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">12 pm</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-12" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 1 PM: PEAK WINDOW -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(13)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">1 pm</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-13" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 2 PM: PEAK WINDOW -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(14)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">2 pm</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-14" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 3 PM: PEAK WINDOW -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(15)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">3 pm</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-15" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <!-- 4 PM: PEAK WINDOW END -->
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-amber-500/20 bg-amber-500/[0.03] items-center hover:bg-amber-500/[0.08] transition-colors" onclick="openNewEventModal(16)">
-                                    <div class="flex flex-col items-end pr-3">
-                                        <span class="text-xs font-bold text-amber-400">4 pm</span>
-                                        <span class="text-[9px] text-amber-500 font-extrabold">PEAK</span>
-                                    </div>
-                                    <div id="slot-hour-16" class="col-span-7 h-full relative flex items-center"></div>
-                                </div>
-
-                                <div class="relative grid grid-cols-8 min-h-[54px] border-b border-slate-800/40 items-center hover:bg-slate-800/20 transition-colors" onclick="openNewEventModal(17)">
-                                    <span class="text-xs font-semibold text-slate-500 pr-3 text-right">5 pm</span>
-                                    <div id="slot-hour-17" class="col-span-7 h-full relative flex items-center"></div>
+                                <!-- Floating Scheduled Bento Appliance Blocks Layer -->
+                                <div id="timelineBentoBlocksLayer" class="absolute inset-0 pointer-events-none w-full h-full">
+                                    <!-- Populated by renderCalendarBlocks() -->
                                 </div>
 
                             </div>
-
-                            <!-- Interactive Schedule Creator / Detail Popover Modal -->
-                            <div id="eventDetailModal"
-                                class="absolute top-[15%] left-[20%] sm:left-[35%] z-30 w-84 p-5 rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl flex flex-col gap-4 transition-all duration-300 scale-95 opacity-0 pointer-events-none">
-                                <div class="flex justify-between items-center pb-1 border-b border-slate-800">
-                                    <span id="modalHeaderTitle"
-                                        class="text-xs font-extrabold uppercase text-indigo-400 tracking-wider">Schedule Event</span>
-                                    <button onclick="closeEventModal()"
-                                        class="text-slate-400 hover:text-white p-1 text-xs rounded-full hover:bg-slate-800"
-                                        title="Close">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-
-                                <div class="flex flex-col gap-3 text-xs">
-                                    <div class="flex flex-col gap-1">
-                                        <label for="eventTitleInput" class="text-[11px] font-semibold text-slate-400">Title</label>
-                                        <input id="eventTitleInput" type="text" placeholder="e.g. Meralco Bill Payment"
-                                            class="pf-input rounded-xl px-3 py-2 text-xs font-semibold text-white">
-                                    </div>
-
-                                    <div class="flex flex-col gap-1">
-                                        <label for="eventCategorySelect" class="text-[11px] font-semibold text-slate-400">Category</label>
-                                        <select id="eventCategorySelect" class="pf-input rounded-xl px-3 py-2 text-xs text-white">
-                                            <option value="billing">Billing & Rates</option>
-                                            <option value="peak">Peak Hours Alert (TOU)</option>
-                                            <option value="appliance">Appliance Schedule</option>
-                                            <option value="audit">Maintenance & Audit</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div class="flex flex-col gap-1">
-                                            <label for="eventHourSelect" class="text-[11px] font-semibold text-slate-400">Start Time</label>
-                                            <select id="eventHourSelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs text-white">
-                                                <option value="8">8:00 AM</option>
-                                                <option value="9">9:00 AM</option>
-                                                <option value="10">10:00 AM</option>
-                                                <option value="11">11:00 AM (Peak)</option>
-                                                <option value="12">12:00 PM (Peak)</option>
-                                                <option value="13">1:00 PM (Peak)</option>
-                                                <option value="14">2:00 PM (Peak)</option>
-                                                <option value="15">3:00 PM (Peak)</option>
-                                                <option value="16">4:00 PM (Peak)</option>
-                                                <option value="17">5:00 PM</option>
-                                            </select>
-                                        </div>
-                                        <div class="flex flex-col gap-1">
-                                            <label for="eventDaySelect" class="text-[11px] font-semibold text-slate-400">Day</label>
-                                            <select id="eventDaySelect" class="pf-input rounded-xl px-2.5 py-1.5 text-xs text-white">
-                                                <option value="mon">Monday (17)</option>
-                                                <option value="tue">Tuesday (18)</option>
-                                                <option value="wed">Wednesday (19)</option>
-                                                <option value="thu">Thursday (20)</option>
-                                                <option value="fri">Friday (21)</option>
-                                                <option value="sat">Saturday (22)</option>
-                                                <option value="sun">Sunday (23)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center justify-between pt-2">
-                                        <button onclick="deleteSelectedEvent()" id="deleteEventBtn"
-                                            class="text-rose-400 hover:text-rose-300 text-xs font-semibold px-2 py-1 rounded hover:bg-rose-500/10 hidden">
-                                            Delete
-                                        </button>
-                                        <div class="flex items-center gap-2 ml-auto">
-                                            <button onclick="closeEventModal()"
-                                                class="px-3 py-1.5 rounded-xl btn-secondary text-xs">Cancel</button>
-                                            <button onclick="saveCalendarEvent()"
-                                                class="px-4 py-1.5 rounded-xl btn-primary text-xs font-bold shadow">Save</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
@@ -6136,10 +5953,46 @@
             year: 2026,
             month: 7, // August (0-indexed)
             selectedDay: 17,
-            viewMode: 'week'
+            selectedDayKey: 'mon'
         };
 
-        // Render Appliance Switches in Calendar Left Panel
+        // Scheduled Bento Blocks Array (persisted locally & synced)
+        let calendarScheduledBlocks = [];
+        try {
+            calendarScheduledBlocks = JSON.parse(localStorage.getItem('powerforecast_calendar_blocks_v2') || '[]');
+        } catch (e) {
+            calendarScheduledBlocks = [];
+        }
+
+        // Initialize default sample blocks if empty so the timeline immediately has rich interactive data
+        if (calendarScheduledBlocks.length === 0) {
+            calendarScheduledBlocks = [
+                {
+                    id: 'block_sample_1',
+                    applianceId: 'mock_panasonic_ac',
+                    dayKey: 'mon',
+                    dayNum: 17,
+                    startHour: 13, // 1:00 PM
+                    durationHours: 3.0 // 1:00 PM to 4:00 PM (3 hrs)
+                },
+                {
+                    id: 'block_sample_2',
+                    applianceId: 'mock_tefal_cooktop',
+                    dayKey: 'mon',
+                    dayNum: 17,
+                    startHour: 18, // 6:00 PM
+                    durationHours: 1.5 // 6:00 PM to 7:30 PM (1.5 hrs)
+                }
+            ];
+        }
+
+        function saveCalendarBlocks() {
+            try {
+                localStorage.setItem('powerforecast_calendar_blocks_v2', JSON.stringify(calendarScheduledBlocks));
+            } catch (e) { }
+        }
+
+        // Render Draggable Appliance Switchboard in Left Panel
         function renderCalendarApplianceSwitches() {
             const listContainer = document.getElementById('calendarApplianceSwitchList');
             const countBadge = document.getElementById('calApplianceCountBadge');
@@ -6180,9 +6033,12 @@
                 else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
 
                 const div = document.createElement('div');
-                div.className = `p-3 rounded-2xl border transition-all flex flex-col gap-2 ${isOn ? 'bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/10' : 'bg-slate-950/50 border-slate-800/80'}`;
+                div.className = `p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-grab active:cursor-grabbing hover:border-indigo-400/60 ${isOn ? 'bg-indigo-950/50 border-indigo-500/60 shadow-lg shadow-indigo-500/10' : 'bg-slate-950/60 border-slate-800/80'}`;
+                div.draggable = true;
+                div.setAttribute('data-appliance-id', item.id);
+                div.ondragstart = (e) => handleApplianceDragStart(e, item.id);
 
-                // Calculate running duration if on
+                // Running duration label
                 let runningLabel = '';
                 if (isOn && item.last_turned_on_at) {
                     const elapsedMs = Math.max(0, now - new Date(item.last_turned_on_at).getTime());
@@ -6200,17 +6056,17 @@
                         <div class="flex items-center gap-2.5 min-w-0">
                             <span class="text-base">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
-                                <span class="font-bold text-xs text-white truncate max-w-[140px] sm:max-w-[160px]" title="${item.name}">${item.name}</span>
+                                <span class="font-bold text-xs text-white truncate max-w-[130px] sm:max-w-[150px]" title="${item.name}">${item.name}</span>
                                 <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
                                     <span class="font-bold text-amber-400">${item.watts}W</span>
                                     <span>•</span>
-                                    <span class="truncate max-w-[90px]">${item.category || 'General'}</span>
+                                    <span class="truncate max-w-[80px]">${item.category || 'General'}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Switch Toggle & Cooldown Badge -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                             ${isCooldown ? `
                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold animate-pulse">
                                     ⏳ ${cooldownSecs}s
@@ -6223,21 +6079,14 @@
                         </div>
                     </div>
 
-                    ${isOn ? `
-                        <div class="flex items-center justify-between text-[10px] pt-1 border-t border-indigo-500/20 text-emerald-300 font-semibold">
-                            <span>${runningLabel || '🟢 Active (Drawing Power)'}</span>
-                            <button onclick="scheduleApplianceInCalendar('${item.id}')" class="text-indigo-300 hover:text-white underline font-bold" title="Add schedule block">
-                                + Schedule
-                            </button>
-                        </div>
-                    ` : `
-                        <div class="flex items-center justify-between text-[10px] pt-0.5 text-slate-500">
-                            <span>⚪ Standby / Off</span>
-                            <button onclick="scheduleApplianceInCalendar('${item.id}')" class="text-indigo-400 hover:text-indigo-300 underline font-semibold">
-                                Schedule
-                            </button>
-                        </div>
-                    `}
+                    <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-800/80">
+                        <span class="${isOn ? 'text-emerald-300 font-bold' : 'text-slate-500'}">
+                            ${isOn ? (runningLabel || '🟢 Active') : '⚪ Standby'}
+                        </span>
+                        <span class="text-[9px] font-semibold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <span>⠿</span> Drag to Timeline
+                        </span>
+                    </div>
                 `;
 
                 listContainer.appendChild(div);
@@ -6248,8 +6097,6 @@
         function updateLiveEnergyMonitor() {
             let totalActiveWatts = 0;
             let activeCount = 0;
-            const now = new Date();
-            const currentHour = now.getHours();
 
             householdLoadList.forEach(item => {
                 if (item.is_currently_on) {
@@ -6265,38 +6112,43 @@
             const wattsEl = document.getElementById('calLiveActiveWatts');
             const costEl = document.getElementById('calLiveHourlyCost');
             const countEl = document.getElementById('calLiveActiveCount');
-            const tariffBadge = document.getElementById('calTariffStatusBadge');
-            const tariffIcon = document.getElementById('calTariffIcon');
 
             if (wattsEl) wattsEl.textContent = `${totalActiveWatts.toLocaleString()} Watts`;
             if (costEl) costEl.textContent = `₱${liveHourlyCost.toFixed(2)} / hr`;
             if (countEl) countEl.textContent = `${activeCount} Running`;
 
-            const inPeak = isPeakHour(currentHour);
-            if (tariffBadge && tariffIcon) {
-                if (inPeak) {
-                    tariffBadge.textContent = '🔥 Peak Tariff Window (High)';
-                    tariffBadge.className = 'text-xs sm:text-sm font-extrabold text-amber-400';
-                    tariffIcon.className = 'w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg';
-                    tariffIcon.textContent = '⚡';
-                } else {
-                    tariffBadge.textContent = '🟢 Off-Peak Eco Tier';
-                    tariffBadge.className = 'text-xs sm:text-sm font-extrabold text-cyan-300';
-                    tariffIcon.className = 'w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-lg';
-                    tariffIcon.textContent = '🌱';
-                }
-            }
-
-            // Update countdowns or active runtime strings on switches if view-calendar is active
+            // Refresh runtime labels on switches and Bento blocks if calendar view is active
             const calView = document.getElementById('view-calendar');
-            if (calView && !calView.classList.contains('hidden') && activeCount > 0) {
-                renderCalendarApplianceSwitches();
+            if (calView && !calView.classList.contains('hidden')) {
+                if (activeCount > 0) {
+                    renderCalendarApplianceSwitches();
+                    updateBentoRuntimeLabels();
+                }
             }
         }
 
         setInterval(updateLiveEnergyMonitor, 1000);
 
-        // Appliance State Toggle Controller (with Cooldown, Safety Modals & Runtime Sessions)
+        function updateBentoRuntimeLabels() {
+            const now = Date.now();
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+
+            document.querySelectorAll('.bento-active-ticker').forEach(el => {
+                const appId = el.getAttribute('data-appliance-id');
+                const item = householdLoadList.find(a => String(a.id) === String(appId));
+                if (item && item.is_currently_on && item.last_turned_on_at) {
+                    const elapsedMs = Math.max(0, now - new Date(item.last_turned_on_at).getTime());
+                    const mins = Math.floor(elapsedMs / 60000);
+                    const secs = Math.floor((elapsedMs % 60000) / 1000);
+                    const runKwh = (item.watts * (elapsedMs / 3600000)) / 1000;
+                    const runCost = runKwh * (genRate + 3.5);
+                    el.textContent = `🟢 Active: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')} (₱${runCost.toFixed(2)})`;
+                }
+            });
+        }
+
+        // Appliance State Toggle Controller (with Surge Cooldown, Safety Modals & Supabase Logging)
         async function toggleApplianceState(id, bypassConfirm = false) {
             const item = householdLoadList.find(a => String(a.id) === String(id));
             if (!item) return;
@@ -6306,6 +6158,7 @@
                 const remaining = Math.ceil((applianceSwitchCooldowns[id] - now) / 1000);
                 showToast("Switch Cooldown", `Surge protection: please wait ${remaining}s before toggling again.`, "warning");
                 renderCalendarApplianceSwitches();
+                renderCalendarBlocks();
                 return;
             }
 
@@ -6322,10 +6175,11 @@
                         '🧊',
                         'Continuous Load Protection',
                         item.name,
-                        `Are you sure you want to turn OFF your ${item.name}? Refrigerators are designed as continuous 24/7 loads to preserve food safety.`,
+                        `Are you sure you want to turn OFF your ${item.name}? Refrigerators are continuous loads designed to preserve food safety.`,
                         () => toggleApplianceState(id, true)
                     );
                     renderCalendarApplianceSwitches();
+                    renderCalendarBlocks();
                     return;
                 }
 
@@ -6339,6 +6193,7 @@
                         () => toggleApplianceState(id, true)
                     );
                     renderCalendarApplianceSwitches();
+                    renderCalendarBlocks();
                     return;
                 }
             }
@@ -6355,6 +6210,7 @@
 
             renderCalendarApplianceSwitches();
             renderHouseholdLoadList();
+            renderCalendarBlocks();
             updateLiveEnergyMonitor();
 
             // Record Runtime Session in Supabase
@@ -6363,7 +6219,6 @@
                 const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
 
                 if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_')) {
-                    // Update user_appliances table
                     await client
                         .from('user_appliances')
                         .update({
@@ -6374,7 +6229,6 @@
                         .eq('user_id', session.user.id);
 
                     if (willTurnOn) {
-                        // Start active usage log session
                         await client
                             .from('appliance_usage_logs')
                             .insert({
@@ -6386,7 +6240,6 @@
                                 source: 'calendar_toggle'
                             });
                     } else {
-                        // Close open usage log session
                         const startTime = item.last_turned_on_at ? new Date(item.last_turned_on_at) : new Date(now - 60000);
                         const durationMins = Math.max(1, Math.round((now - startTime.getTime()) / 60000));
                         const kwh = (item.watts * (durationMins / 60.0)) / 1000.0;
@@ -6414,13 +6267,13 @@
             // Show Undo Toast
             showUndoToast(
                 `${item.name} turned ${willTurnOn ? 'ON' : 'OFF'}`,
-                willTurnOn ? `Drawing ${item.watts}W • Logging runtime session` : 'Runtime logged to energy profile',
+                willTurnOn ? `Drawing ${item.watts}W • Live burn rate updating` : 'Session closed • Power consumption logged',
                 willTurnOn ? '⚡' : '🛑',
                 () => toggleApplianceState(id, true)
             );
         }
 
-        // Safety & Peak Confirmation Modal Handlers
+        // Safety Modal Handlers
         function showApplianceConfirmModal(icon, title, subtitle, message, onProceedFn) {
             const modal = document.getElementById('applianceConfirmModal');
             if (!modal) return;
@@ -6452,7 +6305,7 @@
             }
         }
 
-        // 5-Second Floating Undo Toast Handlers
+        // Undo Toast Handlers
         function showUndoToast(title, subtitle, icon, undoFn) {
             const toast = document.getElementById('calendarUndoToast');
             if (!toast) return;
@@ -6490,14 +6343,269 @@
             }
         }
 
-        function scheduleApplianceInCalendar(applianceId) {
-            const item = householdLoadList.find(a => String(a.id) === String(applianceId));
-            if (!item) return;
-            openNewEventModal(10);
-            const titleInput = document.getElementById('eventTitleInput');
-            const catSelect = document.getElementById('eventCategorySelect');
-            if (titleInput) titleInput.value = `Run: ${item.name} (${item.watts}W)`;
-            if (catSelect) catSelect.value = 'appliance';
+        // ===== 24-HOUR DRAG-AND-DROP TIMELINE & RESIZABLE BENTO ENGINE =====
+
+        // Generate 24 Hourly Slots in Background Timeline
+        function generateHourlySlots() {
+            const grid = document.getElementById('timelineSlotsGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            const SLOT_HEIGHT = 56; // px per hour
+
+            for (let hour = 0; hour < 24; hour++) {
+                const isPeak = isPeakHour(hour);
+                const displayHour = formatHour(hour);
+
+                const row = document.createElement('div');
+                row.className = `relative flex items-center h-[56px] border-b transition-colors ${isPeak ? 'border-amber-500/20 bg-amber-500/[0.02]' : 'border-slate-800/40 hover:bg-slate-900/30'}`;
+                row.setAttribute('data-hour', hour);
+
+                row.ondragover = handleSlotDragOver;
+                row.ondragleave = handleSlotDragLeave;
+                row.ondrop = (e) => handleSlotDrop(e, hour);
+
+                row.innerHTML = `
+                    <div class="w-18 sm:w-22 pr-3 flex flex-col items-end shrink-0 select-none">
+                        <span class="text-xs font-semibold ${isPeak ? 'text-amber-400 font-bold' : 'text-slate-500'}">${displayHour}</span>
+                        ${isPeak ? `<span class="text-[8px] font-extrabold text-amber-500 uppercase tracking-wider">PEAK</span>` : ''}
+                    </div>
+                    <div class="flex-1 h-full border-l ${isPeak ? 'border-amber-500/20' : 'border-slate-800/40'} pointer-events-none"></div>
+                `;
+
+                grid.appendChild(row);
+            }
+        }
+
+        function formatHour(h) {
+            const hNum = Math.floor(h);
+            const mins = Math.round((h - hNum) * 60);
+            const minStr = mins > 0 ? `:${String(mins).padStart(2, '0')}` : ':00';
+            if (hNum === 0) return `12${minStr} am`;
+            if (hNum < 12) return `${hNum}${minStr} am`;
+            if (hNum === 12) return `12${minStr} pm`;
+            if (hNum < 24) return `${hNum - 12}${minStr} pm`;
+            return `12:00 am`;
+        }
+
+        // Drag & Drop Event Handlers
+        let draggedApplianceId = null;
+
+        function handleApplianceDragStart(e, applianceId) {
+            draggedApplianceId = applianceId;
+            e.dataTransfer.setData('text/plain', applianceId);
+            e.dataTransfer.effectAllowed = 'copyMove';
+        }
+
+        function handleSlotDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            const row = e.currentTarget;
+            row.classList.add('bg-indigo-500/20', 'border-indigo-400/60');
+        }
+
+        function handleSlotDragLeave(e) {
+            const row = e.currentTarget;
+            row.classList.remove('bg-indigo-500/20', 'border-indigo-400/60');
+        }
+
+        function handleSlotDrop(e, hour) {
+            e.preventDefault();
+            const row = e.currentTarget;
+            row.classList.remove('bg-indigo-500/20', 'border-indigo-400/60');
+
+            const appId = draggedApplianceId || e.dataTransfer.getData('text/plain');
+            if (!appId) return;
+
+            const appliance = householdLoadList.find(a => String(a.id) === String(appId));
+            if (!appliance) return;
+
+            // Default 2.0 hour block on drop
+            const newBlock = {
+                id: 'blk_' + Date.now(),
+                applianceId: appliance.id,
+                dayKey: calendarState.selectedDayKey,
+                dayNum: calendarState.selectedDay,
+                startHour: hour,
+                durationHours: Math.min(2.0, 24 - hour)
+            };
+
+            calendarScheduledBlocks.push(newBlock);
+            saveCalendarBlocks();
+            renderCalendarBlocks();
+            showToast("Appliance Scheduled", `Placed "${appliance.name}" at ${formatHour(hour)} on ${calendarState.selectedDayKey.toUpperCase()}!`, "success");
+        }
+
+        // Render Resizable Bento Blocks on Timeline
+        function renderCalendarBlocks() {
+            const layer = document.getElementById('timelineBentoBlocksLayer');
+            if (!layer) return;
+
+            layer.innerHTML = '';
+            const SLOT_HEIGHT = 56; // 56px per hour
+            const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
+
+            dayBlocks.forEach(block => {
+                const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                const appName = item ? item.name : 'Scheduled Appliance';
+                const appWatts = item ? item.watts : 1000;
+                const isOn = item ? Boolean(item.is_currently_on) : false;
+
+                let categoryIcon = '⚡';
+                const catLower = (item ? item.category || '' : '').toLowerCase();
+                if (catLower.includes('air') || catLower.includes('cooling')) categoryIcon = '❄️';
+                else if (catLower.includes('refrigerat') || catLower.includes('freez')) categoryIcon = '🧊';
+                else if (catLower.includes('light')) categoryIcon = '💡';
+                else if (catLower.includes('cook') || catLower.includes('oven') || catLower.includes('stove')) categoryIcon = '🍳';
+                else if (catLower.includes('wash') || catLower.includes('laundry')) categoryIcon = '🧺';
+                else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
+
+                const topPx = block.startHour * SLOT_HEIGHT;
+                const heightPx = Math.max(54, block.durationHours * SLOT_HEIGHT);
+                const endHour = block.startHour + block.durationHours;
+                const timeSpanLabel = `${formatHour(block.startHour)} – ${formatHour(endHour)} (${block.durationHours.toFixed(1)} hrs)`;
+
+                const genInput = document.getElementById('genRateInput');
+                const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+                const sessionCost = (appWatts * block.durationHours / 1000.0) * (genRate + 3.5);
+
+                const card = document.createElement('div');
+                card.id = `bentoBlock-${block.id}`;
+                card.className = `pointer-events-auto absolute left-18 sm:left-22 right-2 rounded-2xl p-3 border shadow-xl backdrop-blur-xl transition-shadow flex flex-col justify-between select-none ${isOn ? 'bg-indigo-950/80 border-emerald-400 shadow-emerald-500/20 ring-1 ring-emerald-400/60' : 'bg-slate-900/90 border-indigo-500/40 hover:border-indigo-400'}`;
+                card.style.top = `${topPx}px`;
+                card.style.height = `${heightPx}px`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-lg">${categoryIcon}</span>
+                            <div class="flex flex-col min-w-0">
+                                <span class="font-extrabold text-xs text-white truncate max-w-[180px] sm:max-w-[260px]">${appName}</span>
+                                <div class="flex items-center gap-2 text-[10px]">
+                                    <span class="font-bold text-amber-400">${appWatts}W</span>
+                                    <span class="text-slate-400">•</span>
+                                    <span class="text-slate-300 font-semibold">${timeSpanLabel}</span>
+                                    <span class="text-slate-400">•</span>
+                                    <span class="text-emerald-400 font-bold">~₱${sessionCost.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <!-- Integrated ON/OFF Switch -->
+                            ${item ? `
+                                <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+                                    <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleApplianceState('${item.id}')" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            ` : ''}
+
+                            <!-- Delete Block Button -->
+                            <button onclick="deleteCalendarBlock('${block.id}')" class="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 text-xs transition-all" title="Remove Block">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Running Status / Standby Bar -->
+                    <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-slate-800">
+                        <span class="bento-active-ticker ${isOn ? 'text-emerald-300 font-bold' : 'text-slate-500 font-medium'}" data-appliance-id="${block.applianceId}">
+                            ${isOn ? '🟢 Active (Drawing Power)' : '⚪ Standby / Scheduled'}
+                        </span>
+                        <span class="text-[9px] text-slate-400 font-medium">
+                            ${isOn ? '⚡ Burn rate logging' : 'Drag bottom handle to resize duration'}
+                        </span>
+                    </div>
+
+                    <!-- Bottom Resizer Handle -->
+                    <div class="bento-resizer-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-center justify-center bg-indigo-500/20 hover:bg-indigo-500/40 rounded-b-2xl transition-colors"
+                         onmousedown="startBlockResize(event, '${block.id}')"
+                         title="Drag up/down to adjust duration">
+                        <div class="w-8 h-1 rounded-full bg-slate-400/60"></div>
+                    </div>
+                `;
+
+                layer.appendChild(card);
+            });
+        }
+
+        // Resizing Engine for Bento Blocks
+        let activeResizingBlockId = null;
+        let resizeStartY = 0;
+        let resizeStartDuration = 1.0;
+
+        function startBlockResize(e, blockId) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const block = calendarScheduledBlocks.find(b => b.id === blockId);
+            if (!block) return;
+
+            activeResizingBlockId = blockId;
+            resizeStartY = e.clientY;
+            resizeStartDuration = block.durationHours;
+
+            window.addEventListener('mousemove', handleBlockResizeMove);
+            window.addEventListener('mouseup', handleBlockResizeEnd);
+        }
+
+        function handleBlockResizeMove(e) {
+            if (!activeResizingBlockId) return;
+
+            const block = calendarScheduledBlocks.find(b => b.id === activeResizingBlockId);
+            if (!block) return;
+
+            const deltaY = e.clientY - resizeStartY;
+            const deltaHours = deltaY / 56; // 56px per hour
+            let newDuration = Math.max(0.5, Math.min(24 - block.startHour, Math.round((resizeStartDuration + deltaHours) * 2) / 2));
+
+            block.durationHours = newDuration;
+
+            // Direct DOM height & label update for high frame rate responsiveness
+            const card = document.getElementById(`bentoBlock-${block.id}`);
+            if (card) {
+                card.style.height = `${Math.max(54, newDuration * 56)}px`;
+            }
+        }
+
+        function handleBlockResizeEnd(e) {
+            window.removeEventListener('mousemove', handleBlockResizeMove);
+            window.removeEventListener('mouseup', handleBlockResizeEnd);
+
+            if (activeResizingBlockId) {
+                const block = calendarScheduledBlocks.find(b => b.id === activeResizingBlockId);
+                if (block) {
+                    saveCalendarBlocks();
+                    renderCalendarBlocks();
+                    showToast("Duration Updated", `Session set to ${block.durationHours.toFixed(1)} hours (${formatHour(block.startHour)} – ${formatHour(block.startHour + block.durationHours)})`, "info");
+                }
+            }
+
+            activeResizingBlockId = null;
+        }
+
+        function deleteCalendarBlock(blockId) {
+            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
+            saveCalendarBlocks();
+            renderCalendarBlocks();
+            showToast("Block Removed", "Removed schedule block from timeline.", "info");
+        }
+
+        // Single Day Selector Strip Handler
+        function selectCalendarDay(dayKey, dayNum) {
+            calendarState.selectedDayKey = dayKey;
+            calendarState.selectedDay = dayNum;
+
+            document.querySelectorAll('.day-strip-btn').forEach(btn => {
+                btn.className = 'day-strip-btn flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer';
+            });
+
+            const activeStrip = document.getElementById(`dayStrip-${dayKey}`);
+            if (activeStrip) {
+                activeStrip.className = 'day-strip-btn flex flex-col py-1.5 rounded-xl bg-indigo-600 text-white font-extrabold shadow-lg ring-2 ring-indigo-400/50 scale-105 transition-all cursor-pointer';
+            }
+
+            renderCalendarBlocks();
         }
 
         function renderMiniCalendar() {
@@ -6548,7 +6656,6 @@
                 dayEl.onclick = () => {
                     calendarState.selectedDay = day;
                     renderMiniCalendar();
-                    updateWeekStripDays();
                 };
 
                 daysContainer.appendChild(dayEl);
@@ -6563,17 +6670,6 @@
                 dayEl.textContent = i;
                 daysContainer.appendChild(dayEl);
             }
-        }
-
-        function updateWeekStripDays() {
-            const baseDay = calendarState.selectedDay || 17;
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-            days.forEach((dayKey, index) => {
-                const numEl = document.getElementById(`dayNum-${dayKey}`);
-                if (numEl) {
-                    numEl.textContent = baseDay + index;
-                }
-            });
         }
 
         function navMonth(delta) {
@@ -6592,267 +6688,28 @@
             }
 
             renderMiniCalendar();
-            updateWeekStripDays();
         }
 
         function navToday() {
             calendarState.year = 2026;
             calendarState.month = 7; // August 2026
-            calendarState.selectedDay = 17;
+            selectCalendarDay('mon', 17);
             renderMiniCalendar();
-            updateWeekStripDays();
         }
 
-        function switchCalendarView(mode) {
-            calendarState.viewMode = mode;
-            ['month', 'week', 'day'].forEach(m => {
-                const btn = document.getElementById(`calViewBtn-${m}`);
-                if (btn) {
-                    if (m === mode) {
-                        btn.className = 'px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow transition-all';
-                    } else {
-                        btn.className = 'px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all';
-                    }
-                }
-            });
-        }
-
-        function selectCalendarDay(dayKey) {
-            document.querySelectorAll('[id^="dayStrip-"]').forEach(el => {
-                el.className = 'flex flex-col py-1.5 rounded-xl text-slate-400 hover:bg-slate-800/40 transition-all cursor-pointer';
-            });
-            const selectedStrip = document.getElementById(`dayStrip-${dayKey}`);
-            if (selectedStrip) {
-                selectedStrip.className = 'flex flex-col py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold transition-all cursor-pointer hover:scale-105';
-            }
-        }
-
-        // Dynamic Calendar Events Store (Synced with Supabase)
-        let calendarEvents = [];
-        let activeEventId = null;
-
-        const CATEGORY_STYLES = {
-            billing: { name: "Billing & Rates", bg: "bg-purple-500/20", border: "border-purple-400/40", text: "text-purple-200", badge: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
-            peak: { name: "Peak Hours Alert", bg: "bg-amber-500/20", border: "border-amber-400/40", text: "text-amber-200", badge: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-            appliance: { name: "Appliance Schedule", bg: "bg-cyan-500/20", border: "border-cyan-400/40", text: "text-cyan-200", badge: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
-            audit: { name: "Maintenance & Audit", bg: "bg-emerald-500/20", border: "border-emerald-400/40", text: "text-emerald-200", badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" }
-        };
-
-        // Database Sync Service: Load Calendar Events from Supabase
-        async function syncUserCalendarEventsFromDb() {
-            try {
-                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
-                if (!client) return;
-                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
-                if (!session || !session.user) return;
-
-                const { data, error } = await client
-                    .from('user_calendar_events')
-                    .select('*')
-                    .eq('user_id', session.user.id)
-                    .order('hour', { ascending: true });
-
-                if (error) throw error;
-
-                if (data && Array.isArray(data)) {
-                    calendarEvents = data.map(row => ({
-                        id: row.id,
-                        title: row.title,
-                        category: row.category || 'appliance',
-                        hour: parseInt(row.hour, 10),
-                        day: row.day || 'mon',
-                        notes: row.notes || ''
-                    }));
-                    renderCalendarEvents();
-                }
-            } catch (e) {
-                console.warn('syncUserCalendarEventsFromDb error:', e);
-            }
-        }
-
-        function renderCalendarEvents() {
-            // Clear existing event cards from hourly slots (8 AM to 5 PM)
-            for (let h = 8; h <= 17; h++) {
-                const slot = document.getElementById(`slot-hour-${h}`);
-                if (slot) {
-                    const cards = slot.querySelectorAll('.cal-event-card');
-                    cards.forEach(c => c.remove());
-                }
-            }
-
-            // Render all events in calendarEvents
-            calendarEvents.forEach(evt => {
-                const slot = document.getElementById(`slot-hour-${evt.hour}`);
-                if (!slot) return;
-
-                const style = CATEGORY_STYLES[evt.category] || CATEGORY_STYLES.billing;
-                const card = document.createElement('div');
-                card.className = `cal-event-card absolute top-1 left-[2%] w-[90%] sm:w-[45%] ${style.bg} border ${style.border} ${style.text} p-2.5 rounded-2xl text-xs shadow-lg backdrop-blur-md cursor-pointer hover:scale-[1.02] transition-transform z-10`;
-                card.onclick = (e) => {
-                    e.stopPropagation();
-                    openEditEventModal(evt.id);
-                };
-                card.innerHTML = `
-                    <div class="font-bold flex items-center justify-between">
-                        <span>${escapeHtml(evt.title)}</span>
-                    </div>
-                    <div class="text-[10px] opacity-80">${evt.hour > 12 ? (evt.hour - 12) + ':00 PM' : (evt.hour === 12 ? '12:00 PM' : evt.hour + ':00 AM')} (${evt.day.toUpperCase()})</div>
-                `;
-                slot.appendChild(card);
-            });
-        }
-
-        function escapeHtml(str) {
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
-
-        function openNewEventModal(hour = 9) {
-            activeEventId = null;
-            const modal = document.getElementById('eventDetailModal');
-            if (!modal) return;
-
-            document.getElementById('modalHeaderTitle').textContent = 'Schedule Utility Event';
-            document.getElementById('eventTitleInput').value = '';
-            document.getElementById('eventCategorySelect').value = 'billing';
-            document.getElementById('eventHourSelect').value = String(hour);
-            document.getElementById('eventDaySelect').value = 'mon';
-
-            const delBtn = document.getElementById('deleteEventBtn');
-            if (delBtn) delBtn.classList.add('hidden');
-
-            modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
-            modal.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
-        }
-
-        function openEditEventModal(eventId) {
-            const evt = calendarEvents.find(e => String(e.id) === String(eventId));
-            if (!evt) return;
-
-            activeEventId = eventId;
-            const modal = document.getElementById('eventDetailModal');
-            if (!modal) return;
-
-            document.getElementById('modalHeaderTitle').textContent = 'Edit Schedule Event';
-            document.getElementById('eventTitleInput').value = evt.title;
-            document.getElementById('eventCategorySelect').value = evt.category;
-            document.getElementById('eventHourSelect').value = String(evt.hour);
-            document.getElementById('eventDaySelect').value = evt.day;
-
-            const delBtn = document.getElementById('deleteEventBtn');
-            if (delBtn) delBtn.classList.remove('hidden');
-
-            modal.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
-            modal.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
-        }
-
-        async function saveCalendarEvent() {
-            const title = document.getElementById('eventTitleInput').value.trim();
-            if (!title) {
-                showToast("Event Title Required", "Please enter an event title to schedule.", "warning");
-                return;
-            }
-
-            const category = document.getElementById('eventCategorySelect').value;
-            const hour = parseInt(document.getElementById('eventHourSelect').value, 10);
-            const day = document.getElementById('eventDaySelect').value;
-
-            let eventObj = null;
-            if (activeEventId) {
-                const idx = calendarEvents.findIndex(e => String(e.id) === String(activeEventId));
-                if (idx !== -1) {
-                    calendarEvents[idx] = { id: activeEventId, title, category, hour, day };
-                    eventObj = calendarEvents[idx];
-                }
-            } else {
-                eventObj = {
-                    id: 'evt_' + Date.now(),
-                    title,
-                    category,
-                    hour,
-                    day
-                };
-                calendarEvents.push(eventObj);
-            }
-
-            closeEventModal();
-            renderCalendarEvents();
-            showToast("Event Saved", `Scheduled "${title}" at ${hour}:00 (${day.toUpperCase()})`, "success");
-
-            // Sync to Supabase user_calendar_events
-            try {
-                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
-                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
-                if (client && session && session.user && eventObj) {
-                    if (activeEventId && typeof activeEventId === 'string' && !activeEventId.startsWith('evt_')) {
-                        await client
-                            .from('user_calendar_events')
-                            .update({ title, category, hour, day })
-                            .eq('id', activeEventId)
-                            .eq('user_id', session.user.id);
-                    } else {
-                        const { data } = await client
-                            .from('user_calendar_events')
-                            .insert({
-                                user_id: session.user.id,
-                                title,
-                                category,
-                                hour,
-                                day
-                            })
-                            .select('id')
-                            .single();
-                        if (data && data.id) eventObj.id = data.id;
-                    }
-                }
-            } catch (e) {
-                console.warn('Save calendar event to Supabase error:', e);
-            }
-        }
-
-        async function deleteSelectedEvent() {
-            if (!activeEventId) return;
-            const idToDelete = activeEventId;
-            calendarEvents = calendarEvents.filter(e => String(e.id) !== String(idToDelete));
-            closeEventModal();
-            renderCalendarEvents();
-            showToast("Event Deleted", "Schedule event has been removed.", "info");
-
-            // Sync deletion to Supabase
-            try {
-                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
-                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
-                if (client && session && session.user && typeof idToDelete === 'string' && !idToDelete.startsWith('evt_')) {
-                    await client
-                        .from('user_calendar_events')
-                        .delete()
-                        .eq('id', idToDelete)
-                        .eq('user_id', session.user.id);
-                }
-            } catch (e) {
-                console.warn('Delete calendar event error:', e);
-            }
-        }
-
-        function closeEventModal() {
-            const modal = document.getElementById('eventDetailModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
-                modal.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
-            }
-        }
-
-        function filterEvents() {
-            renderCalendarEvents();
-        }
-
+        // Initialize Calendar Subsystem on page load
+        generateHourlySlots();
+        selectCalendarDay('mon', 17);
+        renderCalendarApplianceSwitches();
+        renderMiniCalendar();
         // Initialize on page load
         initRates();
         fetchRates();
         fetchApplianceCatalog();
         calculateBill();
+        generateHourlySlots();
+        selectCalendarDay('mon', 17);
         renderMiniCalendar();
-        updateWeekStripDays();
-        renderCalendarEvents();
         renderCalendarApplianceSwitches();
         if (typeof renderHouseholdLoadList === 'function') {
             renderHouseholdLoadList();
