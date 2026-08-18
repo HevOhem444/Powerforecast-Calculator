@@ -6096,10 +6096,10 @@
         ];
 
         let calendarState = {
-            year: 2026,
-            month: 7, // August (0-indexed)
-            selectedDay: 17,
-            selectedDayKey: 'mon'
+            year: new Date().getFullYear(),
+            month: new Date().getMonth(),
+            selectedDay: new Date().getDate(),
+            selectedDayKey: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()]
         };
 
         // Scheduled Bento Blocks Array (persisted locally & synced)
@@ -6112,20 +6112,23 @@
 
         // Initialize default sample blocks if empty so the timeline immediately has rich interactive data
         if (calendarScheduledBlocks.length === 0) {
+            const now = new Date();
+            const curDayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+            const curDayNum = now.getDate();
             calendarScheduledBlocks = [
                 {
                     id: 'block_sample_1',
                     applianceId: 'mock_panasonic_ac',
-                    dayKey: 'mon',
-                    dayNum: 17,
+                    dayKey: curDayKey,
+                    dayNum: curDayNum,
                     startHour: 13, // 1:00 PM
                     durationHours: 3.0 // 1:00 PM to 4:00 PM (3 hrs)
                 },
                 {
                     id: 'block_sample_2',
                     applianceId: 'mock_tefal_cooktop',
-                    dayKey: 'mon',
-                    dayNum: 17,
+                    dayKey: curDayKey,
+                    dayNum: curDayNum,
                     startHour: 18, // 6:00 PM
                     durationHours: 1.5 // 6:00 PM to 7:30 PM (1.5 hrs)
                 }
@@ -6138,7 +6141,7 @@
             } catch (e) { }
         }
 
-        // Render Appliance Switchboard in Left Panel (Click to Schedule via Modal)
+        // Render Appliance Switchboard in Left Panel
         function renderCalendarApplianceSwitches() {
             const listContainer = document.getElementById('calendarApplianceSwitchList');
             const countBadge = document.getElementById('calApplianceCountBadge');
@@ -6168,6 +6171,7 @@
                 const isOn = Boolean(item.is_currently_on);
                 const isCooldown = Boolean(applianceSwitchCooldowns[item.id] && applianceSwitchCooldowns[item.id] > now);
                 const cooldownSecs = isCooldown ? Math.ceil((applianceSwitchCooldowns[item.id] - now) / 1000) : 0;
+                const hasSchedule = calendarScheduledBlocks.some(b => String(b.applianceId) === String(item.id));
 
                 let categoryIcon = '⚡';
                 const catLower = (item.category || '').toLowerCase();
@@ -6180,7 +6184,18 @@
 
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer hover:border-indigo-400/80 ${isOn ? 'bg-indigo-950/60 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800 hover:bg-slate-850'}`;
-                div.onclick = () => openNewScheduleForAppliance(item.id);
+                
+                // Clicking card opens schedule settings
+                div.onclick = () => {
+                    if (!hasSchedule) {
+                        openNewScheduleForAppliance(item.id);
+                    } else {
+                        const block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(item.id) && b.dayKey === calendarState.selectedDayKey)
+                                     || calendarScheduledBlocks.find(b => String(b.applianceId) === String(item.id));
+                        if (block) openBentoSettingsModal(block.id);
+                        else openNewScheduleForAppliance(item.id);
+                    }
+                };
 
                 // Running duration label
                 let runningLabel = '';
@@ -6209,7 +6224,7 @@
                             </div>
                         </div>
 
-                        <!-- Switch Toggle & Cooldown Badge -->
+                        <!-- Switch Toggle: Opens Modal on first schedule add, or toggles power directly -->
                         <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                             ${isCooldown ? `
                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold animate-pulse">
@@ -6217,7 +6232,7 @@
                                 </span>
                             ` : ''}
                             <label class="relative inline-flex items-center cursor-pointer ${isCooldown ? 'opacity-50 pointer-events-none' : ''}">
-                                <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleApplianceState('${item.id}')" class="sr-only peer">
+                                <input type="checkbox" ${isOn ? 'checked' : ''} onchange="handleInventoryToggleClick(event, '${item.id}')" class="sr-only peer">
                                 <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                             </label>
                         </div>
@@ -6228,7 +6243,7 @@
                             ${isOn ? (runningLabel || '🟢 Active') : '⚪ Standby'}
                         </span>
                         <span class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all">
-                            <span>📅</span> Schedule
+                            <span>📅</span> ${hasSchedule ? 'Edit Schedule' : '+ Set Schedule'}
                         </span>
                     </div>
                 `;
@@ -6237,22 +6252,44 @@
             });
         }
 
+        // Toggle handler from inventory
+        function handleInventoryToggleClick(e, applianceId) {
+            e.stopPropagation();
+            const item = householdLoadList.find(a => String(a.id) === String(applianceId));
+            if (!item) return;
+
+            const hasSchedule = calendarScheduledBlocks.some(b => String(b.applianceId) === String(applianceId));
+            if (!hasSchedule) {
+                // If not yet scheduled on calendar: popup the Schedule Settings modal first!
+                renderCalendarApplianceSwitches();
+                openNewScheduleForAppliance(applianceId);
+            } else {
+                // If already scheduled: turn ON or OFF
+                toggleApplianceState(applianceId);
+            }
+        }
+
         // Open Schedule Settings Modal from Left Inventory Selection
         function openNewScheduleForAppliance(applianceId) {
             const item = householdLoadList.find(a => String(a.id) === String(applianceId));
             if (!item) return;
 
-            // Check if block already exists on current day
+            // Check if block already exists on current selected day
             let block = calendarScheduledBlocks.find(b => String(b.applianceId) === String(applianceId) && b.dayKey === calendarState.selectedDayKey);
             if (!block) {
+                const now = new Date();
+                const curHour = now.getHours() + (now.getMinutes() >= 30 ? 0.5 : 0);
+                const startHour = Math.min(22.0, Math.max(0, curHour));
+                const durationHours = Math.min(2.0, 24.0 - startHour);
+
                 block = {
                     id: 'blk_' + Date.now(),
                     applianceId: item.id,
                     dayKey: calendarState.selectedDayKey,
                     dayNum: calendarState.selectedDay,
-                    startHour: 8.0, // default 8:00 AM
-                    durationHours: 2.0, // default 2 hrs
-                    autoPower: false,
+                    startHour: startHour,
+                    durationHours: durationHours,
+                    autoPower: true,
                     repeat: 'once'
                 };
                 calendarScheduledBlocks.push(block);
@@ -6319,36 +6356,34 @@
                 const isAuto = Boolean(block.autoPower);
                 const repeatMode = block.repeat || 'once';
 
-                // Calculate horizontal percentage on 24-hour axis
+                // Calculate horizontal percentage on exact 24-hour axis
                 const leftPercent = Math.max(0, Math.min(100, (block.startHour / 24.0) * 100));
-                const widthPercent = Math.max(14, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
+                const widthPercent = Math.max(3, Math.min(100 - leftPercent, (block.durationHours / 24.0) * 100));
 
                 const row = document.createElement('div');
                 row.className = 'flex items-center gap-3 p-2 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all';
 
                 row.innerHTML = `
-                    <!-- Left Appliance Info Card (Fixed Width) -->
-                    <div class="w-48 shrink-0 flex items-center justify-between p-2 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <!-- Left Appliance Info Card (Clean info, No redundant toggle switch) -->
+                    <div class="w-44 shrink-0 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="text-base shrink-0">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
-                                <span class="font-extrabold text-xs text-white truncate max-w-[95px]" title="${appName}">${appName}</span>
-                                <span class="text-[10px] font-bold text-amber-400">${appWatts}W</span>
+                                <span class="font-extrabold text-xs text-white truncate max-w-[100px]" title="${appName}">${appName}</span>
+                                <div class="flex items-center gap-1.5 text-[10px]">
+                                    <span class="font-bold text-amber-400">${appWatts}W</span>
+                                    <span class="text-slate-500">•</span>
+                                    <span class="${isOn ? 'text-emerald-400 font-bold' : 'text-slate-500'}">${isOn ? '🟢 ON' : '⚪ OFF'}</span>
+                                </div>
                             </div>
                         </div>
-                        ${item ? `
-                            <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Toggle Power" onclick="event.stopPropagation()">
-                                <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleApplianceState('${item.id}')" class="sr-only peer">
-                                <div class="w-8 h-4.5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500"></div>
-                            </label>
-                        ` : ''}
                     </div>
 
-                    <!-- Right 24-Hour Roadmap Bar Track -->
-                    <div class="flex-1 relative h-12 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center px-1 overflow-hidden select-none">
+                    <!-- Right 24-Hour Roadmap Bar Track (Exact 24-Hour Grid) -->
+                    <div class="flex-1 relative h-11 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center select-none overflow-hidden">
                         
-                        <!-- Subtle Hourly Background Grid Lines (Every 2 Hours = 12 Segments) -->
-                        <div class="absolute inset-0 grid grid-cols-12 pointer-events-none opacity-10">
+                        <!-- 12-Segment Subtle Background Grid (2 Hours Per Segment) -->
+                        <div class="absolute inset-0 grid grid-cols-12 pointer-events-none opacity-15 h-full">
                             <div class="border-r border-slate-400 h-full"></div>
                             <div class="border-r border-slate-400 h-full"></div>
                             <div class="border-r border-slate-400 h-full"></div>
@@ -6364,25 +6399,23 @@
                         </div>
 
                         <!-- Roadmap Timeline Bar Representation -->
-                        <div class="absolute h-9 rounded-xl flex items-center justify-between px-3 cursor-pointer transition-all shadow-lg border ${isOn ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 border-emerald-300 text-white shadow-emerald-500/20 ring-1 ring-emerald-400/50' : 'bg-gradient-to-r from-indigo-700 via-indigo-600 to-purple-700 border-indigo-400/60 text-white hover:brightness-110'}"
-                             style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 140px;"
+                        <div class="absolute h-8 rounded-lg flex items-center justify-between px-2.5 cursor-pointer transition-all shadow-md ${isOn ? 'bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-400/80 text-white shadow-emerald-500/20' : 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110'}"
+                             style="left: ${leftPercent}%; width: ${widthPercent}%;"
                              onclick="openBentoSettingsModal('${block.id}')"
                              title="Click to edit schedule (${timeSpanLabel})">
                             
-                            <!-- Inside Bar Time & Cost Badge -->
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="font-extrabold text-[11px] truncate">${timeSpanLabel}</span>
-                                <span class="text-[10px] font-bold text-amber-300 bg-black/30 px-1.5 py-0.5 rounded shrink-0">~₱${sessionCost.toFixed(2)}</span>
-                                ${isAuto ? `<span class="text-[9px] font-extrabold bg-emerald-400/30 text-emerald-100 px-1.5 py-0.5 rounded shrink-0">⚡ Auto</span>` : ''}
-                                ${repeatMode !== 'once' ? `<span class="text-[9px] font-extrabold bg-purple-400/30 text-purple-100 px-1.5 py-0.5 rounded shrink-0">🔁 ${repeatMode.toUpperCase()}</span>` : ''}
+                            <!-- Inside Bar Cost & Auto Badges -->
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="font-extrabold text-[10px] truncate">~₱${sessionCost.toFixed(2)}</span>
+                                ${isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
                             </div>
 
                             <!-- Inside Bar Action Buttons -->
-                            <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
-                                <button onclick="openBentoSettingsModal('${block.id}')" class="p-1 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
+                            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                                <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-xs transition-all" title="Configure Schedule">
                                     ⚙️
                                 </button>
-                                <button onclick="deleteCalendarBlock('${block.id}')" class="p-1 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
+                                <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-xs transition-all" title="Remove Block">
                                     ✕
                                 </button>
                             </div>
@@ -6401,6 +6434,7 @@
             calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
             saveCalendarBlocks();
             renderCalendarBlocks();
+            renderCalendarApplianceSwitches();
             showToast("Block Removed", "Removed schedule block from timeline.", "info");
         }
 
@@ -6593,66 +6627,26 @@
 
         setInterval(checkAutomatedApplianceSchedules, 10000);
 
-        // Resizing Engine for Bento Blocks
-        let activeResizingBlockId = null;
-        let resizeStartY = 0;
-        let resizeStartDuration = 1.0;
+        // Update 7-Day Selector Strip Numbers (Monday to Sunday)
+        function updateDayStripDates(baseDate = new Date()) {
+            const currentDayOfWeek = baseDate.getDay(); // 0 = Sun, 1 = Mon...
+            const diffToMon = (currentDayOfWeek + 6) % 7; // Mon: 0, Tue: 1, Wed: 2...
+            const monDate = new Date(baseDate);
+            monDate.setDate(baseDate.getDate() - diffToMon);
 
-        function startBlockResize(e, blockId) {
-            e.stopPropagation();
-            e.preventDefault();
+            const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            weekDayKeys.forEach((key, idx) => {
+                const d = new Date(monDate);
+                d.setDate(monDate.getDate() + idx);
+                const dayNum = d.getDate();
+                const numEl = document.getElementById(`dayNum-${key}`);
+                if (numEl) numEl.textContent = dayNum;
 
-            const block = calendarScheduledBlocks.find(b => b.id === blockId);
-            if (!block) return;
-
-            activeResizingBlockId = blockId;
-            resizeStartY = e.clientY;
-            resizeStartDuration = block.durationHours;
-
-            window.addEventListener('mousemove', handleBlockResizeMove);
-            window.addEventListener('mouseup', handleBlockResizeEnd);
-        }
-
-        function handleBlockResizeMove(e) {
-            if (!activeResizingBlockId) return;
-
-            const block = calendarScheduledBlocks.find(b => b.id === activeResizingBlockId);
-            if (!block) return;
-
-            const deltaY = e.clientY - resizeStartY;
-            const deltaHours = deltaY / 56; // 56px per hour
-            let newDuration = Math.max(0.5, Math.min(24 - block.startHour, Math.round((resizeStartDuration + deltaHours) * 2) / 2));
-
-            block.durationHours = newDuration;
-
-            // Direct DOM height & label update for high frame rate responsiveness
-            const card = document.getElementById(`bentoBlock-${block.id}`);
-            if (card) {
-                card.style.height = `${Math.max(54, newDuration * 56)}px`;
-            }
-        }
-
-        function handleBlockResizeEnd(e) {
-            window.removeEventListener('mousemove', handleBlockResizeMove);
-            window.removeEventListener('mouseup', handleBlockResizeEnd);
-
-            if (activeResizingBlockId) {
-                const block = calendarScheduledBlocks.find(b => b.id === activeResizingBlockId);
-                if (block) {
-                    saveCalendarBlocks();
-                    renderCalendarBlocks();
-                    showToast("Duration Updated", `Session set to ${block.durationHours.toFixed(1)} hours (${formatHour(block.startHour)} – ${formatHour(block.startHour + block.durationHours)})`, "info");
+                const stripBtn = document.getElementById(`dayStrip-${key}`);
+                if (stripBtn) {
+                    stripBtn.onclick = () => selectCalendarDay(key, dayNum);
                 }
-            }
-
-            activeResizingBlockId = null;
-        }
-
-        function deleteCalendarBlock(blockId) {
-            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== blockId);
-            saveCalendarBlocks();
-            renderCalendarBlocks();
-            showToast("Block Removed", "Removed schedule block from timeline.", "info");
+            });
         }
 
         // Single Day Selector Strip Handler
@@ -6679,6 +6673,7 @@
 
             if (!daysContainer) return;
 
+            const now = new Date();
             const formattedTitle = `${CAL_MONTH_NAMES[calendarState.month]} ${calendarState.year}`;
             if (monthYearEl) monthYearEl.textContent = formattedTitle;
             if (mainTitleEl) mainTitleEl.textContent = formattedTitle;
@@ -6702,8 +6697,8 @@
             // Current month days
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('button');
-                const isSelected = (day === calendarState.selectedDay && calendarState.year === 2026 && calendarState.month === 7);
-                const isToday = (day === 17 && calendarState.year === 2026 && calendarState.month === 7);
+                const isSelected = (day === calendarState.selectedDay && calendarState.year === now.getFullYear() && calendarState.month === now.getMonth());
+                const isToday = (day === now.getDate() && calendarState.year === now.getFullYear() && calendarState.month === now.getMonth());
 
                 let classes = 'py-1 rounded-full text-xs font-semibold transition-all hover:bg-indigo-500/30 hover:text-white flex items-center justify-center mx-auto w-7 h-7 ';
 
@@ -6719,6 +6714,11 @@
                 dayEl.textContent = day;
                 dayEl.onclick = () => {
                     calendarState.selectedDay = day;
+                    const pickedDate = new Date(calendarState.year, calendarState.month, day);
+                    const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                    calendarState.selectedDayKey = dayMap[pickedDate.getDay()];
+                    updateDayStripDates(pickedDate);
+                    selectCalendarDay(calendarState.selectedDayKey, day);
                     renderMiniCalendar();
                 };
 
@@ -6755,10 +6755,19 @@
         }
 
         function navToday() {
-            calendarState.year = 2026;
-            calendarState.month = 7; // August 2026
-            selectCalendarDay('mon', 17);
+            const now = new Date();
+            calendarState.year = now.getFullYear();
+            calendarState.month = now.getMonth();
+            const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const curDayKey = dayMap[now.getDay()];
+            const curDayNum = now.getDate();
+            updateDayStripDates(now);
+            selectCalendarDay(curDayKey, curDayNum);
             renderMiniCalendar();
+        }
+
+        function initCalendarDate() {
+            navToday();
         }
 
         // Initialize on page load
@@ -6766,8 +6775,7 @@
         fetchRates();
         fetchApplianceCatalog();
         calculateBill();
-        selectCalendarDay('mon', 17);
-        renderMiniCalendar();
+        initCalendarDate();
         renderCalendarApplianceSwitches();
         if (typeof renderHouseholdLoadList === 'function') {
             renderHouseholdLoadList();
