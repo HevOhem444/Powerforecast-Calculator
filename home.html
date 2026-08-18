@@ -2830,30 +2830,51 @@
                                 </div>
                             </div>
 
-                            <!-- Main Horizontal 24-Hour Roadmap Timeline Container (Gantt Style per Reference) -->
+                            <!-- Timeline Zoom & Resolution Controls Toolbar -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 px-1 py-1 text-xs select-none">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                                        <span>🔍</span>
+                                        <span>Zoom:</span>
+                                    </span>
+                                    <div class="flex items-center p-0.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                                        <button onclick="setCalendarTimelineZoom('24h')" id="zoomBtn24h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all bg-indigo-600 text-white shadow">
+                                            24H (Full)
+                                        </button>
+                                        <button onclick="setCalendarTimelineZoom('12h')" id="zoomBtn12h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
+                                            12H (30m)
+                                        </button>
+                                        <button onclick="setCalendarTimelineZoom('6h')" id="zoomBtn6h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
+                                            6H (15m)
+                                        </button>
+                                        <button onclick="setCalendarTimelineZoom('1h')" id="zoomBtn1h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
+                                            1H (5m)
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span id="timelineZoomIndicatorBadge" class="text-[10px] font-bold text-slate-400">
+                                        Resolution: 2 Hours/Division
+                                    </span>
+                                    <button onclick="scrollTimelineToCurrentTime()" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-700 hover:border-indigo-400 text-indigo-300 transition-all flex items-center gap-1 cursor-pointer" title="Pan timeline to current live time">
+                                        <span>📍</span>
+                                        <span>Focus Now</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Main Horizontal Roadmap Timeline Container (Gantt Style with Zoom & Scroll) -->
                             <div id="mainScheduleTimelineContainer" class="flex-1 overflow-x-auto relative border border-slate-800/60 rounded-2xl bg-slate-950/60 custom-scrollbar p-3">
                                 
-                                <div id="timelineCanvasWrapper" class="relative min-w-[780px] flex flex-col gap-2">
-                                    <!-- Horizontal 24-Hour Time Axis Header & Peak Window Legend -->
+                                <div id="timelineCanvasWrapper" class="relative min-w-[780px] flex flex-col gap-2 transition-all duration-200" style="width: 100%;">
+                                    <!-- Horizontal Dynamic Time Axis Header & Peak Window Legend -->
                                     <div class="flex items-center gap-3 pb-2 border-b border-slate-800 text-[10px] font-bold text-slate-400 select-none">
-                                        <div class="w-48 shrink-0 pl-2 uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                        <div class="w-44 shrink-0 pl-2 uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                                             <span>🔌</span>
                                             <span>Appliance</span>
                                         </div>
-                                        <div class="flex-1 relative flex items-center justify-between px-1">
-                                            <span>12 AM</span>
-                                            <span>2 AM</span>
-                                            <span>4 AM</span>
-                                            <span>6 AM</span>
-                                            <span>8 AM</span>
-                                            <span>10 AM</span>
-                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 11 AM – 4 PM">12 PM 🔥</span>
-                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 11 AM – 4 PM">2 PM 🔥</span>
-                                            <span>4 PM</span>
-                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 6 PM – 9 PM">6 PM 🔥</span>
-                                            <span class="text-amber-400 font-extrabold" title="Meralco Peak: 6 PM – 9 PM">8 PM 🔥</span>
-                                            <span>10 PM</span>
-                                            <span>12 AM</span>
+                                        <div id="timelineHourRulerTrack" class="flex-1 relative flex items-center justify-between px-1">
+                                            <!-- Dynamically populated by renderTimelineHeaderRuler() -->
                                         </div>
                                     </div>
 
@@ -6797,6 +6818,17 @@
             item.manual_override_until = now + 60000; // 1-minute automation debounce
             if (willTurnOn) {
                 item.last_turned_on_at = endedAt;
+            } else if (startedAt) {
+                // Precision Second-Level Cutoff for current calendar block!
+                const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
+                const durationHours = elapsedMs / 3600000.0;
+                
+                // Find active block for this appliance on today's calendar and truncate cleanly
+                const activeBlock = calendarScheduledBlocks.find(b => String(b.applianceId) === String(id) && b.dayKey === calendarState.selectedDayKey);
+                if (activeBlock) {
+                    activeBlock.durationHours = Math.max(0.01, durationHours);
+                    saveCalendarBlocks();
+                }
             }
 
             // Set 5-second surge cooldown
@@ -6822,9 +6854,9 @@
                         .eq('id', item.id)
                         .eq('user_id', session.user.id);
 
-                    // If turning OFF, log complete usage session to appliance_usage_logs
+                    // If turning OFF, log complete usage session to appliance_usage_logs with seconds precision
                     if (!willTurnOn && startedAt) {
-                        const elapsedMs = Math.max(0, now - new Date(startedAt).getTime());
+                        const elapsedMs = Math.max(1000, now - new Date(startedAt).getTime());
                         const durationMinutes = elapsedMs / 60000.0;
                         const genInput = document.getElementById('genRateInput');
                         const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
@@ -6832,7 +6864,7 @@
                         const estCost = kwhConsumed * (genRate + 3.5);
                         const isPeak = isPeakHour(new Date().getHours());
 
-                        if (durationMinutes >= 0.1) {
+                        if (durationMinutes >= 0.01) {
                             await dbLogApplianceUsageSession(item.id, startedAt, endedAt, durationMinutes, kwhConsumed, isPeak, estCost);
                         }
                     }
@@ -6840,6 +6872,135 @@
             } catch (e) {
                 console.warn('Usage log session sync error:', e);
             }
+        }
+
+        // ===== TIMELINE ZOOM & RESOLUTION ENGINE =====
+        let calendarZoomState = {
+            mode: '24h',
+            multiplier: 1
+        };
+
+        function setCalendarTimelineZoom(mode) {
+            calendarZoomState.mode = mode;
+            
+            // Update zoom pill button states
+            ['24h', '12h', '6h', '1h'].forEach(m => {
+                const btn = document.getElementById('zoomBtn' + m);
+                if (btn) {
+                    if (m === mode) {
+                        btn.className = 'px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all bg-indigo-600 text-white shadow';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white';
+                    }
+                }
+            });
+
+            const badge = document.getElementById('timelineZoomIndicatorBadge');
+            const canvas = document.getElementById('timelineCanvasWrapper');
+
+            if (mode === '24h') {
+                calendarZoomState.multiplier = 1;
+                if (canvas) canvas.style.width = '100%';
+                if (badge) badge.textContent = 'Resolution: 2 Hours/Division';
+            } else if (mode === '12h') {
+                calendarZoomState.multiplier = 2;
+                if (canvas) canvas.style.width = '200%';
+                if (badge) badge.textContent = 'Resolution: 30 Mins/Division';
+            } else if (mode === '6h') {
+                calendarZoomState.multiplier = 4;
+                if (canvas) canvas.style.width = '400%';
+                if (badge) badge.textContent = 'Resolution: 15 Mins/Division';
+            } else if (mode === '1h') {
+                calendarZoomState.multiplier = 12;
+                if (canvas) canvas.style.width = '1200%';
+                if (badge) badge.textContent = 'Resolution: 5 Mins/Division';
+            }
+
+            renderTimelineHeaderRuler();
+            renderCalendarBlocks();
+            scrollTimelineToCurrentTime();
+        }
+
+        function renderTimelineHeaderRuler() {
+            const track = document.getElementById('timelineHourRulerTrack');
+            if (!track) return;
+
+            const mode = calendarZoomState.mode;
+            track.innerHTML = '';
+
+            if (mode === '24h') {
+                const hours = [
+                    { h: 0, l: '12 AM' }, { h: 2, l: '2 AM' }, { h: 4, l: '4 AM' }, { h: 6, l: '6 AM' },
+                    { h: 8, l: '8 AM' }, { h: 10, l: '10 AM' }, { h: 12, l: '12 PM 🔥', p: true },
+                    { h: 14, l: '2 PM 🔥', p: true }, { h: 16, l: '4 PM' }, { h: 18, l: '6 PM 🔥', p: true },
+                    { h: 20, l: '8 PM 🔥', p: true }, { h: 22, l: '10 PM' }, { h: 24, l: '12 AM' }
+                ];
+                hours.forEach(item => {
+                    const span = document.createElement('span');
+                    span.textContent = item.l;
+                    if (item.p) span.className = 'text-amber-400 font-extrabold';
+                    track.appendChild(span);
+                });
+            } else if (mode === '12h') {
+                // 30-minute ticks (48 marks)
+                for (let h = 0; h <= 24; h += 0.5) {
+                    const span = document.createElement('span');
+                    const hInt = Math.floor(h);
+                    const m = h % 1 === 0 ? ':00' : ':30';
+                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : (hInt === 12 ? 'PM' : 'PM'));
+                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
+
+                    span.textContent = `${dispH}${m} ${ampm}`;
+                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px]' : 'text-slate-400 text-[9px]';
+                    track.appendChild(span);
+                }
+            } else if (mode === '6h') {
+                // 15-minute ticks (96 marks)
+                for (let h = 0; h <= 24; h += 0.25) {
+                    const span = document.createElement('span');
+                    const hInt = Math.floor(h);
+                    const mins = Math.round((h - hInt) * 60);
+                    const mStr = `:${String(mins).padStart(2, '0')}`;
+                    const ampm = (hInt === 0 || hInt === 24) ? 'AM' : (hInt < 12 ? 'AM' : (hInt === 12 ? 'PM' : 'PM'));
+                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
+
+                    span.textContent = `${dispH}${mStr} ${ampm}`;
+                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[8px]' : 'text-slate-400 text-[8px]';
+                    track.appendChild(span);
+                }
+            } else if (mode === '1h') {
+                // 5-minute ticks (288 marks)
+                for (let h = 0; h <= 24; h += (5 / 60.0)) {
+                    const span = document.createElement('span');
+                    const hInt = Math.floor(h);
+                    const mins = Math.round((h - hInt) * 60);
+                    const mStr = `:${String(mins).padStart(2, '0')}`;
+                    const dispH = (hInt === 0 || hInt === 24) ? 12 : (hInt > 12 ? hInt - 12 : hInt);
+                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
+
+                    span.textContent = `${dispH}${mStr}`;
+                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[7px]' : 'text-slate-400 text-[7px]';
+                    track.appendChild(span);
+                }
+            }
+        }
+
+        function scrollTimelineToCurrentTime() {
+            const container = document.getElementById('mainScheduleTimelineContainer');
+            const canvas = document.getElementById('timelineCanvasWrapper');
+            if (!container || !canvas) return;
+
+            const now = new Date();
+            const currentFraction = (now.getHours() + (now.getMinutes() / 60.0)) / 24.0;
+            const canvasWidth = canvas.scrollWidth;
+            const targetScrollLeft = Math.max(0, (canvasWidth * currentFraction) - (container.clientWidth / 2));
+            
+            container.scrollTo({
+                left: targetScrollLeft,
+                behavior: 'smooth'
+            });
         }
 
         // Toggle handler from inventory
@@ -6850,11 +7011,9 @@
 
             const hasSchedule = calendarScheduledBlocks.some(b => String(b.applianceId) === String(applianceId));
             if (!hasSchedule) {
-                // If not yet scheduled on calendar: popup the Schedule Settings modal first!
                 renderCalendarApplianceSwitches();
                 openNewScheduleForAppliance(applianceId);
             } else {
-                // If already scheduled: turn ON or OFF
                 toggleApplianceState(applianceId);
             }
         }
@@ -6901,6 +7060,7 @@
 
             const endHour = block.startHour + block.durationHours;
 
+            // If appliance is actively ON and current time is at/past start time -> RUNNING takes absolute precedence
             if (isRunning && currentHour >= block.startHour) {
                 return 'running';
             }
@@ -6967,10 +7127,15 @@
             }
         }
 
-        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Temporal Protections)
+        // Render Horizontal Roadmap Timeline Representation (Gantt-Style Rows per Appliance with Temporal Protections & Zoom Support)
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineRoadmapRowsLayer');
             if (!layer) return;
+
+            const rulerTrack = document.getElementById('timelineHourRulerTrack');
+            if (rulerTrack && rulerTrack.children.length === 0) {
+                renderTimelineHeaderRuler();
+            }
 
             // Auto-clean orphaned schedule blocks whose appliance has been deleted from household inventory
             const prevCount = calendarScheduledBlocks.length;
