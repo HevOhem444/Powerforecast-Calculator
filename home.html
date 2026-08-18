@@ -641,6 +641,23 @@
             height: 0;
         }
 
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+
         .toggle-slider {
             position: absolute;
             inset: 0;
@@ -2791,23 +2808,113 @@
                                 </div>
                             </div>
 
-                            <!-- Main 24-Hour Timeline Area (Drop Targets & Resizable Bento Blocks) -->
-                            <div id="mainScheduleTimelineContainer" class="flex-1 overflow-y-auto max-h-[520px] relative pr-1 border border-slate-800/60 rounded-2xl bg-slate-950/40">
+                            <!-- Main 24-Hour Timeline Area (Drop Targets, Side-by-Side Bento Blocks & Horizontal Scrollbar) -->
+                            <div id="mainScheduleTimelineContainer" class="flex-1 overflow-x-auto overflow-y-auto max-h-[520px] relative border border-slate-800/60 rounded-2xl bg-slate-950/40 custom-scrollbar">
                                 
-                                <!-- Background Hourly Drop Slots (12 AM to 11 PM) -->
-                                <div id="timelineSlotsGrid" class="flex flex-col relative w-full select-none">
-                                    <!-- Populated by generateHourlySlots() -->
-                                </div>
+                                <div id="timelineCanvasWrapper" class="relative min-w-full flex flex-col min-h-[1344px]">
+                                    <!-- Background Hourly Drop Slots (12 AM to 11 PM, 24 Hours x 56px = 1344px) -->
+                                    <div id="timelineSlotsGrid" class="flex flex-col relative w-full select-none">
+                                        <!-- Populated by generateHourlySlots() -->
+                                    </div>
 
-                                <!-- Floating Scheduled Bento Appliance Blocks Layer -->
-                                <div id="timelineBentoBlocksLayer" class="absolute inset-0 pointer-events-none w-full h-full">
-                                    <!-- Populated by renderCalendarBlocks() -->
+                                    <!-- Floating Scheduled Bento Appliance Blocks Layer (Side-by-Side) -->
+                                    <div id="timelineBentoBlocksLayer" class="absolute inset-0 pointer-events-none w-full h-full">
+                                        <!-- Populated by renderCalendarBlocks() -->
+                                    </div>
                                 </div>
 
                             </div>
                         </div>
                     </div>
 
+                </div>
+
+                <!-- BENTO BLOCK SETTINGS MODAL (Auto ON/OFF, Repeat Recurrence, Manual Time Input) -->
+                <div id="bentoSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                    <div class="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl flex flex-col gap-5 scale-95 transition-transform duration-200">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div id="bentoModalIcon" class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg">
+                                    ⚙️
+                                </div>
+                                <div class="flex flex-col">
+                                    <h3 id="bentoModalTitle" class="text-sm font-extrabold text-white">Appliance Schedule Settings</h3>
+                                    <span id="bentoModalSubtitle" class="text-xs text-slate-400">Panasonic AC • 1100W</span>
+                                </div>
+                            </div>
+                            <button onclick="closeBentoSettingsModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 text-sm">
+                                ✕
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-4 text-xs">
+                            <!-- 1. Auto ON/OFF Feature -->
+                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">
+                                <div class="flex flex-col gap-0.5">
+                                    <div class="flex items-center gap-1.5 font-bold text-white">
+                                        <span>⚡</span>
+                                        <span>Automatic Power ON/OFF</span>
+                                    </div>
+                                    <span class="text-[11px] text-slate-400">Auto turn ON at start time, and turn OFF when session ends.</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input id="bentoSettingAutoPower" type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <!-- 2. Manual Time Inputs (e.g. 1:00 AM to 3:00 PM) -->
+                            <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                                <span class="font-bold text-white flex items-center gap-1.5">
+                                    <span>⏱️</span>
+                                    <span>Manual Time Range Input</span>
+                                </span>
+                                <div class="grid grid-cols-2 gap-3 mt-1">
+                                    <div class="flex flex-col gap-1">
+                                        <label for="bentoSettingStartTime" class="text-[11px] font-semibold text-slate-400">Start Time</label>
+                                        <input id="bentoSettingStartTime" type="time" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white" onchange="recalcModalDuration()">
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <label for="bentoSettingEndTime" class="text-[11px] font-semibold text-slate-400">End Time</label>
+                                        <input id="bentoSettingEndTime" type="time" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white" onchange="recalcModalDuration()">
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                                    <span>Calculated Duration: <strong id="bentoModalDurationLabel" class="text-amber-400">3.0 hrs</strong></span>
+                                    <span>Est. Cost: <strong id="bentoModalCostLabel" class="text-emerald-400">₱38.25</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- 3. Repeat on Next Day / Recurrence Setting -->
+                            <div class="flex flex-col gap-2 p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                                <span class="font-bold text-white flex items-center gap-1.5">
+                                    <span>🔁</span>
+                                    <span>Repeat Recurrence</span>
+                                </span>
+                                <select id="bentoSettingRepeat" class="pf-input rounded-xl px-3 py-2.5 text-xs font-semibold text-white">
+                                    <option value="once">Do Not Repeat (This Day Only)</option>
+                                    <option value="daily">Repeat Daily (All 7 Days)</option>
+                                    <option value="weekdays">Repeat Mon - Fri (Weekdays)</option>
+                                    <option value="weekends">Repeat Sat - Sun (Weekends)</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 italic">Replicates this operating session across the selected calendar days.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                            <button onclick="deleteCurrentBentoBlockFromModal()" class="px-4 py-2 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs font-bold transition-all">
+                                🗑️ Delete Block
+                            </button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="closeBentoSettingsModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold">
+                                    Cancel
+                                </button>
+                                <button onclick="saveBentoSettingsModal()" class="px-5 py-2 rounded-xl btn-primary text-xs font-extrabold shadow-lg shadow-indigo-500/20">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- SAFETY & PEAK HOUR CONFIRMATION MODAL -->
@@ -6413,16 +6520,28 @@
             showToast("Appliance Scheduled", `Placed "${appliance.name}" at ${formatHour(hour)} on ${calendarState.selectedDayKey.toUpperCase()}!`, "success");
         }
 
-        // Render Resizable Bento Blocks on Timeline
+        // Render Resizable Bento Blocks on Timeline (Side-by-Side Columns with Sliding Bar)
         function renderCalendarBlocks() {
             const layer = document.getElementById('timelineBentoBlocksLayer');
+            const wrapper = document.getElementById('timelineCanvasWrapper');
+            const slotsGrid = document.getElementById('timelineSlotsGrid');
             if (!layer) return;
 
             layer.innerHTML = '';
             const SLOT_HEIGHT = 56; // 56px per hour
             const dayBlocks = calendarScheduledBlocks.filter(b => b.dayKey === calendarState.selectedDayKey);
 
-            dayBlocks.forEach(block => {
+            // Dynamic horizontal width calculation to guarantee side-by-side layout with horizontal sliding bar
+            const colWidth = 290; // px per appliance column
+            const timeGutter = 82; // px for time labels on the left
+            const totalCols = Math.max(1, dayBlocks.length);
+            const totalCanvasWidth = Math.max(760, timeGutter + (totalCols * colWidth) + 30);
+
+            if (wrapper) wrapper.style.minWidth = `${totalCanvasWidth}px`;
+            if (slotsGrid) slotsGrid.style.minWidth = `${totalCanvasWidth}px`;
+            if (layer) layer.style.minWidth = `${totalCanvasWidth}px`;
+
+            dayBlocks.forEach((block, colIndex) => {
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const appName = item ? item.name : 'Scheduled Appliance';
                 const appWatts = item ? item.watts : 1000;
@@ -6437,6 +6556,7 @@
                 else if (catLower.includes('wash') || catLower.includes('laundry')) categoryIcon = '🧺';
                 else if (catLower.includes('tv') || catLower.includes('comput') || catLower.includes('entertain')) categoryIcon = '🖥️';
 
+                const leftPx = timeGutter + (colIndex * colWidth);
                 const topPx = block.startHour * SLOT_HEIGHT;
                 const heightPx = Math.max(54, block.durationHours * SLOT_HEIGHT);
                 const endHour = block.startHour + block.durationHours;
@@ -6448,34 +6568,42 @@
 
                 const card = document.createElement('div');
                 card.id = `bentoBlock-${block.id}`;
-                card.className = `pointer-events-auto absolute left-18 sm:left-22 right-2 rounded-2xl p-3 border shadow-xl backdrop-blur-xl transition-shadow flex flex-col justify-between select-none ${isOn ? 'bg-indigo-950/80 border-emerald-400 shadow-emerald-500/20 ring-1 ring-emerald-400/60' : 'bg-slate-900/90 border-indigo-500/40 hover:border-indigo-400'}`;
+                card.className = `pointer-events-auto absolute rounded-2xl p-3 border shadow-2xl backdrop-blur-xl transition-shadow flex flex-col justify-between select-none ${isOn ? 'bg-indigo-950/90 border-emerald-400 shadow-emerald-500/20 ring-1 ring-emerald-400/60' : 'bg-slate-900/95 border-indigo-500/50 hover:border-indigo-400'}`;
+                card.style.left = `${leftPx}px`;
+                card.style.width = `${colWidth - 14}px`;
                 card.style.top = `${topPx}px`;
                 card.style.height = `${heightPx}px`;
 
+                const isAuto = Boolean(block.autoPower);
+                const repeatMode = block.repeat || 'once';
+
                 card.innerHTML = `
-                    <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-start justify-between gap-1.5">
                         <div class="flex items-center gap-2 min-w-0">
-                            <span class="text-lg">${categoryIcon}</span>
+                            <span class="text-lg shrink-0">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
-                                <span class="font-extrabold text-xs text-white truncate max-w-[180px] sm:max-w-[260px]">${appName}</span>
-                                <div class="flex items-center gap-2 text-[10px]">
+                                <span class="font-extrabold text-xs text-white truncate max-w-[145px]" title="${appName}">${appName}</span>
+                                <div class="flex items-center gap-1.5 text-[10px]">
                                     <span class="font-bold text-amber-400">${appWatts}W</span>
-                                    <span class="text-slate-400">•</span>
-                                    <span class="text-slate-300 font-semibold">${timeSpanLabel}</span>
                                     <span class="text-slate-400">•</span>
                                     <span class="text-emerald-400 font-bold">~₱${sessionCost.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
                             <!-- Integrated ON/OFF Switch -->
                             ${item ? `
-                                <label class="relative inline-flex items-center cursor-pointer" onclick="event.stopPropagation()">
+                                <label class="relative inline-flex items-center cursor-pointer" title="Toggle power switch">
                                     <input type="checkbox" ${isOn ? 'checked' : ''} onchange="toggleApplianceState('${item.id}')" class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    <div class="w-8 h-4.5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500"></div>
                                 </label>
                             ` : ''}
+
+                            <!-- Settings Button -->
+                            <button onclick="openBentoSettingsModal('${block.id}')" class="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-indigo-500/20 text-xs transition-all" title="Settings (Auto ON/OFF, Repeat, Time Range)">
+                                ⚙️
+                            </button>
 
                             <!-- Delete Block Button -->
                             <button onclick="deleteCalendarBlock('${block.id}')" class="p-1 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 text-xs transition-all" title="Remove Block">
@@ -6484,18 +6612,35 @@
                         </div>
                     </div>
 
+                    <!-- Time & Repeat Badges -->
+                    <div class="flex flex-wrap items-center gap-1.5 my-1">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
+                            ⏱️ ${timeSpanLabel}
+                        </span>
+                        ${isAuto ? `
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                                ⚡ Auto
+                            </span>
+                        ` : ''}
+                        ${repeatMode !== 'once' ? `
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
+                                🔁 ${repeatMode.toUpperCase()}
+                            </span>
+                        ` : ''}
+                    </div>
+
                     <!-- Live Running Status / Standby Bar -->
                     <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-slate-800">
                         <span class="bento-active-ticker ${isOn ? 'text-emerald-300 font-bold' : 'text-slate-500 font-medium'}" data-appliance-id="${block.applianceId}">
-                            ${isOn ? '🟢 Active (Drawing Power)' : '⚪ Standby / Scheduled'}
+                            ${isOn ? '🟢 Active' : '⚪ Scheduled'}
                         </span>
                         <span class="text-[9px] text-slate-400 font-medium">
-                            ${isOn ? '⚡ Burn rate logging' : 'Drag bottom handle to resize duration'}
+                            ${isOn ? '⚡ Burning' : 'Stretch ⇕'}
                         </span>
                     </div>
 
                     <!-- Bottom Resizer Handle -->
-                    <div class="bento-resizer-handle absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-center justify-center bg-indigo-500/20 hover:bg-indigo-500/40 rounded-b-2xl transition-colors"
+                    <div class="bento-resizer-handle absolute bottom-0 left-0 right-0 h-3.5 cursor-ns-resize flex items-center justify-center bg-indigo-500/20 hover:bg-indigo-500/40 rounded-b-2xl transition-colors"
                          onmousedown="startBlockResize(event, '${block.id}')"
                          title="Drag up/down to adjust duration">
                         <div class="w-8 h-1 rounded-full bg-slate-400/60"></div>
@@ -6505,6 +6650,195 @@
                 layer.appendChild(card);
             });
         }
+
+        // ===== BENTO BLOCK SETTINGS MODAL HANDLERS =====
+        let activeEditingBlockId = null;
+
+        function openBentoSettingsModal(blockId) {
+            const block = calendarScheduledBlocks.find(b => b.id === blockId);
+            if (!block) return;
+
+            activeEditingBlockId = blockId;
+            const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+
+            const modal = document.getElementById('bentoSettingsModal');
+            const titleEl = document.getElementById('bentoModalTitle');
+            const subEl = document.getElementById('bentoModalSubtitle');
+            const autoPowerCb = document.getElementById('bentoSettingAutoPower');
+            const startInput = document.getElementById('bentoSettingStartTime');
+            const endInput = document.getElementById('bentoSettingEndTime');
+            const repeatSelect = document.getElementById('bentoSettingRepeat');
+
+            if (titleEl) titleEl.textContent = `${item ? item.name : 'Appliance'} Schedule Settings`;
+            if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
+
+            if (autoPowerCb) autoPowerCb.checked = Boolean(block.autoPower);
+
+            // Format hours into HH:MM time strings
+            const startH = Math.floor(block.startHour);
+            const startM = Math.round((block.startHour - startH) * 60);
+            const endHour = block.startHour + block.durationHours;
+            const endH = Math.floor(endHour % 24);
+            const endM = Math.round((endHour - Math.floor(endHour)) * 60);
+
+            if (startInput) startInput.value = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+            if (endInput) endInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+            if (repeatSelect) repeatSelect.value = block.repeat || 'once';
+
+            recalcModalDuration();
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.remove('scale-95');
+            }
+        }
+
+        function closeBentoSettingsModal() {
+            const modal = document.getElementById('bentoSettingsModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.classList.remove('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.add('scale-95');
+            }
+            activeEditingBlockId = null;
+        }
+
+        function recalcModalDuration() {
+            const startInput = document.getElementById('bentoSettingStartTime');
+            const endInput = document.getElementById('bentoSettingEndTime');
+            const durLabel = document.getElementById('bentoModalDurationLabel');
+            const costLabel = document.getElementById('bentoModalCostLabel');
+
+            if (!startInput || !endInput) return;
+
+            const [sh, sm] = (startInput.value || '00:00').split(':').map(Number);
+            const [eh, em] = (endInput.value || '02:00').split(':').map(Number);
+
+            const startVal = sh + (sm / 60);
+            let endVal = eh + (em / 60);
+            if (endVal <= startVal) endVal += 24; // spans past midnight
+
+            const duration = Math.max(0.5, endVal - startVal);
+            if (durLabel) durLabel.textContent = `${duration.toFixed(1)} hrs`;
+
+            const block = calendarScheduledBlocks.find(b => b.id === activeEditingBlockId);
+            const item = block ? householdLoadList.find(a => String(a.id) === String(block.applianceId)) : null;
+            const watts = item ? item.watts : 1000;
+            const genInput = document.getElementById('genRateInput');
+            const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+            const estCost = (watts * duration / 1000) * (genRate + 3.5);
+
+            if (costLabel) costLabel.textContent = `₱${estCost.toFixed(2)}`;
+        }
+
+        function saveBentoSettingsModal() {
+            if (!activeEditingBlockId) return;
+
+            const block = calendarScheduledBlocks.find(b => b.id === activeEditingBlockId);
+            if (!block) return;
+
+            const autoPowerCb = document.getElementById('bentoSettingAutoPower');
+            const startInput = document.getElementById('bentoSettingStartTime');
+            const endInput = document.getElementById('bentoSettingEndTime');
+            const repeatSelect = document.getElementById('bentoSettingRepeat');
+
+            const [sh, sm] = (startInput ? startInput.value : '00:00').split(':').map(Number);
+            const [eh, em] = (endInput ? endInput.value : '02:00').split(':').map(Number);
+
+            const startVal = sh + (sm / 60);
+            let endVal = eh + (em / 60);
+            if (endVal <= startVal) endVal += 24;
+            const duration = Math.max(0.5, endVal - startVal);
+
+            block.startHour = startVal;
+            block.durationHours = duration;
+            block.autoPower = Boolean(autoPowerCb && autoPowerCb.checked);
+            const repeatMode = repeatSelect ? repeatSelect.value : 'once';
+            block.repeat = repeatMode;
+
+            // Handle Repeat Replication across other days
+            const allDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            let targetDays = [];
+            if (repeatMode === 'daily') {
+                targetDays = allDays;
+            } else if (repeatMode === 'weekdays') {
+                targetDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            } else if (repeatMode === 'weekends') {
+                targetDays = ['sat', 'sun'];
+            }
+
+            if (targetDays.length > 0) {
+                targetDays.forEach(day => {
+                    if (day !== block.dayKey) {
+                        const existingIdx = calendarScheduledBlocks.findIndex(b => b.applianceId === block.applianceId && b.dayKey === day);
+                        if (existingIdx !== -1) {
+                            calendarScheduledBlocks[existingIdx].startHour = block.startHour;
+                            calendarScheduledBlocks[existingIdx].durationHours = block.durationHours;
+                            calendarScheduledBlocks[existingIdx].autoPower = block.autoPower;
+                            calendarScheduledBlocks[existingIdx].repeat = repeatMode;
+                        } else {
+                            calendarScheduledBlocks.push({
+                                id: 'blk_' + Date.now() + '_' + day,
+                                applianceId: block.applianceId,
+                                dayKey: day,
+                                dayNum: 17,
+                                startHour: block.startHour,
+                                durationHours: block.durationHours,
+                                autoPower: block.autoPower,
+                                repeat: repeatMode
+                            });
+                        }
+                    }
+                });
+            }
+
+            saveCalendarBlocks();
+            renderCalendarBlocks();
+            closeBentoSettingsModal();
+            showToast("Settings Applied", `Saved operating window and recurrence (${repeatMode.toUpperCase()})!`, "success");
+        }
+
+        function deleteCurrentBentoBlockFromModal() {
+            if (!activeEditingBlockId) return;
+            deleteCalendarBlock(activeEditingBlockId);
+            closeBentoSettingsModal();
+        }
+
+        // Automated Power Scheduler Engine (Checks active time windows for auto-power blocks)
+        function checkAutomatedApplianceSchedules() {
+            const now = new Date();
+            const currentHour = now.getHours() + (now.getMinutes() / 60.0);
+            const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const todayKey = dayMap[now.getDay()];
+
+            calendarScheduledBlocks.forEach(block => {
+                if (block.autoPower && block.dayKey === todayKey) {
+                    const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+                    if (!item) return;
+
+                    const endHour = block.startHour + block.durationHours;
+                    const inWindow = (currentHour >= block.startHour && currentHour < endHour);
+
+                    if (inWindow && !item.is_currently_on) {
+                        toggleApplianceState(item.id, true);
+                        showToast("Smart Automation", `Auto-turned ON "${item.name}" per schedule!`, "info");
+                    } else if (!inWindow && item.is_currently_on) {
+                        // Check if other active blocks exist for this appliance before turning off
+                        const otherActive = calendarScheduledBlocks.some(b => b.applianceId === item.id && b.dayKey === todayKey && currentHour >= b.startHour && currentHour < (b.startHour + b.durationHours));
+                        if (!otherActive) {
+                            toggleApplianceState(item.id, true);
+                            showToast("Smart Automation", `Auto-turned OFF "${item.name}" (session complete)!`, "info");
+                        }
+                    }
+                }
+            });
+        }
+
+        setInterval(checkAutomatedApplianceSchedules, 10000);
 
         // Resizing Engine for Bento Blocks
         let activeResizingBlockId = null;
