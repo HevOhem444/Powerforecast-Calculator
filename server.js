@@ -696,13 +696,18 @@ Your objective is to identify household, kitchen, commercial, or HVAC appliances
         return;
     }
 
-    // Static Files — with path traversal protection
+    // Static Files — with path traversal protection & clean URLs
     let filePath = path.resolve(path.join(PROJECT_DIR, pathname));
     if (!filePath.startsWith(path.resolve(PROJECT_DIR))) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Forbidden' }));
         return;
     }
+
+    if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) {
+        filePath = filePath + '.html';
+    }
+
     fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
             res.writeHead(404, { 'Content-Type': 'application/json' });

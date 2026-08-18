@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="Assets/LOGO.png">
+    <!-- Supabase JS Client & Auth System -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
     <script>
         (function() {
             const savedTheme = localStorage.getItem('powerforecast_theme');
@@ -859,8 +862,39 @@
         passwordInput.addEventListener('input', checkPasswordMatch);
         confirmInput.addEventListener('input', checkPasswordMatch);
 
+        // Check if already logged in
+        if (window.PowerForecastAuth) {
+            PowerForecastAuth.redirectIfAuthenticated('home.html');
+        }
+
+        // Google Sign-Up Handler
+        const googleSignupBtn = document.getElementById('google-signup-btn') || document.querySelector('.google-btn');
+        if (googleSignupBtn) {
+            googleSignupBtn.addEventListener('click', async () => {
+                try {
+                    googleSignupBtn.disabled = true;
+                    googleSignupBtn.innerHTML = 'Connecting to Google...';
+                    await PowerForecastAuth.signInWithGoogle();
+                } catch (err) {
+                    console.error('Google Sign-Up Error:', err);
+                    showError(err.message || 'Failed to initialize Google Sign-Up.');
+                    googleSignupBtn.disabled = false;
+                    googleSignupBtn.innerHTML = `
+                        <svg width="22" height="22" viewBox="0 0 48 48">
+                            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/>
+                            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                        </svg>
+                        Google
+                    `;
+                }
+            });
+        }
+
         // Sign Up button logic
-        document.getElementById('signup-btn').addEventListener('click', () => {
+        const signupBtn = document.getElementById('signup-btn');
+        signupBtn.addEventListener('click', async () => {
             const fullname = document.getElementById('fullname-input').value.trim();
             const email = document.getElementById('email-input').value.trim();
             const password = passwordInput.value.trim();
@@ -874,9 +908,9 @@
                 return;
             }
 
-            if (password.length < 8) {
+            if (password.length < 6) {
                 triggerShake(card);
-                showError('Password must be at least 8 characters.');
+                showError('Password must be at least 6 characters.');
                 return;
             }
 
@@ -892,9 +926,51 @@
                 return;
             }
 
-            // Success — redirect to login
-            window.location.href = 'login.html';
+            // Set loading state
+            const originalBtnText = signupBtn.textContent;
+            signupBtn.disabled = true;
+            signupBtn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> Creating Account...';
+
+            try {
+                const data = await PowerForecastAuth.signUp(fullname, email, password);
+                
+                const errEl = document.getElementById('signup-error');
+                if (errEl) errEl.remove();
+
+                // If user is auto-confirmed or session established
+                if (data.session) {
+                    window.location.href = 'home.html';
+                } else {
+                    // Email confirmation sent or account created
+                    showSuccess('Account created! Please check your email to confirm your registration or log in now.');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2500);
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                triggerShake(card);
+                let message = error.message || 'Failed to create account.';
+                if (message.includes('User already registered')) {
+                    message = 'This email is already registered. Please log in instead.';
+                }
+                showError(message);
+            } finally {
+                signupBtn.disabled = false;
+                signupBtn.textContent = originalBtnText;
+            }
         });
+
+        function showSuccess(msg) {
+            let msgEl = document.getElementById('signup-error');
+            if (!msgEl) {
+                msgEl = document.createElement('p');
+                msgEl.id = 'signup-error';
+                document.getElementById('signup-btn').insertAdjacentElement('afterend', msgEl);
+            }
+            msgEl.style.cssText = 'color:#51cf66;font-size:0.85rem;text-align:center;margin-top:12px;font-weight:600;';
+            msgEl.textContent = msg;
+        }
 
         function triggerShake(element) {
             element.style.animation = 'none';

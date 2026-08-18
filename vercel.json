@@ -32,8 +32,10 @@
   ],
   "routes": [
     { "src": "/", "dest": "/login.html" },
-    { "src": "/index", "dest": "/login.html" },
-    { "src": "/index.html", "dest": "/login.html" },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/signup", "dest": "/signup.html" },
+    { "src": "/forgot-password", "dest": "/forgot-password.html" },
+    { "src": "/landing", "dest": "/landing.html" },
     { "src": "/home", "dest": "/home.html" },
     { "src": "/docs", "dest": "/docs.html" },
     { "src": "/Assets/(.*)", "dest": "/Assets/$1" },
