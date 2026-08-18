@@ -2908,7 +2908,8 @@
                             </button>
                         </div>
 
-                        <div class="flex flex-col gap-4 text-xs">
+                        <!-- 1. Schedule Configuration Form Container -->
+                        <div id="bentoScheduleFormContainer" class="flex flex-col gap-4 text-xs">
                             <!-- 1. Auto ON/OFF Feature -->
                             <div class="flex items-center justify-between p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/30">
                                 <div class="flex flex-col gap-0.5">
@@ -2983,6 +2984,47 @@
                                     <option value="weekends">Repeat Sat - Sun (Weekends)</option>
                                 </select>
                                 <p class="text-[10px] text-slate-400 italic">Replicates this operating session across the selected calendar days.</p>
+                            </div>
+                        </div>
+
+                        <!-- 2. Historical Energy Receipt Card (Displayed for past completed sessions) -->
+                        <div id="bentoReceiptContainer" class="hidden flex flex-col gap-3.5 text-xs">
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/60 to-slate-950 border border-indigo-500/30 flex flex-col gap-3">
+                                <div class="flex items-center justify-between border-b border-indigo-500/20 pb-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg">🧾</span>
+                                        <span class="font-extrabold text-white text-xs">Energy Consumption Receipt</span>
+                                    </div>
+                                    <span id="receiptPeakBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        🟢 Off-Peak Run
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 text-[11px]">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-slate-400">Total Duration:</span>
+                                        <strong id="receiptDuration" class="text-white text-xs">1 hr 15 mins</strong>
+                                    </div>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-slate-400">Metered Energy:</span>
+                                        <strong id="receiptKwh" class="text-amber-400 text-xs">0.94 kWh</strong>
+                                    </div>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-slate-400">Appliance Power:</span>
+                                        <strong id="receiptWatts" class="text-slate-200 text-xs">750 Watts</strong>
+                                    </div>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-slate-400">Gen & Distribution Rate:</span>
+                                        <strong id="receiptRate" class="text-slate-200 text-xs">₱12.75 / kWh</strong>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between pt-2.5 border-t border-indigo-500/20">
+                                    <span class="text-xs font-bold text-slate-300">Total Incurred Cost:</span>
+                                    <strong id="receiptCost" class="text-base font-black text-emerald-400">₱11.96</strong>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between px-1 text-[10px] text-slate-400">
+                                <span id="receiptTimeSpan">Started: 12:00 AM • Ended: 1:15 AM</span>
+                                <span>🔒 Audited & Logged</span>
                             </div>
                         </div>
 
@@ -7492,18 +7534,20 @@
             }
         }
 
-        function openBentoSettingsModal(blockId) {
+        function openBentoSettingsModal(blockId, receiptData = null) {
             let block = blockId ? calendarScheduledBlocks.find(b => b.id === blockId) : activeEditingDraft;
-            if (!block) return;
+            if (!block && !receiptData) return;
 
             activeEditingBlockId = blockId;
-            activeEditingApplianceId = block.applianceId;
-            const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
+            activeEditingApplianceId = block ? block.applianceId : (receiptData ? receiptData.applianceId : null);
+            const item = householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId));
 
             const dateStr = getSelectedCalendarDateString();
-            const temporalStatus = blockId ? getScheduleTemporalStatus(block, dateStr) : 'future';
+            const temporalStatus = blockId ? getScheduleTemporalStatus(block, dateStr) : (receiptData ? 'past' : 'future');
 
             const modal = document.getElementById('bentoSettingsModal');
+            const formContainer = document.getElementById('bentoScheduleFormContainer');
+            const receiptContainer = document.getElementById('bentoReceiptContainer');
             const titleEl = document.getElementById('bentoModalTitle');
             const subEl = document.getElementById('bentoModalSubtitle');
             const autoPowerCb = document.getElementById('bentoSettingAutoPower');
@@ -7518,59 +7562,102 @@
             const delSeriesBtn = document.getElementById('bentoDeleteSeriesBtn');
             const saveBtn = document.getElementById('bentoSaveBtn');
 
-            // Date picker min constraint
-            if (dateInput) {
-                const todayStr = getTodayDateString();
-                dateInput.min = todayStr;
-                dateInput.value = blockId ? getBlockDateString(block) : (dateStr >= todayStr ? dateStr : todayStr);
-                onModalStartDateChange();
-            }
-
-            if (titleEl) {
-                if (!blockId) {
-                    titleEl.textContent = `➕ New Schedule: ${item ? item.name : 'Appliance'}`;
-                } else if (temporalStatus === 'past') {
-                    titleEl.textContent = `📜 Completed Record: ${item ? item.name : 'Appliance'}`;
-                } else if (temporalStatus === 'running') {
-                    titleEl.textContent = `🟢 Active Session: ${item ? item.name : 'Appliance'}`;
-                } else {
-                    titleEl.textContent = `⚙️ Edit Schedule: ${item ? item.name : 'Appliance'}`;
-                }
-            }
-
-            if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
-            if (autoPowerCb) autoPowerCb.checked = Boolean(block.autoPower);
-
-            // Format hours into HH:MM time strings
-            const startH = Math.floor(block.startHour);
-            const startM = Math.round((block.startHour - startH) * 60);
-            const endHour = block.startHour + block.durationHours;
-            const endH = Math.floor(endHour % 24);
-            const endM = Math.round((endHour - Math.floor(endHour)) * 60);
-
-            if (startInput) startInput.value = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-            if (endInput) endInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-            if (repeatSelect) repeatSelect.value = block.repeat || 'once';
-
-            // Handle Temporal UI Modes
-            if (temporalStatus === 'past') {
-                if (autoPowerCb) autoPowerCb.disabled = true;
-                if (dateInput) dateInput.disabled = true;
-                if (startInput) startInput.disabled = true;
-                if (endInput) endInput.disabled = true;
-                if (repeatSelect) repeatSelect.disabled = true;
-                if (startLockBadge) startLockBadge.classList.add('hidden');
-                if (timeWarning) timeWarning.classList.add('hidden');
+            // 1. Digital Energy Receipt View for Past Completed Sessions
+            if (temporalStatus === 'past' || receiptData) {
+                if (formContainer) formContainer.classList.add('hidden');
+                if (receiptContainer) receiptContainer.classList.remove('hidden');
                 if (readOnlyNotice) readOnlyNotice.classList.remove('hidden');
                 if (delSingleBtn) delSingleBtn.classList.add('hidden');
                 if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
                 if (saveBtn) saveBtn.classList.add('hidden');
+
+                if (titleEl) titleEl.textContent = `🧾 Energy Receipt: ${item ? item.name : 'Appliance'}`;
+                if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'Historical Log'}` : 'Archived Operating Session'}`;
+
+                const appWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
+                const durHours = block ? block.durationHours : (receiptData ? receiptData.durationHours : 0.5);
+                const durMinutes = durHours * 60;
+                const durText = durHours >= 1 
+                    ? `${Math.floor(durHours)} hr ${Math.round((durHours % 1) * 60)} mins`
+                    : `${Math.max(1, Math.round(durMinutes))} mins`;
+
+                const genInput = document.getElementById('genRateInput');
+                const genRate = parseFloat(genInput ? genInput.value : 9.2504) || 9.2504;
+                const totalRate = genRate + 3.5;
+                const kwh = (appWatts * durHours) / 1000.0;
+                const cost = kwh * totalRate;
+
+                const startH = block ? block.startHour : (receiptData ? receiptData.startHour : 0);
+                const endH = block ? (block.startHour + block.durationHours) % 24 : 0;
+                const isPeak = block ? checkSchedulePeakOverlap(block.startHour, block.durationHours).isPeak : false;
+
+                const durEl = document.getElementById('receiptDuration');
+                const kwhEl = document.getElementById('receiptKwh');
+                const wattsEl = document.getElementById('receiptWatts');
+                const rateEl = document.getElementById('receiptRate');
+                const costEl = document.getElementById('receiptCost');
+                const peakBadge = document.getElementById('receiptPeakBadge');
+                const timeSpanEl = document.getElementById('receiptTimeSpan');
+
+                if (durEl) durEl.textContent = durText;
+                if (kwhEl) kwhEl.textContent = `${kwh.toFixed(3)} kWh`;
+                if (wattsEl) wattsEl.textContent = `${appWatts.toLocaleString()} Watts`;
+                if (rateEl) rateEl.textContent = `₱${totalRate.toFixed(2)} / kWh`;
+                if (costEl) costEl.textContent = `₱${cost.toFixed(2)}`;
+                if (peakBadge) {
+                    peakBadge.textContent = isPeak ? '🔥 Peak Window Session' : '🟢 Off-Peak Session';
+                    peakBadge.className = isPeak 
+                        ? 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                }
+                if (timeSpanEl) timeSpanEl.textContent = `Started: ${formatHour(startH)} • Ended: ${formatHour(endH)}`;
+
             } else {
-                if (autoPowerCb) autoPowerCb.disabled = false;
-                if (dateInput) dateInput.disabled = false;
-                if (endInput) endInput.disabled = false;
-                if (repeatSelect) repeatSelect.disabled = false;
+                // 2. Active Running / Future Editable Schedule View
+                if (formContainer) formContainer.classList.remove('hidden');
+                if (receiptContainer) receiptContainer.classList.add('hidden');
                 if (readOnlyNotice) readOnlyNotice.classList.add('hidden');
+
+                if (dateInput) {
+                    const todayStr = getTodayDateString();
+                    dateInput.min = todayStr;
+                    dateInput.value = blockId ? getBlockDateString(block) : (dateStr >= todayStr ? dateStr : todayStr);
+                    dateInput.disabled = false;
+                    onModalStartDateChange();
+                }
+
+                if (titleEl) {
+                    if (!blockId) {
+                        titleEl.textContent = `➕ New Schedule: ${item ? item.name : 'Appliance'}`;
+                    } else if (temporalStatus === 'running') {
+                        titleEl.textContent = `🟢 Active Session: ${item ? item.name : 'Appliance'}`;
+                    } else {
+                        titleEl.textContent = `⚙️ Edit Schedule: ${item ? item.name : 'Appliance'}`;
+                    }
+                }
+
+                if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Operating Session'}`;
+                if (autoPowerCb) {
+                    autoPowerCb.checked = Boolean(block.autoPower);
+                    autoPowerCb.disabled = false;
+                }
+
+                const startH = Math.floor(block.startHour);
+                const startM = Math.round((block.startHour - startH) * 60);
+                const endHour = block.startHour + block.durationHours;
+                const endH = Math.floor(endHour % 24);
+                const endM = Math.round((endHour - Math.floor(endHour)) * 60);
+
+                if (startInput) startInput.value = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
+                if (endInput) {
+                    endInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                    endInput.disabled = false;
+                }
+                if (repeatSelect) {
+                    repeatSelect.value = block.repeat || 'once';
+                    repeatSelect.disabled = false;
+                }
+
                 if (saveBtn) {
                     saveBtn.classList.remove('hidden');
                     saveBtn.textContent = blockId ? 'Save Changes' : 'Create Schedule';
@@ -7585,7 +7672,6 @@
                     }
                     if (delSeriesBtn) delSeriesBtn.classList.add('hidden');
                 } else {
-                    // Future / Draft
                     if (startInput) startInput.disabled = false;
                     if (startLockBadge) startLockBadge.classList.add('hidden');
                     const isRecurring = Boolean(block.seriesId || (block.repeat && block.repeat !== 'once'));
@@ -7595,9 +7681,9 @@
                     }
                     if (delSeriesBtn) delSeriesBtn.classList.toggle('hidden', !isRecurring || !blockId);
                 }
-            }
 
-            recalcModalDuration();
+                recalcModalDuration();
+            }
 
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
