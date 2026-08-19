@@ -2893,6 +2893,7 @@
                     </div>
 
                 </div>
+            </section>
 
                 <!-- 1. ROUTINE & SCHEDULE CREATOR / EDITOR MODAL -->
                 <div id="routineSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
@@ -3022,7 +3023,7 @@
                 </div>
 
                 <!-- 2. TODAY'S LIVE RUNNING & HISTORICAL RECEIPT MODAL -->
-                <div id="todayLiveSessionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                <div id="todayLiveSessionModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
                     <div class="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-emerald-500/40 shadow-2xl flex flex-col gap-4 scale-95 transition-transform duration-200">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                             <div class="flex items-center gap-3">
@@ -3167,7 +3168,7 @@
                 </div>
 
                 <!-- 4. UNIVERSAL DANGER TYPE-TO-CONFIRM MODAL -->
-                <div id="universalDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                <div id="universalDeleteConfirmModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
                     <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-rose-500/40 shadow-2xl shadow-rose-950/50 flex flex-col gap-4 scale-95 transition-transform duration-200">
                         <div class="flex items-center justify-between pb-2 border-b border-slate-800">
                             <div class="flex items-center gap-3">
@@ -3225,7 +3226,7 @@
                 </div>
 
                 <!-- 5. HISTORICAL CALENDAR SESSION LOGS MODAL -->
-                <div id="calendarLogsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                <div id="calendarLogsModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
                     <div class="w-full max-w-2xl p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl flex flex-col gap-4 scale-95 transition-transform duration-200 max-h-[90vh]">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                             <div class="flex items-center gap-3">
@@ -3331,8 +3332,6 @@
                         </button>
                     </div>
                 </div>
-
-            </section>
 
             <!-- PANEL 5: ANALYTICS VIEW (BLANK) -->
             <section id="view-analytics" class="view-panel hidden flex-col gap-6 min-h-[400px]">
@@ -3835,7 +3834,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.0v - Safe appliance deletion with live running lock, double confirmation modal, and calendar session logs manager with visual timeline sync</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.1v - Fix modal visibility across tabs and elevate delete confirmation popup above session logs modal</span>
     </div>
 
     <!-- Application Logic Script -->
