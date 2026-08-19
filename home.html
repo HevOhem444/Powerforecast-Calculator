@@ -6476,7 +6476,28 @@
 
         // Anti-Spam & Concurrency Lock Engine
         const applianceNetworkLocks = {};
-        const applianceSwitchCooldowns = {};
+        let applianceSwitchCooldowns = {};
+        try {
+            const savedCooldowns = JSON.parse(localStorage.getItem('powerforecast_switch_cooldowns') || '{}');
+            const nowMs = Date.now();
+            for (const [k, v] of Object.entries(savedCooldowns)) {
+                if (v > nowMs) applianceSwitchCooldowns[k] = v;
+            }
+        } catch (e) {
+            applianceSwitchCooldowns = {};
+        }
+
+        function saveSwitchCooldown(id, expiresAt) {
+            if (expiresAt) {
+                applianceSwitchCooldowns[id] = expiresAt;
+            } else {
+                delete applianceSwitchCooldowns[id];
+            }
+            try {
+                localStorage.setItem('powerforecast_switch_cooldowns', JSON.stringify(applianceSwitchCooldowns));
+            } catch (e) { }
+        }
+
         const ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS = 30.0;
         const UI_SWITCH_COOLDOWN_MS = 30000;
         let dbHistoricalLogsCache = [];
@@ -6865,9 +6886,24 @@
 
             householdLoadList.forEach(item => {
                 const isOn = Boolean(item.is_currently_on);
-                const isCooldown = Boolean(applianceSwitchCooldowns[item.id] && applianceSwitchCooldowns[item.id] > now);
+                let runningElapsedSecs = 0;
+                if (isOn && item.last_turned_on_at) {
+                    const elapsedMs = Math.max(0, now - new Date(item.last_turned_on_at).getTime());
+                    runningElapsedSecs = elapsedMs / 1000.0;
+                }
+
+                let isCooldown = Boolean(applianceSwitchCooldowns[item.id] && applianceSwitchCooldowns[item.id] > now);
+                let cooldownSecs = isCooldown ? Math.ceil((applianceSwitchCooldowns[item.id] - now) / 1000) : 0;
+
+                if (isOn && runningElapsedSecs < ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS) {
+                    const minRunRemaining = Math.ceil(ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS - runningElapsedSecs);
+                    if (minRunRemaining > cooldownSecs) {
+                        isCooldown = true;
+                        cooldownSecs = minRunRemaining;
+                    }
+                }
+
                 const isLocked = Boolean(applianceNetworkLocks[item.id]);
-                const cooldownSecs = isCooldown ? Math.ceil((applianceSwitchCooldowns[item.id] - now) / 1000) : 0;
                 const scheduledBlocks = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(item.id));
                 const hasSchedule = scheduledBlocks.length > 0;
 
@@ -7000,13 +7036,20 @@
 
             // Clean up expired switch cooldowns continuously
             let hasActiveCooldowns = false;
+            let cooldownsChanged = false;
             Object.keys(applianceSwitchCooldowns).forEach(id => {
                 if (applianceSwitchCooldowns[id] <= now) {
                     delete applianceSwitchCooldowns[id];
+                    cooldownsChanged = true;
                 } else {
                     hasActiveCooldowns = true;
                 }
             });
+            if (cooldownsChanged) {
+                try {
+                    localStorage.setItem('powerforecast_switch_cooldowns', JSON.stringify(applianceSwitchCooldowns));
+                } catch (e) { }
+            }
 
             const totalRate = getEffectiveCalendarRate();
             const liveHourlyCost = (totalActiveWatts / 1000) * totalRate;
@@ -7030,7 +7073,7 @@
 
         setInterval(updateLiveEnergyMonitor, 1000);
 
-        // Appliance State Toggle Controller (with Anti-Spam Mutex, 5-second Discard & Precision Cut-off)
+        // Appliance State Toggle Controller (with Anti-Spam Mutex, 30-second Discard & Precision Cut-off)
         async function toggleApplianceState(id, bypassConfirm = false, isAutomationCall = false) {
             const item = householdLoadList.find(a => String(a.id) === String(id));
             if (!item) return;
@@ -7075,7 +7118,7 @@
             // Set In-Flight Network Lock and 30-second UI debounce
             applianceNetworkLocks[id] = true;
             if (!isAutomationCall) {
-                applianceSwitchCooldowns[id] = now + UI_SWITCH_COOLDOWN_MS;
+                saveSwitchCooldown(id, now + UI_SWITCH_COOLDOWN_MS);
             }
 
             const nowDt = new Date();
