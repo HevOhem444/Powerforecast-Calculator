@@ -2873,41 +2873,26 @@
                                 </div>
                             </div>
 
-                            <!-- Timeline Zoom & Resolution Controls Toolbar -->
-                            <div class="flex flex-wrap items-center justify-between gap-2 px-1 py-1 text-xs select-none">
+                            <!-- Timeline Header & Actions Toolbar -->
+                            <div class="flex items-center justify-between gap-2 px-1 py-1.5 text-xs select-none">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                                        <span>🔍</span>
-                                        <span>Zoom:</span>
-                                    </span>
-                                    <div class="flex items-center p-0.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                                        <button onclick="setCalendarTimelineZoom('24h')" id="zoomBtn24h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all bg-indigo-600 text-white shadow">
-                                            24H (Full)
-                                        </button>
-                                        <button onclick="setCalendarTimelineZoom('12h')" id="zoomBtn12h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
-                                            12H (30m)
-                                        </button>
-                                        <button onclick="setCalendarTimelineZoom('6h')" id="zoomBtn6h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
-                                            6H (15m)
-                                        </button>
-                                        <button onclick="setCalendarTimelineZoom('1h')" id="zoomBtn1h" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white">
-                                            1H (5m)
-                                        </button>
-                                    </div>
+                                    <span class="text-base">🗓️</span>
+                                    <span class="font-extrabold text-white text-xs sm:text-sm">24-Hour Schedule Roadmap</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Preview</span>
+                                    <span class="hidden md:inline text-[10px] text-slate-500 font-medium">💡 Ctrl + Scroll or Pinch to zoom</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span id="timelineZoomIndicatorBadge" class="text-[10px] font-bold text-slate-400">
-                                        Resolution: 2 Hours/Division
-                                    </span>
-                                    <button onclick="scrollTimelineToCurrentTime()" class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 border border-slate-700 hover:border-indigo-400 text-indigo-300 transition-all flex items-center gap-1 cursor-pointer" title="Pan timeline to current live time">
-                                        <span>📍</span>
-                                        <span>Focus Now</span>
+                                    <button onclick="scrollTimelineToCurrentTime('mainScheduleTimelineContainer')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-indigo-400 text-indigo-300 transition-all flex items-center gap-1 cursor-pointer" title="Pan timeline to current live time">
+                                        <span>📍</span> Focus Now
+                                    </button>
+                                    <button onclick="openEnlargedTimelineModal()" class="px-3 py-1 rounded-xl text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all cursor-pointer" title="Open large master roadmap window">
+                                        <span>⛶</span> Enlarge Timeline
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Main Horizontal Roadmap Timeline Container (Gantt Style with Zoom & Scroll) -->
-                            <div id="mainScheduleTimelineContainer" class="flex-1 overflow-x-auto relative border border-slate-800/60 rounded-2xl bg-slate-950/60 custom-scrollbar p-3">
+                            <!-- Main Horizontal Roadmap Timeline Container (Interactive Canvas with Zoom & Drag) -->
+                            <div id="mainScheduleTimelineContainer" class="flex-1 overflow-x-auto relative border border-slate-800/60 rounded-2xl bg-slate-950/60 custom-scrollbar p-3 select-none">
                                 
                                 <div id="timelineCanvasWrapper" class="relative min-w-[780px] flex flex-col gap-2 transition-all duration-200" style="width: 100%;">
                                     <!-- Horizontal Dynamic Time Axis Header & Peak Window Legend -->
@@ -2925,6 +2910,23 @@
                                     <div id="timelineRoadmapRowsLayer" class="flex flex-col gap-2 relative z-10 py-1">
                                         <!-- Populated dynamically by renderCalendarBlocks() -->
                                     </div>
+                                </div>
+
+                                <!-- Floating Gesture Zoom HUD (Bottom-Right) -->
+                                <div class="sticky bottom-2 left-full -ml-44 z-20 flex items-center gap-1 p-1 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-xl text-xs w-fit">
+                                    <button onclick="stepTimelineZoom(-0.25, 'mainScheduleTimelineContainer')" class="w-7 h-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-bold flex items-center justify-center transition-all cursor-pointer" title="Zoom Out (or Ctrl + Scroll Down)">
+                                        −
+                                    </button>
+                                    <button onclick="resetTimelineZoom('mainScheduleTimelineContainer')" id="timelineZoomPercentBadge" class="px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-indigo-300 hover:bg-slate-800 transition-all cursor-pointer" title="Click to Reset Zoom to 100%">
+                                        100%
+                                    </button>
+                                    <button onclick="stepTimelineZoom(0.25, 'mainScheduleTimelineContainer')" class="w-7 h-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-bold flex items-center justify-center transition-all cursor-pointer" title="Zoom In (or Ctrl + Scroll Up)">
+                                        +
+                                    </button>
+                                    <div class="h-4 w-px bg-slate-800 my-auto"></div>
+                                    <button onclick="openEnlargedTimelineModal()" class="w-7 h-7 rounded-xl bg-slate-900 hover:bg-indigo-600/30 text-indigo-300 hover:text-white font-bold flex items-center justify-center transition-all cursor-pointer" title="Enlarge Timeline Window">
+                                        ⛶
+                                    </button>
                                 </div>
 
                             </div>
@@ -3321,6 +3323,90 @@
                         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                             <button onclick="closeCalendarLogsModal()" class="px-5 py-2 rounded-xl btn-secondary text-xs font-bold cursor-pointer">
                                 Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ENLARGED MASTER TIMELINE ROADMAP WINDOW MODAL -->
+                <div id="calendarEnlargedTimelineModal" class="fixed inset-0 z-[65] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl opacity-0 pointer-events-none transition-all duration-200 p-2 sm:p-4">
+                    <div class="w-full max-w-7xl p-5 sm:p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl flex flex-col gap-4 scale-95 transition-transform duration-200 max-h-[94vh]">
+                        <!-- Master Modal Header -->
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-xl text-indigo-300">
+                                    🗓️
+                                </div>
+                                <div class="flex flex-col">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm sm:text-base font-extrabold text-white">24-Hour Master Operating Roadmap</h3>
+                                        <span id="enlargedDayBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Today</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400">High-definition schedule roadmap & live energy session monitor</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                                <span class="hidden md:inline text-[11px] text-slate-400 font-medium">💡 Hold <strong>Ctrl + Scroll</strong> or <strong>Pinch</strong> to zoom canvas</span>
+                                <button onclick="scrollTimelineToCurrentTime('enlargedTimelineContainer')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 hover:border-indigo-400 text-indigo-300 transition-all flex items-center gap-1.5 cursor-pointer">
+                                    <span>📍</span> Focus Now
+                                </button>
+                                <button onclick="closeEnlargedTimelineModal()" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 text-sm cursor-pointer" title="Close Master Window">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Enlarged Master Roadmap Canvas Container -->
+                        <div id="enlargedTimelineContainer" class="flex-1 overflow-x-auto overflow-y-auto relative border border-slate-800/60 rounded-2xl bg-slate-950/70 custom-scrollbar p-3 min-h-[380px] max-h-[70vh] select-none">
+                            
+                            <div id="enlargedTimelineCanvasWrapper" class="relative min-w-[1000px] flex flex-col gap-2 transition-all duration-200" style="width: 100%;">
+                                <!-- Horizontal Dynamic Time Axis Header -->
+                                <div class="flex items-center gap-3 pb-2 border-b border-slate-800 text-[11px] font-bold text-slate-400 select-none">
+                                    <div class="w-52 shrink-0 pl-2 uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                        <span>🔌</span>
+                                        <span>Appliance Name & Rating</span>
+                                    </div>
+                                    <div id="enlargedTimelineHourRulerTrack" class="flex-1 relative flex items-center justify-between px-1">
+                                        <!-- Dynamically populated by renderTimelineHeaderRuler() -->
+                                    </div>
+                                </div>
+
+                                <!-- Horizontal Master Rows Container -->
+                                <div id="enlargedTimelineRoadmapRowsLayer" class="flex flex-col gap-2.5 relative z-10 py-1">
+                                    <!-- Populated dynamically by renderCalendarBlocks() -->
+                                </div>
+                            </div>
+
+                            <!-- Floating Gesture Zoom HUD for Master Window -->
+                            <div class="sticky bottom-2 left-full -ml-36 z-20 flex items-center gap-1 p-1 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-xl text-xs w-fit">
+                                <button onclick="stepTimelineZoom(-0.25, 'enlargedTimelineContainer')" class="w-7 h-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-bold flex items-center justify-center transition-all cursor-pointer" title="Zoom Out (Ctrl + Scroll Down)">
+                                    −
+                                </button>
+                                <button onclick="resetTimelineZoom('enlargedTimelineContainer')" id="enlargedTimelineZoomPercentBadge" class="px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-indigo-300 hover:bg-slate-800 transition-all cursor-pointer" title="Click to Reset Zoom">
+                                    100%
+                                </button>
+                                <button onclick="stepTimelineZoom(0.25, 'enlargedTimelineContainer')" class="w-7 h-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-bold flex items-center justify-center transition-all cursor-pointer" title="Zoom In (Ctrl + Scroll Up)">
+                                    +
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- Master Modal Footer -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                            <div class="flex items-center gap-4 text-slate-400">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>Live Running Sync</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded bg-amber-500/30 border border-amber-500/50"></span>
+                                    <span>Peak Window: 11AM–2PM & 6PM–9PM</span>
+                                </div>
+                            </div>
+                            <button onclick="closeEnlargedTimelineModal()" class="px-5 py-2 rounded-xl btn-secondary text-xs font-bold cursor-pointer">
+                                Close Master View
                             </button>
                         </div>
                     </div>
@@ -3873,7 +3959,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.2v - Refactor appliance navigation into dual sidebar submenu for registered inventory and 3-way add studio</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.3v - Dynamic gesture pinch and mouse wheel zoom engine with enlarged master timeline window</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -7753,137 +7839,189 @@
             multiplier: 1
         };
 
-        function setCalendarTimelineZoom(mode) {
-            const container = document.getElementById('mainScheduleTimelineContainer');
-            const canvas = document.getElementById('timelineCanvasWrapper');
-            let currentCenterRatio = 0.5;
-            if (container && canvas && canvas.scrollWidth > 0) {
-                currentCenterRatio = (container.scrollLeft + (container.clientWidth / 2)) / canvas.scrollWidth;
-            }
+        // ==========================================
+        // DYNAMIC TIMELINE GESTURE ZOOM & PAN ENGINE
+        // ==========================================
+        let timelineZoomLevel = 1.0; // 1.0x (24H overview) to 4.0x (detailed minute breakdown)
 
-            calendarZoomState.mode = mode;
-            
-            // Update zoom pill button states
-            ['24h', '12h', '6h', '1h'].forEach(m => {
-                const btn = document.getElementById('zoomBtn' + m);
-                if (btn) {
-                    if (m === mode) {
-                        btn.className = 'px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all bg-indigo-600 text-white shadow';
+        function setDynamicTimelineZoom(newZoom, focalClientX = null, containerId = 'mainScheduleTimelineContainer') {
+            const clampedZoom = Math.min(4.0, Math.max(1.0, Math.round(newZoom * 100) / 100));
+            timelineZoomLevel = clampedZoom;
+
+            const containers = [
+                { cid: 'mainScheduleTimelineContainer', wid: 'timelineCanvasWrapper', bid: 'timelineZoomPercentBadge' },
+                { cid: 'enlargedTimelineContainer', wid: 'enlargedTimelineCanvasWrapper', bid: 'enlargedTimelineZoomPercentBadge' }
+            ];
+
+            containers.forEach(({ cid, wid, bid }) => {
+                const container = document.getElementById(cid);
+                const wrapper = document.getElementById(wid);
+                const badge = document.getElementById(bid);
+
+                if (wrapper) {
+                    wrapper.style.width = `${Math.round(clampedZoom * 100)}%`;
+                }
+                if (badge) {
+                    badge.textContent = `${Math.round(clampedZoom * 100)}%`;
+                    if (clampedZoom > 1.0) {
+                        badge.className = 'px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-slate-800 transition-all cursor-pointer';
                     } else {
-                        btn.className = 'px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all text-slate-400 hover:text-white';
+                        badge.className = 'px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-indigo-300 hover:bg-slate-800 transition-all cursor-pointer';
                     }
+                }
+
+                if (container && focalClientX !== null && cid === containerId) {
+                    const rect = container.getBoundingClientRect();
+                    const mouseRatio = (focalClientX - rect.left) / rect.width;
+                    const newScrollLeft = Math.max(0, (container.scrollWidth * mouseRatio) - (container.clientWidth / 2));
+                    container.scrollLeft = newScrollLeft;
                 }
             });
 
-            const badge = document.getElementById('timelineZoomIndicatorBadge');
+            renderTimelineHeaderRuler();
+        }
 
-            if (mode === '24h') {
-                calendarZoomState.multiplier = 1;
-                if (canvas) canvas.style.width = '100%';
-                if (badge) badge.textContent = 'Resolution: 2 Hours/Division';
-            } else if (mode === '12h') {
-                calendarZoomState.multiplier = 2;
-                if (canvas) canvas.style.width = '200%';
-                if (badge) badge.textContent = 'Resolution: 30 Mins/Division';
-            } else if (mode === '6h') {
-                calendarZoomState.multiplier = 4;
-                if (canvas) canvas.style.width = '400%';
-                if (badge) badge.textContent = 'Resolution: 15 Mins/Division';
-            } else if (mode === '1h') {
-                calendarZoomState.multiplier = 12;
-                if (canvas) canvas.style.width = '1200%';
-                if (badge) badge.textContent = 'Resolution: 5 Mins/Division';
+        function stepTimelineZoom(delta, containerId = 'mainScheduleTimelineContainer') {
+            setDynamicTimelineZoom(timelineZoomLevel + delta, null, containerId);
+        }
+
+        function resetTimelineZoom(containerId = 'mainScheduleTimelineContainer') {
+            setDynamicTimelineZoom(1.0, null, containerId);
+            const container = document.getElementById(containerId);
+            if (container) container.scrollLeft = 0;
+        }
+
+        function renderTimelineHeaderRuler() {
+            const tracks = [
+                document.getElementById('timelineHourRulerTrack'),
+                document.getElementById('enlargedTimelineHourRulerTrack')
+            ].filter(Boolean);
+
+            tracks.forEach(track => {
+                track.innerHTML = '';
+                if (timelineZoomLevel < 1.75) {
+                    // Standard 2-hour intervals
+                    const hours = [
+                        { h: 0, l: '12 AM' }, { h: 2, l: '2 AM' }, { h: 4, l: '4 AM' }, { h: 6, l: '6 AM' },
+                        { h: 8, l: '8 AM' }, { h: 10, l: '10 AM' }, { h: 12, l: '12 PM 🔥', p: true },
+                        { h: 14, l: '2 PM 🔥', p: true }, { h: 16, l: '4 PM' }, { h: 18, l: '6 PM 🔥', p: true },
+                        { h: 20, l: '8 PM 🔥', p: true }, { h: 22, l: '10 PM' }, { h: 24, l: '12 AM' }
+                    ];
+                    hours.forEach(item => {
+                        const span = document.createElement('span');
+                        span.textContent = item.l;
+                        span.className = item.p ? 'text-amber-400 font-extrabold text-[10px]' : 'text-slate-400 font-bold text-[10px]';
+                        track.appendChild(span);
+                    });
+                } else {
+                    // High-definition 1-hour intervals
+                    for (let h = 0; h <= 24; h++) {
+                        const span = document.createElement('span');
+                        const ampm = (h === 0 || h === 24) ? '12 AM' : (h === 12 ? '12 PM 🔥' : (h < 12 ? `${h} AM` : `${h - 12} PM`));
+                        const isPeak = (h >= 11 && h <= 14) || (h >= 18 && h <= 21);
+                        span.textContent = isPeak && !ampm.includes('🔥') ? `${ampm} 🔥` : ampm;
+                        span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px] shrink-0' : 'text-slate-400 text-[9px] shrink-0';
+                        track.appendChild(span);
+                    }
+                }
+            });
+        }
+
+        // Scroll to Current Live Time
+        function scrollTimelineToCurrentTime(containerId = 'mainScheduleTimelineContainer') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const now = new Date();
+            const nowH = now.getHours() + (now.getMinutes() / 60.0);
+            const ratio = nowH / 24.0;
+            const targetLeft = Math.max(0, (container.scrollWidth * ratio) - (container.clientWidth / 2));
+            container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            showToast("Timeline Centered", `Focused on current live time (${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`, "info");
+        }
+
+        // Enlarged Timeline Modal Controllers
+        function openEnlargedTimelineModal() {
+            const modal = document.getElementById('calendarEnlargedTimelineModal');
+            const dayBadge = document.getElementById('enlargedDayBadge');
+            if (dayBadge) {
+                const now = new Date();
+                const selectedDateStr = getSelectedCalendarDateString();
+                const isToday = (selectedDateStr === getTodayDateString());
+                dayBadge.textContent = isToday ? `Today (${calendarState.selectedDayKey.toUpperCase()} ${calendarState.selectedDay})` : `${calendarState.selectedDayKey.toUpperCase()} ${calendarState.selectedDay}, ${CAL_MONTH_NAMES[calendarState.month]}`;
             }
 
             renderTimelineHeaderRuler();
             renderCalendarBlocks();
+            initTimelineGestureListeners();
 
-            if (container && canvas) {
-                const newScrollLeft = Math.max(0, (canvas.scrollWidth * currentCenterRatio) - (container.clientWidth / 2));
-                container.scrollTo({
-                    left: newScrollLeft,
-                    behavior: 'smooth'
-                });
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.remove('scale-95');
+                setTimeout(() => {
+                    scrollTimelineToCurrentTime('enlargedTimelineContainer');
+                }, 150);
             }
         }
 
-        function renderTimelineHeaderRuler() {
-            const track = document.getElementById('timelineHourRulerTrack');
-            if (!track) return;
-
-            const mode = calendarZoomState.mode;
-            track.innerHTML = '';
-
-            if (mode === '24h') {
-                const hours = [
-                    { h: 0, l: '12 AM' }, { h: 2, l: '2 AM' }, { h: 4, l: '4 AM' }, { h: 6, l: '6 AM' },
-                    { h: 8, l: '8 AM' }, { h: 10, l: '10 AM' }, { h: 12, l: '12 PM 🔥', p: true },
-                    { h: 14, l: '2 PM 🔥', p: true }, { h: 16, l: '4 PM' }, { h: 18, l: '6 PM 🔥', p: true },
-                    { h: 20, l: '8 PM 🔥', p: true }, { h: 22, l: '10 PM' }, { h: 24, l: '12 AM' }
-                ];
-                hours.forEach(item => {
-                    const span = document.createElement('span');
-                    span.textContent = item.l;
-                    if (item.p) span.className = 'text-amber-400 font-extrabold';
-                    track.appendChild(span);
-                });
-            } else if (mode === '12h') {
-                for (let totalMin = 0; totalMin <= 1440; totalMin += 30) {
-                    const span = document.createElement('span');
-                    const h = Math.floor(totalMin / 60);
-                    const m = totalMin % 60;
-                    const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
-                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
-                    const mStr = m === 0 ? ':00' : ':30';
-                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
-
-                    span.textContent = `${dispH}${mStr} ${ampm}`;
-                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px]' : 'text-slate-400 text-[9px]';
-                    track.appendChild(span);
-                }
-            } else if (mode === '6h') {
-                for (let totalMin = 0; totalMin <= 1440; totalMin += 15) {
-                    const span = document.createElement('span');
-                    const h = Math.floor(totalMin / 60);
-                    const m = totalMin % 60;
-                    const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
-                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
-                    const mStr = `:${String(m).padStart(2, '0')}`;
-                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
-
-                    span.textContent = `${dispH}${mStr} ${ampm}`;
-                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[8px]' : 'text-slate-400 text-[8px]';
-                    track.appendChild(span);
-                }
-            } else if (mode === '1h') {
-                for (let totalMin = 0; totalMin <= 1440; totalMin += 5) {
-                    const span = document.createElement('span');
-                    const h = Math.floor(totalMin / 60);
-                    const m = totalMin % 60;
-                    const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
-                    const mStr = `:${String(m).padStart(2, '0')}`;
-                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
-
-                    span.textContent = `${dispH}${mStr}`;
-                    span.className = isPeak ? 'text-amber-400 font-extrabold text-[7px]' : 'text-slate-400 text-[7px]';
-                    track.appendChild(span);
-                }
+        function closeEnlargedTimelineModal() {
+            const modal = document.getElementById('calendarEnlargedTimelineModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.classList.remove('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.add('scale-95');
             }
         }
 
-        function scrollTimelineToCurrentTime() {
-            const container = document.getElementById('mainScheduleTimelineContainer');
-            const canvas = document.getElementById('timelineCanvasWrapper');
-            if (!container || !canvas) return;
+        // Attach Gesture Listeners (Ctrl+Wheel & Touch Pinch)
+        function initTimelineGestureListeners() {
+            ['mainScheduleTimelineContainer', 'enlargedTimelineContainer'].forEach(cid => {
+                const container = document.getElementById(cid);
+                if (!container || container._gestureInitialized) return;
+                container._gestureInitialized = true;
 
-            const now = new Date();
-            const currentFraction = (now.getHours() + (now.getMinutes() / 60.0)) / 24.0;
-            const canvasWidth = canvas.scrollWidth;
-            const targetScrollLeft = Math.max(0, (canvasWidth * currentFraction) - (container.clientWidth / 2));
-            
-            container.scrollTo({
-                left: targetScrollLeft,
-                behavior: 'smooth'
+                // 1. Ctrl + Wheel Zoom
+                container.addEventListener('wheel', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+                        setDynamicTimelineZoom(timelineZoomLevel + delta, e.clientX, cid);
+                    }
+                }, { passive: false });
+
+                // 2. Touch Pinch-to-Zoom (2 fingers)
+                let initialPinchDistance = null;
+                let initialZoomOnPinch = 1.0;
+
+                container.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        initialPinchDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        initialZoomOnPinch = timelineZoomLevel;
+                    }
+                }, { passive: true });
+
+                container.addEventListener('touchmove', (e) => {
+                    if (e.touches.length === 2 && initialPinchDistance) {
+                        e.preventDefault();
+                        const currentDistance = Math.hypot(
+                            e.touches[0].clientX - e.touches[1].clientX,
+                            e.touches[0].clientY - e.touches[1].clientY
+                        );
+                        const factor = currentDistance / initialPinchDistance;
+                        setDynamicTimelineZoom(initialZoomOnPinch * factor, (e.touches[0].clientX + e.touches[1].clientX) / 2, cid);
+                    }
+                }, { passive: false });
+
+                container.addEventListener('touchend', (e) => {
+                    if (e.touches.length < 2) {
+                        initialPinchDistance = null;
+                    }
+                }, { passive: true });
             });
         }
 
@@ -8409,6 +8547,13 @@
 
                 layer.appendChild(row);
             });
+
+            const enlargedLayer = document.getElementById('enlargedTimelineRoadmapRowsLayer');
+            if (enlargedLayer) {
+                enlargedLayer.innerHTML = layer.innerHTML;
+            }
+
+            initTimelineGestureListeners();
         }
 
         // Delete Scheduled Timeline Block or Entire Recurring Series
