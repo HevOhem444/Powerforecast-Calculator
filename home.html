@@ -4205,12 +4205,29 @@
     <div id="appToastContainer"
         class="fixed bottom-9 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
 
-    <!-- ZZZ-Style Live Engine Build Watermark -->
+    <!-- ZZZ-Style Live Engine Build Watermark with Expandable Hover Details -->
     <div id="pfBuildWatermark"
-        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
-        title="PowerForecast Live Build Version">
+        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-[11px] sm:text-xs font-mono font-semibold shadow-2xl transition-all duration-300 ease-out cursor-default group max-w-[320px] sm:max-w-[480px] hover:max-w-[92vw] hover:sm:max-w-[720px] hover:shadow-indigo-500/20"
+        style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
+        title="1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.7v - Implement responsive bottom-sheet drawer pattern for tariff configuration on mobile</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate group-hover:whitespace-normal group-hover:overflow-visible transition-all duration-300">
+            1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day
+        </span>
+        <!-- Floating Tooltip Card on Hover -->
+        <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[520px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50"
+             style="background-color: var(--overlay-bg); border-color: var(--card-border);">
+            <div class="flex items-center justify-between gap-3 pb-2 border-b border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Live Build Release</span>
+                </span>
+                <span class="t-muted font-normal font-sans">PowerForecast Engine</span>
+            </div>
+            <p class="mt-2 text-xs font-mono font-medium t-primary leading-relaxed break-words">
+                1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day
+            </p>
+        </div>
     </div>
 
     <!-- Application Logic Script -->
@@ -10496,15 +10513,7 @@
 
     </script>
 
-    <!-- Anti-Gravity Persistent Version Badge (Bottom-Right) -->
-    <aside id="app-version-badge" aria-label="System Version" class="fixed bottom-3 right-3 z-30 pointer-events-auto select-none">
-        <div class="px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold backdrop-blur-xl transition-all shadow-lg flex items-center gap-2 border hover:scale-105"
-             style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
-             title="PowerForecast Version 1.8.2v - Major Update">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-            <span class="font-bold tracking-tight">1.8.2v</span>
-        </div>
-    </aside>
+
 </body>
 
 </html>
