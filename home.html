@@ -4216,7 +4216,7 @@
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-base sm:text-lg font-extrabold t-primary">PowerForecast Release Logs</h3>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v1.8.4 Live</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v1.8.4bv Live</span>
                             </div>
                             <span class="text-xs t-muted">Historical database of all deployments, feature rollouts, and minor fixes</span>
                         </div>
@@ -4226,22 +4226,12 @@
                     </button>
                 </div>
 
-                <!-- Search & Category Filters -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
-                    <!-- Search Input -->
-                    <div class="relative flex-1">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs t-muted">🔍</span>
-                        <input id="changelogSearchInput" type="text" placeholder="Search update notes, fixes, or versions..."
-                               class="pf-input w-full pl-8 pr-3 py-1.5 rounded-xl text-xs"
-                               oninput="filterChangelogEntries()">
-                    </div>
-                    <!-- Filter Pills -->
-                    <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
-                        <button onclick="setChangelogFilter('all')" class="changelog-filter-btn active px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white transition-all" data-filter="all">All</button>
-                        <button onclick="setChangelogFilter('v1.8')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.8">v1.8</button>
-                        <button onclick="setChangelogFilter('v1.7')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.7">v1.7</button>
-                        <button onclick="setChangelogFilter('v1.6')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.6">v1.6</button>
-                    </div>
+                <!-- Search Input (Clean Full-Width) -->
+                <div class="relative w-full pt-1">
+                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs t-muted">🔍</span>
+                    <input id="changelogSearchInput" type="text" placeholder="Search update notes, fixes, or versions..."
+                           class="pf-input w-full pl-9 pr-4 py-2 rounded-xl text-xs shadow-inner"
+                           oninput="filterChangelogEntries()">
                 </div>
             </div>
 
@@ -4264,31 +4254,31 @@
     <div id="appToastContainer"
         class="fixed bottom-9 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
 
-        <!-- ZZZ-Style Live Engine Build Watermark (Clickable for Full Update Logs) -->
+        <!-- ZZZ-Style Live Engine Build Watermark (Clean Version Tag with Hover Fix Log & Clickable Modal) -->
     <div id="pfBuildWatermark"
         onclick="openSystemUpdateLogsModal()"
-        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-[11px] sm:text-xs font-mono font-semibold shadow-2xl transition-all duration-300 ease-out cursor-pointer group max-w-[320px] sm:max-w-[480px] hover:max-w-[92vw] hover:sm:max-w-[740px] hover:scale-[1.02] hover:border-indigo-400 hover:shadow-indigo-500/25"
-        style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
+        class="fixed bottom-2.5 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-xs font-mono font-bold shadow-2xl transition-all duration-200 ease-out cursor-pointer group hover:scale-105 hover:border-indigo-400 hover:shadow-indigo-500/25"
+        style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-primary);"
         title="Click to view full Release History & Update Logs 📜">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate group-hover:whitespace-normal group-hover:overflow-visible transition-all duration-300">
-            1.8.4v - Implement interactive Release Changelog Modal and database compilation on watermark banner click
+        <span id="pfBuildVersionLabel" class="tracking-tight font-extrabold text-indigo-300 group-hover:text-amber-400 transition-colors">
+            1.8.4bv
         </span>
-        <!-- Floating Tooltip Card on Hover -->
-        <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[540px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50"
+        <!-- Floating Fix Log Tooltip Card on Hover -->
+        <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[500px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50"
              style="background-color: var(--overlay-bg); border-color: var(--card-border);">
             <div class="flex items-center justify-between gap-3 pb-2 border-b border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                 <span class="flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Live Build Release • Click for Changelog</span>
+                    <span>v1.8.4bv Active Fix Log</span>
                 </span>
                 <span class="t-muted font-normal font-sans">PowerForecast Engine</span>
             </div>
             <p class="mt-2 text-xs font-mono font-medium t-primary leading-relaxed break-words">
-                1.8.4v - Implement interactive Release Changelog Modal and database compilation on watermark banner click
+                1.8.4bv - Streamline bottom watermark to clean version tag, show full fix log in hover bubble, and remove filter pill tabs in changelog modal
             </p>
             <div class="mt-2.5 pt-2 border-t border-indigo-500/10 flex items-center justify-between text-[10px] t-muted">
-                <span>💡 Click this banner to open full Changelog history</span>
+                <span>💡 Click to open full Changelog history</span>
                 <span class="text-indigo-400 font-bold">Open History →</span>
             </div>
         </div>
@@ -10422,8 +10412,15 @@
         {
                 "hash": "HEAD",
                 "date": "2026-08-20",
+                "version": "1.8.4bv",
+                "title": "Streamline bottom watermark to clean version tag, show full fix log in hover bubble, and remove filter pill tabs in changelog modal",
+                "type": "Patch"
+        },
+        {
+                "hash": "f9b1e77",
+                "date": "2026-08-20",
                 "version": "1.8.4v",
-                "title": "Implement interactive Release Changelog Modal and database compilation on watermark banner click",
+                "title": "Compile historical version changelog and implement interactive release logs modal on watermark click",
                 "type": "Feature"
         },
         {
@@ -11184,8 +11181,6 @@
         }
 ];
 
-        let activeChangelogFilter = 'all';
-
         function openSystemUpdateLogsModal() {
             const modal = document.getElementById('systemUpdateLogsModal');
             if (!modal) return;
@@ -11205,17 +11200,6 @@
             if (inner) inner.classList.add('scale-95');
         }
 
-        function setChangelogFilter(filterKey) {
-            activeChangelogFilter = filterKey;
-            document.querySelectorAll('.changelog-filter-btn').forEach(btn => {
-                const isActive = btn.getAttribute('data-filter') === filterKey;
-                btn.className = isActive 
-                    ? 'changelog-filter-btn active px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white transition-all shadow'
-                    : 'changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
-            });
-            renderChangelogTimeline();
-        }
-
         function filterChangelogEntries() {
             renderChangelogTimeline();
         }
@@ -11229,14 +11213,6 @@
             const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
 
             const filtered = POWERFORECAST_CHANGELOG.filter(item => {
-                // Filter by major version
-                if (activeChangelogFilter !== 'all') {
-                    const v = (item.version || '').toLowerCase();
-                    if (!v.startsWith(activeChangelogFilter.toLowerCase()) && !item.title.toLowerCase().includes(activeChangelogFilter.toLowerCase())) {
-                        return false;
-                    }
-                }
-                // Filter by search query
                 if (query) {
                     const matchV = (item.version || '').toLowerCase().includes(query);
                     const matchTitle = (item.title || '').toLowerCase().includes(query);
@@ -11254,7 +11230,7 @@
                     <div class="p-8 rounded-2xl bento-note-box border text-center flex flex-col items-center justify-center gap-2 my-6">
                         <span class="text-2xl">🔍</span>
                         <span class="text-xs font-bold t-primary">No Release Logs Found</span>
-                        <span class="text-[11px] t-muted">Try adjusting your search keywords or active version filter.</span>
+                        <span class="text-[11px] t-muted">Try searching for a different keyword or version.</span>
                     </div>
                 `;
                 return;
