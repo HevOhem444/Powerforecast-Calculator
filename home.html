@@ -7125,17 +7125,18 @@
                             .eq('user_id', userId);
                     }
 
-                    // Create or update live running block on timeline
+                    // Create or update live running block on timeline (bind to active schedule if one exists)
                     let activeBlock = calendarScheduledBlocks.find(b => 
                         String(b.applianceId) === String(id) && 
                         b.dayKey === curDayKey && 
-                        b.is_active_live
+                        (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
                     );
 
                     if (activeBlock) {
-                        activeBlock.startHour = Math.round(curHour * 10000) / 10000;
-                        activeBlock.durationHours = 0.05;
+                        activeBlock.is_active_live = true;
                         activeBlock.logId = logId;
+                        activeBlock.startHour = Math.round(curHour * 10000) / 10000;
+                        activeBlock.is_closed_session = false;
                     } else {
                         activeBlock = {
                             id: 'blk_live_' + Date.now(),
@@ -7260,40 +7261,42 @@
                                 .eq('user_id', userId);
                         }
 
-                        // Precision Truncation: Cut off the timeline block to exact elapsed duration
-                        let activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
+                        // Database Deletion: Remove scheduled event from user_calendar_events in Supabase
+                        const activeSchedBlocks = calendarScheduledBlocks.filter(b => 
                             String(b.applianceId) === String(id) && 
-                            b.dayKey === curDayKey &&
-                            b.is_active_live
-                        ) || calendarScheduledBlocks.slice().reverse().find(b => 
-                            String(b.applianceId) === String(id) && 
-                            b.dayKey === curDayKey &&
-                            isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)
+                            b.dayKey === curDayKey && 
+                            (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
                         );
-
-                        if (activeBlock) {
-                            activeBlock.durationHours = Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000);
-                            activeBlock.is_active_live = false;
-                            activeBlock.is_closed_session = true;
-                            activeBlock.logId = finalLogId;
-                            saveCalendarBlocks();
-                        } else {
-                            const closedBlock = {
-                                id: 'blk_closed_' + Date.now(),
-                                applianceId: item.id,
-                                dayKey: curDayKey,
-                                dayNum: curDayNum,
-                                startHour: Math.max(0, Math.round((curHour - elapsedHours) * 10000) / 10000),
-                                durationHours: Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000),
-                                autoPower: Boolean(isAutomationCall),
-                                repeat: 'once',
-                                is_active_live: false,
-                                is_closed_session: true,
-                                logId: finalLogId
-                            };
-                            calendarScheduledBlocks.push(closedBlock);
-                            saveCalendarBlocks();
+                        for (const schedBlock of activeSchedBlocks) {
+                            if (schedBlock.id && !schedBlock.id.startsWith('blk_') && !schedBlock.id.startsWith('block_sample')) {
+                                await dbDeleteCalendarEvent(schedBlock.id);
+                            }
                         }
+
+                        // Precision Truncation: Replace the scheduled block with the deactivated/closed historical session
+                        const startH = Math.max(0, Math.round((curHour - elapsedHours) * 10000) / 10000);
+                        const durH = Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000);
+
+                        const closedBlock = {
+                            id: 'blk_closed_' + Date.now(),
+                            applianceId: item.id,
+                            dayKey: curDayKey,
+                            dayNum: curDayNum,
+                            startHour: startH,
+                            durationHours: durH,
+                            autoPower: Boolean(isAutomationCall),
+                            repeat: 'once',
+                            is_active_live: false,
+                            is_closed_session: true,
+                            logId: finalLogId
+                        };
+
+                        // Remove all old un-truncated/live blocks for this appliance today and insert the closedBlock
+                        calendarScheduledBlocks = calendarScheduledBlocks.filter(b => 
+                            !(String(b.applianceId) === String(id) && b.dayKey === curDayKey && (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)))
+                        );
+                        calendarScheduledBlocks.push(closedBlock);
+                        saveCalendarBlocks();
 
                         // Update local dbHistoricalLogsCache immediately
                         dbHistoricalLogsCache.push({
