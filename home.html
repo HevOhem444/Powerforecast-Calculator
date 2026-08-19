@@ -82,8 +82,8 @@
         }
     </script>
     <style>
-        :root {
-            --transition-speed: 0.4s;
+:root {
+            --transition-speed: 0.35s;
             --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -93,46 +93,46 @@
             --topbar-bg: #07072e;
             --sidebar-bg: #050524;
             --sidebar-active: #151666;
-            --sidebar-hover: rgba(108, 122, 224, 0.15);
-            --card-bg: rgba(15, 14, 58, 0.75);
-            --card-border: rgba(108, 122, 224, 0.15);
-            --card-glow-bg: rgba(20, 18, 80, 0.9);
+            --sidebar-hover: rgba(108, 122, 224, 0.18);
+            --card-bg: rgba(15, 14, 58, 0.80);
+            --card-border: rgba(108, 122, 224, 0.22);
+            --card-glow-bg: rgba(20, 18, 80, 0.92);
             --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --input-bg: rgba(15, 15, 60, 0.85);
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(15, 15, 60, 0.88);
             --input-bg-solid: #0d0a33;
-            --input-border: rgba(108, 122, 224, 0.25);
-            --input-focus: #6c7ae0;
+            --input-border: rgba(108, 122, 224, 0.30);
+            --input-focus: #818cf8;
             --accent: #6c7ae0;
             --accent-text: #a2a5ff;
-            --accent-glow: rgba(108, 122, 224, 0.15);
-            --highlight: #ffd54f;
-            --divider: rgba(108, 122, 224, 0.12);
+            --accent-glow: rgba(108, 122, 224, 0.25);
+            --highlight: #fbbf24;
+            --divider: rgba(108, 122, 224, 0.18);
             --toggle-label-color: #ffffff;
-            --overlay-bg: rgba(5, 5, 30, 0.88);
-            --bulb-glow: rgba(255, 213, 79, 0.08);
+            --overlay-bg: rgba(5, 5, 30, 0.90);
+            --bulb-glow: rgba(255, 213, 79, 0.12);
 
             /* Bento Tokens (Dark) */
-            --bento-bg: rgba(15, 14, 58, 0.65);
-            --bento-inner-bg: rgba(9, 9, 48, 0.65);
-            --bento-border: rgba(108, 122, 224, 0.22);
-            --bento-border-hover: rgba(129, 140, 248, 0.55);
-            --bento-border-dashed: rgba(108, 122, 224, 0.35);
+            --bento-bg: rgba(15, 14, 58, 0.75);
+            --bento-inner-bg: rgba(9, 9, 48, 0.75);
+            --bento-border: rgba(108, 122, 224, 0.25);
+            --bento-border-hover: rgba(129, 140, 248, 0.65);
+            --bento-border-dashed: rgba(108, 122, 224, 0.40);
             --bento-stat-watt: #fbbf24;
             --bento-stat-usage: #ffffff;
             --bento-stat-kwh: #a2a5ff;
             --bento-stat-cost: #34d399;
-            --bento-pill-bg: rgba(15, 14, 58, 0.85);
+            --bento-pill-bg: rgba(15, 14, 58, 0.90);
             --bento-pill-text: #c7d2fe;
-            --bento-pill-border: rgba(99, 102, 241, 0.35);
+            --bento-pill-border: rgba(99, 102, 241, 0.40);
             --bento-tab-active-bg: #4f46e5;
             --bento-tab-active-text: #ffffff;
-            --bento-tab-inactive-text: #94a3b8;
-            --bento-note-bg: rgba(9, 9, 48, 0.5);
-            --bento-note-text: #94a3b8;
-            --bento-note-border: rgba(108, 122, 224, 0.2);
-            --bento-icon-bg: rgba(99, 102, 241, 0.2);
+            --bento-tab-inactive-text: #cbd5e1;
+            --bento-note-bg: rgba(9, 9, 48, 0.65);
+            --bento-note-text: #cbd5e1;
+            --bento-note-border: rgba(108, 122, 224, 0.28);
+            --bento-icon-bg: rgba(99, 102, 241, 0.25);
             --bento-icon-color: #a2a5ff;
         }
 
@@ -141,47 +141,74 @@
             --topbar-bg: #1c1d70;
             --sidebar-bg: #121350;
             --sidebar-active: #2b2ca8;
-            --sidebar-hover: rgba(255, 255, 255, 0.12);
-            --card-bg: rgba(255, 255, 255, 0.94);
-            --card-border: rgba(99, 102, 241, 0.18);
-            --card-glow-bg: rgba(255, 255, 255, 0.98);
-            --text-primary: #100b46;
-            --text-secondary: #333668;
-            --text-muted: #5e6094;
+            --sidebar-hover: rgba(255, 255, 255, 0.16);
+            --card-bg: #ffffff;
+            --card-border: rgba(99, 102, 241, 0.22);
+            --card-glow-bg: #ffffff;
+            --text-primary: #0f0b40;
+            --text-secondary: #272a5a;
+            --text-muted: #4e5282;
             --input-bg: #ffffff;
             --input-bg-solid: #ffffff;
-            --input-border: rgba(99, 102, 241, 0.24);
-            --input-focus: #4f46e5;
+            --input-border: rgba(99, 102, 241, 0.32);
+            --input-focus: #4338ca;
             --accent: #4f46e5;
             --accent-text: #3730a3;
-            --accent-glow: rgba(79, 70, 229, 0.12);
-            --highlight: #d97706;
-            --divider: rgba(99, 102, 241, 0.15);
+            --accent-glow: rgba(79, 70, 229, 0.16);
+            --highlight: #b45309;
+            --divider: rgba(99, 102, 241, 0.18);
             --toggle-label-color: #ffffff;
-            --overlay-bg: rgba(255, 255, 255, 0.95);
-            --bulb-glow: rgba(255, 213, 79, 0.38);
+            --overlay-bg: rgba(248, 250, 255, 0.96);
+            --bulb-glow: rgba(255, 213, 79, 0.40);
 
-            /* Bento Tokens (Light - High Contrast & Vibrant) */
-            --bento-bg: rgba(246, 248, 255, 0.92);
+            /* Bento Tokens (Light) */
+            --bento-bg: rgba(246, 248, 255, 0.95);
             --bento-inner-bg: linear-gradient(145deg, #ffffff 0%, #f4f6ff 100%);
-            --bento-border: rgba(99, 102, 241, 0.2);
-            --bento-border-hover: rgba(79, 70, 229, 0.45);
-            --bento-border-dashed: rgba(99, 102, 241, 0.38);
-            --bento-stat-watt: #d97706;
-            --bento-stat-usage: #100b46;
-            --bento-stat-kwh: #4338ca;
-            --bento-stat-cost: #059669;
+            --bento-border: rgba(99, 102, 241, 0.24);
+            --bento-border-hover: rgba(79, 70, 229, 0.55);
+            --bento-border-dashed: rgba(99, 102, 241, 0.42);
+            --bento-stat-watt: #b45309;
+            --bento-stat-usage: #0f0b40;
+            --bento-stat-kwh: #3730a3;
+            --bento-stat-cost: #047857;
             --bento-pill-bg: #ffffff;
             --bento-pill-text: #1e1b4b;
-            --bento-pill-border: rgba(99, 102, 241, 0.25);
+            --bento-pill-border: rgba(99, 102, 241, 0.30);
             --bento-tab-active-bg: #4f46e5;
             --bento-tab-active-text: #ffffff;
-            --bento-tab-inactive-text: #4b5563;
-            --bento-note-bg: rgba(238, 242, 255, 0.85);
-            --bento-note-text: #312e81;
-            --bento-note-border: rgba(99, 102, 241, 0.22);
+            --bento-tab-inactive-text: #374151;
+            --bento-note-bg: rgba(238, 242, 255, 0.92);
+            --bento-note-text: #1e1b4b;
+            --bento-note-border: rgba(99, 102, 241, 0.28);
             --bento-icon-bg: #e0e7ff;
-            --bento-icon-color: #4338ca;
+            --bento-icon-color: #3730a3;
+        }
+
+        /* Anti-Gravity Accessibility & Focus Rings */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Universal Touch Targets for Mobile (WCAG 2.2 AA) */
+        @media (pointer: coarse) {
+            button, .nav-item, .nav-sub-item, select, input[type="checkbox"], input[type="radio"], a {
+                min-height: 48px;
+            }
+            .sidebar-hamburger {
+                min-width: 48px;
+                min-height: 48px;
+            }
+        }
+
+        /* Fluid Typography Helpers */
+        .text-fluid-title {
+            font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+            line-height: 1.25;
+        }
+        .text-fluid-metric {
+            font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+            line-height: 1.1;
         }
 
         select option {
@@ -1209,8 +1236,144 @@
         <!-- ===== MAIN CONTENT AREA (SCROLLABLE) ===== -->
         <main class="app-main ml-64 flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-4rem)] relative z-20">
 
-            <!-- PANEL 1: DASHBOARD VIEW (BLANK) -->
-            <section id="view-dashboard" class="view-panel hidden flex-col gap-6 min-h-[400px]">
+                        <!-- PANEL 1: DASHBOARD VIEW (INTERACTIVE OVERVIEW) -->
+            <section id="view-dashboard" class="view-panel hidden flex-col gap-6 w-full">
+                <!-- Dashboard Welcome Banner -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-indigo-500/15">
+                    <div>
+                        <h2 class="text-fluid-title font-extrabold t-primary flex items-center gap-2.5">
+                            <span>⚡ PowerForecast Command Center</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm t-muted mt-1">Real-time energy telemetry, monthly bill projections, and appliance intelligence.</p>
+                    </div>
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <button onclick="switchView('calculator')" class="px-4 py-2.5 rounded-xl btn-primary text-xs font-bold shadow-md flex items-center gap-2">
+                            <span>⚡ Open Calculator</span>
+                        </button>
+                        <button onclick="switchApplianceSubmenu('add')" class="px-4 py-2.5 rounded-xl btn-secondary text-xs font-bold flex items-center gap-2">
+                            <span>➕ Add Appliance</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4-Card Bento Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Metric Card 1: Estimated Bill -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider t-muted">Projected Bill</span>
+                            <span class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-sm">💵</span>
+                        </div>
+                        <div class="my-3">
+                            <div id="dashMetricBill" class="text-fluid-metric font-extrabold" style="color: var(--bento-stat-cost);">₱0.00</div>
+                            <span id="dashMetricTier" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Standard Residential</span>
+                        </div>
+                        <div class="text-[11px] t-muted flex items-center justify-between pt-2 border-t border-indigo-500/10">
+                            <span>Effective Rate:</span>
+                            <span id="dashMetricEffectiveRate" class="font-bold t-primary">₱0.0000/kWh</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric Card 2: Monthly Energy -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider t-muted">Monthly Energy</span>
+                            <span class="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 text-sm">⚡</span>
+                        </div>
+                        <div class="my-3">
+                            <div id="dashMetricKwh" class="text-fluid-metric font-extrabold" style="color: var(--bento-stat-kwh);">0.0 kWh</div>
+                            <span class="text-[11px] font-semibold t-secondary">Estimated consumption</span>
+                        </div>
+                        <div class="text-[11px] t-muted flex items-center justify-between pt-2 border-t border-indigo-500/10">
+                            <span>Daily Average:</span>
+                            <span id="dashMetricDailyKwh" class="font-bold t-primary">0.00 kWh/day</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric Card 3: Active Load -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider t-muted">Active Load</span>
+                            <span class="p-2 rounded-xl bg-amber-500/15 text-amber-400 text-sm">💡</span>
+                        </div>
+                        <div class="my-3">
+                            <div id="dashMetricActiveWatt" class="text-fluid-metric font-extrabold" style="color: var(--bento-stat-watt);">0 W</div>
+                            <span id="dashMetricActiveCount" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">0 Devices Active</span>
+                        </div>
+                        <div class="text-[11px] t-muted flex items-center justify-between pt-2 border-t border-indigo-500/10">
+                            <span>Total Registered:</span>
+                            <span id="dashMetricTotalAppliances" class="font-bold t-primary">0 appliances</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric Card 4: Current Meralco Rate -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider t-muted">Meralco Rate</span>
+                            <span class="p-2 rounded-xl bg-blue-500/15 text-blue-400 text-sm">📊</span>
+                        </div>
+                        <div class="my-3">
+                            <div id="dashMetricGenRate" class="text-fluid-metric font-extrabold t-primary">₱9.2800</div>
+                            <span class="text-[11px] font-semibold text-blue-400">Generation Component</span>
+                        </div>
+                        <div class="text-[11px] t-muted flex items-center justify-between pt-2 border-t border-indigo-500/10">
+                            <span>Rate Source:</span>
+                            <span class="font-bold t-primary">DOE / Meralco Live</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bento Row 2: Household Load Live Monitor & Quick Switchboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Left: Household Appliances Switchboard (7 cols) -->
+                    <div class="lg:col-span-7 bento-sub-card rounded-2xl p-5 flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">🔌</span>
+                                <h3 class="text-sm font-bold t-primary uppercase tracking-wide">Live Appliance Switchboard</h3>
+                            </div>
+                            <button onclick="switchView('appliances')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300">Manage All →</button>
+                        </div>
+                        <div id="dashApplianceList" class="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+                            <!-- Dynamic appliance roster loaded via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Smart Energy Tips & Bill Optimization (5 cols) -->
+                    <div class="lg:col-span-5 flex flex-col gap-4">
+                        <!-- Quick Bill Breakdown Snapshot -->
+                        <div class="bento-sub-card rounded-2xl p-5 flex flex-col gap-3">
+                            <h3 class="text-sm font-bold t-primary uppercase tracking-wide flex items-center gap-2">
+                                <span>🧾 Cost Allocation Snapshot</span>
+                            </h3>
+                            <div class="flex flex-col gap-2 text-xs">
+                                <div class="flex justify-between items-center py-1 border-b border-indigo-500/10">
+                                    <span class="t-muted">Generation & Transmission:</span>
+                                    <span id="dashCostGen" class="font-bold t-primary">₱0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1 border-b border-indigo-500/10">
+                                    <span class="t-muted">Distribution Network:</span>
+                                    <span id="dashCostDist" class="font-bold t-primary">₱0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1 border-b border-indigo-500/10">
+                                    <span class="t-muted">Gov't Taxes & Universal Charges:</span>
+                                    <span id="dashCostTaxes" class="font-bold t-primary">₱0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Energy Efficiency Advisory Card -->
+                        <div class="bento-note-box p-4 rounded-2xl flex flex-col gap-2 border">
+                            <div class="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                                <span>💡</span>
+                                <span>Smart Energy Advisory</span>
+                            </div>
+                            <p class="text-xs t-secondary leading-relaxed" id="dashAdvisoryText">
+                                High-wattage cooling and heating appliances represent the primary drivers of your estimated monthly bill. Optimize routine schedules in the Calendar view to minimize peak load.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- PANEL 2: CALCULATOR VIEW PANEL (MAIN CALCULATOR) -->
@@ -3442,12 +3605,108 @@
                     </div>
                 </div>
 
-            <!-- PANEL 5: ANALYTICS VIEW (BLANK) -->
-            <section id="view-analytics" class="view-panel hidden flex-col gap-6 min-h-[400px]">
+                        <!-- PANEL 5: ANALYTICS VIEW (ENERGY CONSUMPTION INSIGHTS) -->
+            <section id="view-analytics" class="view-panel hidden flex-col gap-6 w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-indigo-500/15">
+                    <div>
+                        <h2 class="text-fluid-title font-extrabold t-primary flex items-center gap-2.5">
+                            <span>📈 Energy Analytics & Breakdown</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm t-muted mt-1">Deep-dive cost distribution, appliance category weights, and usage trends.</p>
+                    </div>
+                    <button onclick="renderAnalyticsView()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-semibold flex items-center gap-2">
+                        <span>🔄 Refresh Data</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left: Category Breakdown Bars (7 cols) -->
+                    <div class="lg:col-span-7 bento-sub-card rounded-2xl p-5 flex flex-col gap-4">
+                        <h3 class="text-sm font-bold t-primary uppercase tracking-wide flex items-center gap-2">
+                            <span>📊 Energy Usage by Appliance Category</span>
+                        </h3>
+                        <div id="analyticsCategoryBreakdown" class="flex flex-col gap-3.5 pt-2">
+                            <!-- Dynamic category bars rendered via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Cost Component Proportions (5 cols) -->
+                    <div class="lg:col-span-5 bento-sub-card rounded-2xl p-5 flex flex-col gap-4">
+                        <h3 class="text-sm font-bold t-primary uppercase tracking-wide flex items-center gap-2">
+                            <span>💵 Rate Component Distribution</span>
+                        </h3>
+                        <div id="analyticsRateComponents" class="flex flex-col gap-3 pt-2">
+                            <!-- Dynamic component breakdown -->
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <!-- PANEL 6: FORECASTING VIEW (BLANK) -->
-            <section id="view-forecasting" class="view-panel hidden flex-col gap-6 min-h-[400px]">
+                        <!-- PANEL 6: FORECASTING VIEW (PREDICTIVE SCENARIO SIMULATOR) -->
+            <section id="view-forecasting" class="view-panel hidden flex-col gap-6 w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-indigo-500/15">
+                    <div>
+                        <h2 class="text-fluid-title font-extrabold t-primary flex items-center gap-2.5">
+                            <span>🔮 Predictive Energy Forecasting</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm t-muted mt-1">Simulate upcoming tariff adjustments and model energy reduction scenarios.</p>
+                    </div>
+                </div>
+
+                <!-- Simulation Control Card -->
+                <div class="bento-sub-card rounded-2xl p-5 flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <span class="text-sm font-bold t-primary">Rate Fluctuation Scenario Simulator</span>
+                        <span id="forecastRateDeltaBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">±0.0% Tariff Shift</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs t-muted">-20%</span>
+                        <input type="range" id="forecastDeltaSlider" min="-20" max="20" value="0" step="1" class="flex-1" oninput="updateForecastSimulation(this.value)">
+                        <span class="text-xs t-muted">+20%</span>
+                    </div>
+                </div>
+
+                <!-- 3 Scenario Comparison Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Scenario 1: Eco-Optimized -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between border-emerald-500/30">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Eco-Optimized</span>
+                                <span>🌿</span>
+                            </div>
+                            <p class="text-xs t-muted mb-4">-15% usage via schedule optimization</p>
+                            <div id="forecastEcoCost" class="text-2xl font-extrabold text-emerald-400">₱0.00</div>
+                        </div>
+                        <span class="text-[11px] t-secondary mt-3">Target: ~₱0.00/day</span>
+                    </div>
+
+                    <!-- Scenario 2: Baseline Current -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between border-indigo-500/30">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Current Projected</span>
+                                <span>📊</span>
+                            </div>
+                            <p class="text-xs t-muted mb-4">Based on active household load</p>
+                            <div id="forecastBaseCost" class="text-2xl font-extrabold text-indigo-300">₱0.00</div>
+                        </div>
+                        <span class="text-[11px] t-secondary mt-3">Monthly baseline</span>
+                    </div>
+
+                    <!-- Scenario 3: Peak Summer Load -->
+                    <div class="bento-sub-card rounded-2xl p-5 flex flex-col justify-between border-amber-500/30">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Peak Load / Summer</span>
+                                <span>☀️</span>
+                            </div>
+                            <p class="text-xs t-muted mb-4">+25% AC & cooling surge</p>
+                            <div id="forecastPeakCost" class="text-2xl font-extrabold text-amber-400">₱0.00</div>
+                        </div>
+                        <span class="text-[11px] t-secondary mt-3">Estimated surge envelope</span>
+                    </div>
+                </div>
             </section>
 
         </main>
@@ -4160,7 +4419,13 @@
                 targetNav.classList.add('active');
             }
 
-            if (viewName === 'appliances') {
+            if (viewName === 'dashboard') {
+                if (typeof renderDashboardView === 'function') renderDashboardView();
+            } else if (viewName === 'analytics') {
+                if (typeof renderAnalyticsView === 'function') renderAnalyticsView();
+            } else if (viewName === 'forecasting') {
+                if (typeof renderForecastingView === 'function') renderForecastingView();
+            } else if (viewName === 'appliances') {
                 toggleApplianceNavDropdown(true);
             } else if (viewName === 'calendar') {
                 if (typeof renderCalendarApplianceSwitches === 'function') renderCalendarApplianceSwitches();
@@ -10057,7 +10322,176 @@
             }
         }
         initAuthUser();
+
+        // ===== Anti-Gravity Dashboard, Analytics & Forecasting Renderers =====
+        function renderDashboardView() {
+            try {
+                const totalKwh = (calcState && calcState.calculatedKwh) || 200;
+                const totalCost = (calcState && calcState.totalCost) || 0;
+                const effectiveRate = totalKwh > 0 ? (totalCost / totalKwh) : (window.currentRate || 9.28);
+                const activeWatt = typeof getActiveAppliancesWattage === 'function' ? getActiveAppliancesWattage() : 0;
+                const totalAppliances = (window.householdAppliances || []).length;
+                const activeCount = (window.householdAppliances || []).filter(a => a.active !== false).length;
+
+                const billEl = document.getElementById('dashMetricBill');
+                const kwhEl = document.getElementById('dashMetricKwh');
+                const dailyKwhEl = document.getElementById('dashMetricDailyKwh');
+                const rateEl = document.getElementById('dashMetricEffectiveRate');
+                const wattEl = document.getElementById('dashMetricActiveWatt');
+                const activeCountEl = document.getElementById('dashMetricActiveCount');
+                const totalAppEl = document.getElementById('dashMetricTotalAppliances');
+                const genRateEl = document.getElementById('dashMetricGenRate');
+
+                if (billEl) billEl.textContent = '₱' + totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (kwhEl) kwhEl.textContent = totalKwh.toFixed(1) + ' kWh';
+                if (dailyKwhEl) dailyKwhEl.textContent = (totalKwh / 30).toFixed(2) + ' kWh/day';
+                if (rateEl) rateEl.textContent = '₱' + effectiveRate.toFixed(4) + '/kWh';
+                if (wattEl) wattEl.textContent = activeWatt + ' W';
+                if (activeCountEl) activeCountEl.textContent = activeCount + ' Devices Active';
+                if (totalAppEl) totalAppEl.textContent = totalAppliances + ' registered';
+                if (genRateEl && window.currentRate) genRateEl.textContent = '₱' + window.currentRate.toFixed(4);
+
+                // Cost Breakdown Snapshot
+                const costGenEl = document.getElementById('dashCostGen');
+                const costDistEl = document.getElementById('dashCostDist');
+                const costTaxesEl = document.getElementById('dashCostTaxes');
+                if (costGenEl && calcState) costGenEl.textContent = '₱' + ((calcState.generationCharge || 0) + (calcState.transmissionCharge || 0)).toFixed(2);
+                if (costDistEl && calcState) costDistEl.textContent = '₱' + (calcState.distributionCharge || 0).toFixed(2);
+                if (costTaxesEl && calcState) costTaxesEl.textContent = '₱' + ((calcState.totalTaxes || 0) + (calcState.universalCharges || 0)).toFixed(2);
+
+                // Populate appliance list
+                const listEl = document.getElementById('dashApplianceList');
+                if (listEl) {
+                    const apps = window.householdAppliances || [];
+                    if (apps.length === 0) {
+                        listEl.innerHTML = '<div class="text-xs t-muted py-4 text-center">No appliances added yet. Click "+ Add Appliance" to get started.</div>';
+                    } else {
+                        listEl.innerHTML = apps.map((app, idx) => {
+                            const isAct = app.active !== false;
+                            return `
+                                <div class="flex items-center justify-between p-3 rounded-xl bento-note-box border text-xs">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-base">${app.icon || '🔌'}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold t-primary">${app.name || 'Appliance'}</span>
+                                            <span class="t-muted text-[10px]">${app.wattage || 0}W • ${app.hoursPerDay || 0} hrs/day</span>
+                                        </div>
+                                    </div>
+                                    <label class="toggle-switch transform scale-75">
+                                        <input type="checkbox" ${isAct ? 'checked' : ''} onchange="toggleApplianceActive(${idx}, this.checked)">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch (err) {
+                console.warn('Dashboard render error:', err);
+            }
+        }
+
+        function renderAnalyticsView() {
+            try {
+                const apps = window.householdAppliances || [];
+                const catContainer = document.getElementById('analyticsCategoryBreakdown');
+                const rateContainer = document.getElementById('analyticsRateComponents');
+
+                if (catContainer) {
+                    if (apps.length === 0) {
+                        catContainer.innerHTML = '<div class="text-xs t-muted py-6 text-center">Register appliances to view category distribution.</div>';
+                    } else {
+                        // Group by category
+                        const catMap = {};
+                        apps.forEach(a => {
+                            const cat = a.category || 'General';
+                            const kwh = ((a.wattage || 0) * (a.hoursPerDay || 0) * 30) / 1000;
+                            catMap[cat] = (catMap[cat] || 0) + kwh;
+                        });
+                        const totalCatKwh = Object.values(catMap).reduce((a, b) => a + b, 0) || 1;
+                        catContainer.innerHTML = Object.entries(catMap).map(([cat, kwh]) => {
+                            const pct = Math.round((kwh / totalCatKwh) * 100);
+                            return `
+                                <div class="flex flex-col gap-1 text-xs">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold t-primary">${cat}</span>
+                                        <span class="font-bold text-indigo-400">${kwh.toFixed(1)} kWh (${pct}%)</span>
+                                    </div>
+                                    <div class="w-full h-2 rounded-full bg-slate-800/60 overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-indigo-500 to-amber-400 rounded-full" style="width: ${pct}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                if (rateContainer && calcState) {
+                    const total = calcState.totalCost || 1;
+                    const items = [
+                        { name: 'Generation Charge', val: calcState.generationCharge || 0, color: 'bg-indigo-500' },
+                        { name: 'Transmission Charge', val: calcState.transmissionCharge || 0, color: 'bg-purple-500' },
+                        { name: 'System Loss Charge', val: calcState.systemLossCharge || 0, color: 'bg-blue-400' },
+                        { name: 'Distribution Charge', val: calcState.distributionCharge || 0, color: 'bg-emerald-400' },
+                        { name: 'Government Taxes & VAT', val: calcState.totalTaxes || 0, color: 'bg-amber-400' },
+                        { name: 'Universal & FIT-All', val: calcState.universalCharges || 0, color: 'bg-slate-400' },
+                    ];
+                    rateContainer.innerHTML = items.map(item => {
+                        const pct = Math.round((item.val / total) * 100);
+                        return `
+                            <div class="flex items-center justify-between text-xs py-1 border-b border-indigo-500/10">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full ${item.color}"></span>
+                                    <span class="t-secondary">${item.name}</span>
+                                </div>
+                                <span class="font-bold t-primary">₱${item.val.toFixed(2)} (${pct}%)</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.warn('Analytics render error:', err);
+            }
+        }
+
+        function updateForecastSimulation(deltaVal) {
+            try {
+                const delta = parseFloat(deltaVal) || 0;
+                const badge = document.getElementById('forecastRateDeltaBadge');
+                if (badge) badge.textContent = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}% Tariff Shift`;
+
+                const baseCost = (calcState && calcState.totalCost) || 2000;
+                const adjustedBase = baseCost * (1 + (delta / 100));
+                const ecoCost = adjustedBase * 0.85;
+                const peakCost = adjustedBase * 1.25;
+
+                const baseEl = document.getElementById('forecastBaseCost');
+                const ecoEl = document.getElementById('forecastEcoCost');
+                const peakEl = document.getElementById('forecastPeakCost');
+
+                if (baseEl) baseEl.textContent = '₱' + adjustedBase.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (ecoEl) ecoEl.textContent = '₱' + ecoCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (peakEl) peakEl.textContent = '₱' + peakCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } catch (err) {
+                console.warn('Forecast simulation error:', err);
+            }
+        }
+
+        function renderForecastingView() {
+            updateForecastSimulation(0);
+        }
+
     </script>
+
+    <!-- Anti-Gravity Persistent Version Badge (Bottom-Right) -->
+    <aside id="app-version-badge" aria-label="System Version" class="fixed bottom-3 right-3 z-30 pointer-events-auto select-none">
+        <div class="px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold backdrop-blur-xl transition-all shadow-lg flex items-center gap-2 border hover:scale-105"
+             style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
+             title="PowerForecast Version 1.8.1v - Major Update">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+            <span class="font-bold tracking-tight">1.8.1v</span>
+        </div>
+    </aside>
 </body>
 
 </html>
