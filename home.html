@@ -3127,8 +3127,9 @@
                                         Tomorrow
                                     </span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 pt-0.5">
-                                    <button type="button" onclick="setRoutineQuickStart('tomorrow')" id="btnQuickStart_tomorrow" class="py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow">Tomorrow</button>
+                                <div class="grid grid-cols-3 gap-2 pt-0.5">
+                                    <button type="button" onclick="setRoutineQuickStart('selected')" id="btnQuickStart_selected" class="py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow">Selected Day</button>
+                                    <button type="button" onclick="setRoutineQuickStart('tomorrow')" id="btnQuickStart_tomorrow" class="py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Tomorrow</button>
                                     <button type="button" onclick="setRoutineQuickStart('custom')" id="btnQuickStart_custom" class="py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Pick Date</button>
                                 </div>
                                 <input id="routineStartDateInput" type="date" class="hidden pf-input rounded-xl px-3 py-2 text-xs font-bold text-white w-full mt-1 cursor-pointer" onchange="onRoutineStartDateInputChange()">
@@ -8909,6 +8910,7 @@
         // 1. ROUTINE SETUP MODAL HANDLERS (+ Set Schedule)
         // ==========================================
         function setRoutineQuickStart(mode) {
+            const btnSelected = document.getElementById('btnQuickStart_selected');
             const btnTomorrow = document.getElementById('btnQuickStart_tomorrow');
             const btnCustom = document.getElementById('btnQuickStart_custom');
             const dateInput = document.getElementById('routineStartDateInput');
@@ -8916,19 +8918,30 @@
 
             const todayStr = getTodayDateString();
             const tomorrowStr = getTomorrowDateString();
+            const selectedCalStr = getSelectedCalendarDateString();
 
-            if (mode === 'tomorrow') {
+            const inactiveClass = 'py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
+            const activeClass = 'py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
+
+            if (btnSelected) btnSelected.className = inactiveClass;
+            if (btnTomorrow) btnTomorrow.className = inactiveClass;
+            if (btnCustom) btnCustom.className = inactiveClass;
+            if (dateInput) dateInput.classList.add('hidden');
+
+            if (mode === 'selected') {
+                routineStartingDateStr = selectedCalStr;
+                if (btnSelected) btnSelected.className = activeClass;
+                const isViewingToday = (selectedCalStr === todayStr);
+                if (badge) badge.textContent = isViewingToday ? 'Today' : `${calendarState.selectedDayKey.toUpperCase()} (${selectedCalStr})`;
+            } else if (mode === 'tomorrow') {
                 routineStartingDateStr = tomorrowStr;
-                if (btnTomorrow) btnTomorrow.className = 'py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
-                if (btnCustom) btnCustom.className = 'py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
-                if (dateInput) dateInput.classList.add('hidden');
+                if (btnTomorrow) btnTomorrow.className = activeClass;
                 if (badge) badge.textContent = 'Tomorrow';
             } else {
-                if (btnTomorrow) btnTomorrow.className = 'py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400';
-                if (btnCustom) btnCustom.className = 'py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow';
+                if (btnCustom) btnCustom.className = activeClass;
                 if (dateInput) {
                     dateInput.min = todayStr;
-                    if (!dateInput.value) dateInput.value = tomorrowStr;
+                    if (!dateInput.value) dateInput.value = selectedCalStr;
                     dateInput.classList.remove('hidden');
                     routineStartingDateStr = dateInput.value;
                 }
@@ -9010,8 +9023,8 @@
             if (titleEl) titleEl.textContent = `${item ? item.name : 'Appliance'} Control & Schedule`;
             if (subEl) subEl.textContent = `${item ? `${item.watts}W Rating • ${item.category || 'General'}` : 'Appliance Routine'}`;
 
-            // Initialize Starting Day selector to tomorrow
-            setRoutineQuickStart('tomorrow');
+            // Initialize Starting Day selector to currently viewed calendar day
+            setRoutineQuickStart('selected');
 
             const isRecurring = Boolean(block && (block.seriesId || (block.repeat && block.repeat !== 'once')));
             if (delSingleBtn) {
@@ -10487,9 +10500,9 @@
     <aside id="app-version-badge" aria-label="System Version" class="fixed bottom-3 right-3 z-30 pointer-events-auto select-none">
         <div class="px-2.5 py-1 rounded-xl text-[11px] font-mono font-semibold backdrop-blur-xl transition-all shadow-lg flex items-center gap-2 border hover:scale-105"
              style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
-             title="PowerForecast Version 1.8.1v - Major Update">
+             title="PowerForecast Version 1.8.2v - Major Update">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-            <span class="font-bold tracking-tight">1.8.1v</span>
+            <span class="font-bold tracking-tight">1.8.2v</span>
         </div>
     </aside>
 </body>
