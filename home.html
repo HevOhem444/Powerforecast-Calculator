@@ -3678,14 +3678,14 @@
 
     <!-- Global Toast Notification Container -->
     <div id="appToastContainer"
-        class="fixed bottom-7 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+        class="fixed bottom-9 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
 
     <!-- ZZZ-Style Live Engine Build Watermark -->
     <div id="pfBuildWatermark"
-        class="fixed bottom-1.5 right-3 z-50 pointer-events-auto select-none flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-950/40 backdrop-blur-sm border border-slate-800/40 text-[9.5px] font-mono tracking-wider text-slate-500/80 hover:text-slate-200 hover:border-slate-700/80 hover:bg-slate-900/80 transition-all cursor-default shadow-sm group"
-        title="PowerForecast Engine Build • UI-Branch Live Sync">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
-        <span id="pfBuildVersionLabel">OSPROD_PF_v2.4.2_R20260819_B7A29_LIVE</span>
+        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
+        title="PowerForecast Live Build Version">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.44v - Fix live running appliance timeline visibility, auto-generate active session bar, and persist 30s switch lock</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -7027,16 +7027,31 @@
                     // Dynamically stretch active running blocks on the timeline in real-time
                     if (item.last_turned_on_at) {
                         const startMs = new Date(item.last_turned_on_at).getTime();
-                        const elapsedHours = Math.max(0.01, (now - startMs) / 3600000);
+                        const elapsedHours = Math.max(0.0014, (now - startMs) / 3600000);
                         const curDayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
                         
-                        const liveBlock = calendarScheduledBlocks.find(b => 
+                        let liveBlock = calendarScheduledBlocks.find(b => 
                             String(b.applianceId) === String(item.id) && 
                             b.dayKey === curDayKey && 
                             b.is_active_live
                         );
                         if (liveBlock) {
                             liveBlock.durationHours = Math.round(elapsedHours * 10000) / 10000;
+                        } else {
+                            const startDt = new Date(item.last_turned_on_at);
+                            const startH = startDt.getHours() + (startDt.getMinutes() / 60.0) + (startDt.getSeconds() / 3600.0);
+                            liveBlock = {
+                                id: 'blk_live_' + item.id + '_' + startMs,
+                                applianceId: item.id,
+                                dayKey: curDayKey,
+                                dayNum: new Date().getDate(),
+                                startHour: Math.round(startH * 10000) / 10000,
+                                durationHours: Math.round(elapsedHours * 10000) / 10000,
+                                autoPower: false,
+                                repeat: 'once',
+                                is_active_live: true
+                            };
+                            calendarScheduledBlocks.push(liveBlock);
                         }
                     }
                 }
@@ -7737,9 +7752,39 @@
                 incomingRolloverBlocks = [];
             } else {
                 // Today or Future: merge schedule routines + active live bars + historical logs from today
+                const isViewingToday = (selectedDateStr === todayStr);
+
+                // Auto-guarantee that any currently running appliance has an active live block on Today's view
+                if (isViewingToday) {
+                    householdLoadList.forEach(item => {
+                        if (item.is_currently_on && item.last_turned_on_at) {
+                            const exists = calendarScheduledBlocks.some(b => 
+                                String(b.applianceId) === String(item.id) && 
+                                b.dayKey === selectedKey && 
+                                b.is_active_live
+                            );
+                            if (!exists) {
+                                const startDt = new Date(item.last_turned_on_at);
+                                const startH = startDt.getHours() + (startDt.getMinutes() / 60.0) + (startDt.getSeconds() / 3600.0);
+                                const elHours = Math.max(0.0014, (Date.now() - startDt.getTime()) / 3600000.0);
+                                calendarScheduledBlocks.push({
+                                    id: 'blk_live_' + item.id + '_' + startDt.getTime(),
+                                    applianceId: item.id,
+                                    dayKey: selectedKey,
+                                    dayNum: calendarState.selectedDay,
+                                    startHour: Math.round(startH * 10000) / 10000,
+                                    durationHours: Math.round(elHours * 10000) / 10000,
+                                    autoPower: false,
+                                    repeat: 'once',
+                                    is_active_live: true
+                                });
+                            }
+                        }
+                    });
+                }
+
                 const rawStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
                 const nowHour = new Date().getHours() + (new Date().getMinutes() / 60.0);
-                const isViewingToday = (selectedDateStr === todayStr);
 
                 const activeScheduledAndLive = rawStartingBlocks.filter(b => {
                     if (b.is_active_live) {
