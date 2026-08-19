@@ -3046,18 +3046,11 @@
                                     Started: 7:48 AM
                                 </span>
                             </div>
-                            <div class="flex flex-col gap-1.5 pt-1">
-                                <label for="todayLiveEndTime" class="text-[11px] font-bold text-slate-300 flex items-center justify-between">
-                                    <span>Target Shutoff Time (Today Only)</span>
-                                    <span class="text-[10px] font-normal text-slate-400">Adjust when to turn OFF today</span>
-                                </label>
-                                <input id="todayLiveEndTime" type="time" class="pf-input rounded-xl px-3 py-2 text-xs font-bold text-white w-full" onchange="recalcTodayLiveDuration()">
-                            </div>
                             <div class="flex items-center justify-between text-[11px] text-slate-300 pt-1 border-t border-emerald-500/20">
-                                <span>Today's Duration: <strong id="todayLiveDurationLabel" class="text-amber-400 font-extrabold">45 mins</strong></span>
-                                <span>Est. Cost: <strong id="todayLiveCostLabel" class="text-emerald-400 font-extrabold">₱0.85</strong></span>
+                                <span>Running Duration: <strong id="todayLiveDurationLabel" class="text-amber-400 font-extrabold">0 mins</strong></span>
+                                <span>Est. Incurred Cost: <strong id="todayLiveCostLabel" class="text-emerald-400 font-extrabold">₱0.00</strong></span>
                             </div>
-                            <button id="todayLiveStopBtn" type="button" onclick="stopLiveSessionNowFromModal()" class="w-full py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs transition-all shadow-md mt-1 cursor-pointer">
+                            <button id="todayLiveStopBtn" type="button" onclick="stopLiveSessionNowFromModal()" class="w-full py-2.5 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-xs transition-all shadow-md mt-1 cursor-pointer">
                                 ⏹️ Turn OFF & Save Historical Receipt Now
                             </button>
                         </div>
@@ -3114,11 +3107,8 @@
 
                         <!-- Footer Actions -->
                         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-                            <button onclick="closeTodayModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold">
+                            <button onclick="closeTodayModal()" class="px-5 py-2 rounded-xl btn-secondary text-xs font-bold w-full sm:w-auto">
                                 Close
-                            </button>
-                            <button id="todaySaveBtn" onclick="saveTodayLiveModal()" class="px-5 py-2 rounded-xl btn-primary text-xs font-extrabold shadow-lg shadow-emerald-500/20">
-                                Save Today's End Time
                             </button>
                         </div>
                     </div>
@@ -3721,7 +3711,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.48v - Separate Routine, Today live session, and Queue into distinct dedicated popups with Starting Day limited to Tomorrow and Pick Date</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.49v - Remove target shutoff time and save button from Live Control popup for open-ended manual run</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -7085,6 +7075,12 @@
                 }
             });
 
+            // If Today Live modal is open, refresh its running duration and cost ticker
+            const todayModal = document.getElementById('todayLiveSessionModal');
+            if (todayModal && !todayModal.classList.contains('opacity-0')) {
+                recalcTodayLiveDuration();
+            }
+
             // Clean up expired switch cooldowns continuously
             let hasActiveCooldowns = false;
             let cooldownsChanged = false;
@@ -8520,7 +8516,6 @@
                 if (liveCard) liveCard.classList.remove('hidden');
                 if (receiptContainer) receiptContainer.classList.add('hidden');
                 if (readOnlyNotice) readOnlyNotice.classList.add('hidden');
-                if (saveBtn) saveBtn.classList.remove('hidden');
 
                 const now = new Date();
                 let startH = block ? block.startHour : (now.getHours() + (now.getMinutes() / 60.0));
@@ -8530,11 +8525,6 @@
                 }
 
                 if (liveStartBadge) liveStartBadge.textContent = `Started: ${formatHour(startH)}`;
-
-                const endHour = block ? (block.startHour + block.durationHours) : (startH + 1.0);
-                const endH = Math.floor(endHour % 24);
-                const endM = Math.round((endHour - Math.floor(endHour)) * 60);
-                if (liveEndInput) liveEndInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 
                 recalcTodayLiveDuration();
             }
@@ -8560,33 +8550,27 @@
         }
 
         function recalcTodayLiveDuration() {
-            const liveEndInput = document.getElementById('todayLiveEndTime');
             const durLabel = document.getElementById('todayLiveDurationLabel');
             const costLabel = document.getElementById('todayLiveCostLabel');
-            if (!liveEndInput) return;
+            if (!durLabel || !costLabel || !activeEditingApplianceId) return;
 
             const item = householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId));
-            const block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
+            if (!item) return;
 
-            const now = new Date();
-            let startH = block ? block.startHour : (now.getHours() + (now.getMinutes() / 60.0));
-            if (item && item.last_turned_on_at) {
-                const startDt = new Date(item.last_turned_on_at);
-                startH = startDt.getHours() + (startDt.getMinutes() / 60.0);
+            const now = Date.now();
+            let elapsedHours = 0.0003;
+            if (item.last_turned_on_at) {
+                const startMs = new Date(item.last_turned_on_at).getTime();
+                elapsedHours = Math.max(0.0003, (now - startMs) / 3600000);
             }
 
-            const [eh, em] = (liveEndInput.value || '00:00').split(':').map(Number);
-            let endVal = eh + (em / 60.0);
-            if (endVal <= startH) endVal += 24;
-
-            const duration = Math.max(0.0167, endVal - startH);
-            const totalSecs = Math.max(1, Math.round(duration * 3600));
-            const durMinutes = duration * 60;
+            const totalSecs = Math.max(1, Math.round(elapsedHours * 3600));
+            const durMinutes = elapsedHours * 60;
             
             let durText = '';
-            if (duration >= 1) {
-                const hrs = Math.floor(duration);
-                const mins = Math.round((duration % 1) * 60);
+            if (elapsedHours >= 1) {
+                const hrs = Math.floor(elapsedHours);
+                const mins = Math.round((elapsedHours % 1) * 60);
                 durText = mins > 0 ? `${hrs} hr ${mins} mins` : `${hrs} hr`;
             } else if (durMinutes >= 1) {
                 const mins = Math.floor(durMinutes);
@@ -8596,15 +8580,13 @@
                 durText = `${totalSecs} sec${totalSecs === 1 ? '' : 's'}`;
             }
 
-            if (durLabel) durLabel.textContent = durText;
+            durLabel.textContent = durText;
 
-            const watts = item ? (item.watts * (item.qty || 1)) : 1000;
+            const watts = (item.watts || 1000) * (item.qty || 1);
             const totalRate = getEffectiveCalendarRate();
-            const estCost = (watts * duration / 1000.0) * totalRate;
+            const estCost = (watts * elapsedHours / 1000.0) * totalRate;
 
-            if (costLabel) {
-                costLabel.textContent = `₱${estCost.toFixed(2)}`;
-            }
+            costLabel.textContent = (estCost < 0.01 && estCost > 0) ? `< ₱0.01` : `₱${estCost.toFixed(2)}`;
         }
 
         async function stopLiveSessionNowFromModal() {
@@ -8621,46 +8603,6 @@
                     closeTodayModal();
                 }
             }
-        }
-
-        function saveTodayLiveModal() {
-            const liveEndInput = document.getElementById('todayLiveEndTime');
-            const appId = activeEditingApplianceId;
-            if (!appId || !liveEndInput || !liveEndInput.value) {
-                closeTodayModal();
-                return;
-            }
-
-            const item = householdLoadList.find(a => String(a.id) === String(appId));
-            const block = activeEditingBlockId ? calendarScheduledBlocks.find(b => b.id === activeEditingBlockId) : null;
-
-            const now = new Date();
-            let startH = block ? block.startHour : (now.getHours() + (now.getMinutes() / 60.0));
-            if (item && item.last_turned_on_at) {
-                const startDt = new Date(item.last_turned_on_at);
-                startH = startDt.getHours() + (startDt.getMinutes() / 60.0);
-            }
-
-            const [eh, em] = liveEndInput.value.split(':').map(Number);
-            let endVal = eh + (em / 60.0);
-            if (endVal <= startH) endVal += 24;
-
-            const newDuration = Math.max(0.0167, endVal - startH);
-
-            if (block) {
-                block.durationHours = Math.round(newDuration * 10000) / 10000;
-                if (block.id.startsWith('blk_')) {
-                    dbInsertCalendarEvent(block);
-                } else {
-                    dbUpdateCalendarEvent(block);
-                }
-            }
-
-            saveCalendarBlocks();
-            renderCalendarBlocks();
-            renderCalendarApplianceSwitches();
-            closeTodayModal();
-            showToast("Live Shutoff Updated", `Appliance will automatically run until ${formatHour(endVal % 24)}.`, "success");
         }
 
         // ==========================================
