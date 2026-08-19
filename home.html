@@ -6477,8 +6477,8 @@
         // Anti-Spam & Concurrency Lock Engine
         const applianceNetworkLocks = {};
         const applianceSwitchCooldowns = {};
-        const ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS = 5.0;
-        const UI_SWITCH_COOLDOWN_MS = 2000;
+        const ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS = 30.0;
+        const UI_SWITCH_COOLDOWN_MS = 30000;
         let dbHistoricalLogsCache = [];
 
         // Scheduled Bento Blocks Array (persisted locally & synced to Supabase)
@@ -7154,6 +7154,13 @@
                     }
                     saveCalendarBlocks();
 
+                    // Automatically pop up the Schedule / Live End-Time modal on Turn ON
+                    if (!isAutomationCall && activeBlock) {
+                        setTimeout(() => {
+                            openBentoSettingsModal(activeBlock.id);
+                        }, 250);
+                    }
+
                 } else {
                     // ===== TURNING OFF =====
                     const startedAtStr = item.last_turned_on_at || nowIso;
@@ -7180,7 +7187,7 @@
                         localStorage.setItem('pf_shutoff_' + id, String(suppressUntil));
                     }
 
-                    // A. ACCIDENTAL MISCLICK DISCARD (< 5 Seconds)
+                    // A. ACCIDENTAL MISCLICK DISCARD (< 30 Seconds)
                     if (elapsedSeconds < ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS) {
                         // Delete transient log from Supabase
                         if (client && userId && item.active_session_log_id) {
@@ -7208,10 +7215,10 @@
                         }
 
                         item.active_session_log_id = null;
-                        showToast("Quick Toggle (< 5s)", "Session cancelled & discarded from database logs.", "info");
+                        showToast("Quick Toggle (< 30s)", "Session cancelled & discarded from database logs.", "info");
 
                     } else {
-                        // B. LEGITIMATE SESSION (>= 5 Seconds)
+                        // B. LEGITIMATE SESSION (>= 30 Seconds)
                         const durMinutes = Math.max(0.1, elapsedSeconds / 60.0);
                         const kwh = (item.watts * (item.qty || 1) * elapsedHours) / 1000.0;
                         const totalRate = getEffectiveCalendarRate();
@@ -7524,23 +7531,24 @@
             if (dateStr < todayStr) return 'past';
             if (dateStr > todayStr) return 'future';
 
+            // Closed sessions or historical database logs are permanently past records
+            if (block.is_closed_session || block.is_from_db_log) return 'past';
+
             // Selected day is Today:
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60.0);
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
             const isRunning = Boolean(item && item.is_currently_on);
 
-            if (isRunning) {
-                if (block.is_active_live) return 'running';
-                const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
-                if (inWindow) return 'running';
+            if (isRunning && block.is_active_live && !block.is_closed_session) {
+                return 'running';
             }
 
             const endHour = block.startHour + block.durationHours;
             if (endHour <= 24 && endHour <= currentHour) {
                 return 'past';
             } else if (currentHour >= block.startHour && endHour <= 24) {
-                return isRunning ? 'running' : 'past';
+                return (isRunning && block.is_active_live) ? 'running' : 'past';
             } else {
                 return 'future';
             }
