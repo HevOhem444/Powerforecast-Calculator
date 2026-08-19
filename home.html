@@ -713,6 +713,18 @@
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
         }
 
+        .nav-sub-item {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-sub-item.active {
+            background-color: rgba(99, 102, 241, 0.2) !important;
+            color: #c7d2fe !important;
+            border: 1px solid rgba(129, 140, 248, 0.35) !important;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+            font-weight: 700 !important;
+        }
+
         /* Colored bar segments */
         .bar-gen {
             background: #6c7ae0;
@@ -1134,9 +1146,34 @@
                         <span class="text-xl">⚡</span>
                         <span>Calculator</span>
                     </div>
-                    <div onclick="switchView('appliances')" id="nav-appliances" class="nav-item">
-                        <span class="text-xl">🔌</span>
-                        <span>Appliances</span>
+                    <!-- Appliances Accordion Group -->
+                    <div class="flex flex-col gap-1">
+                        <div onclick="toggleApplianceNavDropdown()" id="nav-appliances" class="nav-item flex items-center justify-between cursor-pointer group">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xl">🔌</span>
+                                <span>Appliances</span>
+                            </div>
+                            <span id="nav-appliances-chevron" class="text-[10px] text-slate-400 group-hover:text-slate-200 transition-transform duration-200">▼</span>
+                        </div>
+                        <!-- Collapsible 2-Submenu Container -->
+                        <div id="nav-appliances-submenu" class="hidden flex flex-col gap-1 pl-4 pr-1 py-1 transition-all duration-200">
+                            <!-- 1. Registered Devices Sub-Item -->
+                            <div onclick="switchApplianceSubmenu('registered')" id="nav-sub-registered"
+                                class="nav-sub-item active flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all cursor-pointer">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm">🏠</span>
+                                    <span>Registered Devices</span>
+                                </div>
+                                <span id="sidebarRegisteredBadge" class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">0</span>
+                            </div>
+
+                            <!-- 2. Add Appliance Sub-Item -->
+                            <div onclick="switchApplianceSubmenu('add')" id="nav-sub-add"
+                                class="nav-sub-item flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all cursor-pointer">
+                                <span class="text-sm">➕</span>
+                                <span>Add Appliance</span>
+                            </div>
+                        </div>
                     </div>
                     <div onclick="switchView('calendar')" id="nav-calendar" class="nav-item">
                         <span class="text-xl">📅</span>
@@ -1586,49 +1623,46 @@
             <!-- PANEL 3: APPLIANCES VIEW (IMAGE RECOGNITION AI & DOE PELP CERTIFIED APPLIANCE MANAGER) -->
             <section id="view-appliances" class="view-panel hidden flex-col gap-6">
 
-                <!-- Top Mode Switcher Bar -->
-                <div
-                    class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pf-divider border-b pb-4">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-2xl">🔌</span>
-                            <h2 class="text-2xl font-extrabold t-primary">Appliance Intelligence Center</h2>
-                        </div>
-                        <p class="text-sm t-muted mt-0.5">Scan appliance tags with Vision AI or search 6,800+ DOE
-                            Philippine Energy Labeling Program (PELP) certified models.</p>
-                    </div>
+                <!-- HUB 1: ADD APPLIANCE CREATION STUDIO (AI Vision, DOE PELP, Custom Studio) -->
+                <div id="applianceMode-add-hub" class="hidden flex-col gap-6">
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <!-- Mode Toggle Segmented Control -->
-                        <div class="bento-segmented-wrap flex flex-wrap p-1 rounded-xl shadow-inner">
-                            <button id="applianceModeBtn-vision" onclick="switchApplianceMode('vision')"
-                                class="bento-seg-btn active px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
-                                <span>📷</span> AI Vision Scan
-                            </button>
-                            <button id="applianceModeBtn-pelp" onclick="switchApplianceMode('pelp')"
-                                class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
-                                <span>🏷️</span> DOE PELP Catalog
-                            </button>
-                            <button id="applianceModeBtn-manual" onclick="switchApplianceMode('manual')"
-                                class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
-                                <span>✏️</span> Custom / Manual Entry
-                            </button>
-                            <button id="applianceModeBtn-registered" onclick="switchApplianceMode('registered')"
-                                class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
-                                <span>🏠</span> Registered Appliances
-                                <span id="registeredAppliancesSubtabBadge" class="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-indigo-500/30 text-indigo-300 font-extrabold">0</span>
-                            </button>
+                    <!-- Top 3-Way Mode Switcher Bar for Add Appliance Studio -->
+                    <div
+                        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pf-divider border-b pb-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl">🔌</span>
+                                <h2 class="text-2xl font-extrabold t-primary">Appliance Intelligence Studio</h2>
+                            </div>
+                            <p class="text-sm t-muted mt-0.5">Scan appliance tags with Vision AI, search 6,800+ DOE PELP certified models, or enter custom specs.</p>
                         </div>
 
-                        <!-- API Key Status Pill Indicator -->
-                        <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()"
-                            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-rose-950/40 border-rose-700/50 text-rose-200 hover:border-rose-400 transition-all shadow cursor-pointer"
-                            title="Click to view API Key Connection Status &amp; Setup">
-                            <span id="aiApiKeyDot" class="w-2 h-2 rounded-full bg-rose-400"></span>
-                            <span id="aiApiKeyText">No API Key Connected</span>
-                        </button>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- 3-Way Mode Toggle Segmented Control -->
+                            <div class="bento-segmented-wrap flex flex-wrap p-1 rounded-xl shadow-inner">
+                                <button id="applianceModeBtn-vision" onclick="switchCreationStudioTab('vision')"
+                                    class="bento-seg-btn active px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
+                                    <span>📷</span> AI Vision Scan
+                                </button>
+                                <button id="applianceModeBtn-pelp" onclick="switchCreationStudioTab('pelp')"
+                                    class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
+                                    <span>🏷️</span> DOE PELP Catalog
+                                </button>
+                                <button id="applianceModeBtn-manual" onclick="switchCreationStudioTab('manual')"
+                                    class="bento-seg-btn px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 font-bold transition-all">
+                                    <span>✏️</span> Custom Studio
+                                </button>
+                            </div>
+
+                            <!-- API Key Status Pill Indicator -->
+                            <button id="aiApiKeyBtn" onclick="toggleAiSettingsModal()"
+                                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border bg-rose-950/40 border-rose-700/50 text-rose-200 hover:border-rose-400 transition-all shadow cursor-pointer"
+                                title="Click to view API Key Connection Status &amp; Setup">
+                                <span id="aiApiKeyDot" class="w-2 h-2 rounded-full bg-rose-400"></span>
+                                <span id="aiApiKeyText">No API Key Connected</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
 
                 <!-- MODE 1: AI Vision Appliance Recognition Container -->
                 <div id="applianceMode-vision" class="flex flex-col gap-6">
@@ -2533,10 +2567,12 @@
 
                         </div>
                     </div>
-                </div>
+                </div> <!-- End of Mode 3 Manual -->
 
-                <!-- MODE 4: Registered Household Appliances Inventory Subtab -->
-                <div id="applianceMode-registered" class="hidden flex-col gap-6">
+                </div> <!-- End of HUB 1: applianceMode-add-hub -->
+
+                <!-- HUB 2: Registered Household Appliances Inventory Subtab -->
+                <div id="applianceMode-registered" class="flex flex-col gap-6">
 
                     <!-- Sub-Header & Live Stats Banner -->
                     <div class="glass-card p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-slate-900/60 to-purple-950/40">
@@ -2560,6 +2596,9 @@
                                 <span class="text-slate-400">Devices:</span>
                                 <span id="registeredTotalCountLabel" class="font-extrabold text-indigo-300">0 Registered</span>
                             </div>
+                            <button onclick="switchApplianceSubmenu('add')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all cursor-pointer">
+                                <span>➕</span> Add Appliance
+                            </button>
                             <button onclick="exportLoadListJson()" class="px-3.5 py-2 btn-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow hover:brightness-110 cursor-pointer" title="Export Inventory to JSON">
                                 <span>⬇️</span> Export
                             </button>
@@ -3834,7 +3873,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.1v - Fix modal visibility across tabs and elevate delete confirmation popup above session logs modal</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.2v - Refactor appliance navigation into dual sidebar submenu for registered inventory and 3-way add studio</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -4025,6 +4064,12 @@
                 item.classList.remove('active');
             });
 
+            if (viewName !== 'appliances') {
+                document.querySelectorAll('.nav-sub-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+            }
+
             const targetPanel = document.getElementById('view-' + viewName);
             const targetNav = document.getElementById('nav-' + viewName);
 
@@ -4036,7 +4081,9 @@
                 targetNav.classList.add('active');
             }
 
-            if (viewName === 'calendar') {
+            if (viewName === 'appliances') {
+                toggleApplianceNavDropdown(true);
+            } else if (viewName === 'calendar') {
                 if (typeof renderCalendarApplianceSwitches === 'function') renderCalendarApplianceSwitches();
                 if (typeof renderCalendarBlocks === 'function') renderCalendarBlocks();
                 if (typeof renderMiniCalendar === 'function') renderMiniCalendar();
@@ -5135,6 +5182,11 @@
                 subtabBadge.textContent = householdLoadList.length;
             }
 
+            const sidebarBadge = document.getElementById('sidebarRegisteredBadge');
+            if (sidebarBadge) {
+                sidebarBadge.textContent = householdLoadList.length;
+            }
+
             const countBadges = [
                 document.getElementById('householdLoadCountBadge'),
                 ...document.querySelectorAll('.householdLoadCountBadge')
@@ -6073,6 +6125,7 @@
             renderHouseholdLoadList();
             renderCalendarApplianceSwitches();
             dbInsertAppliance(item);
+            switchApplianceSubmenu('registered');
             showToast("AI Appliance Saved", `Added "${item.name}" (${item.watts}W) to your Household Inventory!`, "success");
         }
 
@@ -6186,34 +6239,121 @@
             showToast("Report Exported", "Downloaded technical spec sheet.", "success");
         }
 
-        // ===== Appliance View 4-Way Mode Switcher =====
-        function switchApplianceMode(mode) {
+        // ===== Appliance View & Submenu Navigation Controllers =====
+        let activeApplianceSection = 'registered'; // 'registered' or 'add'
+        let activeCreationTab = 'vision'; // 'vision', 'pelp', 'manual'
+
+        function toggleApplianceNavDropdown(forceOpen = null) {
+            const submenu = document.getElementById('nav-appliances-submenu');
+            const chevron = document.getElementById('nav-appliances-chevron');
+            if (!submenu) return;
+
+            const isCurrentlyOpen = !submenu.classList.contains('hidden');
+            const shouldOpen = (forceOpen !== null) ? forceOpen : !isCurrentlyOpen;
+
+            if (shouldOpen) {
+                submenu.classList.remove('hidden');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                if (currentViewName !== 'appliances') {
+                    const defaultTarget = (householdLoadList && householdLoadList.length > 0) ? 'registered' : 'add';
+                    switchApplianceSubmenu(defaultTarget);
+                }
+            } else {
+                submenu.classList.add('hidden');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function switchApplianceSubmenu(target) {
+            // 1. Ensure view-appliances is active
+            if (currentViewName !== 'appliances') {
+                executeSwitchView('appliances');
+            }
+
+            // 2. Open submenu and rotate chevron
+            const submenu = document.getElementById('nav-appliances-submenu');
+            const chevron = document.getElementById('nav-appliances-chevron');
+            if (submenu) submenu.classList.remove('hidden');
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
+
+            // 3. Highlight active nav-sub-item
+            const subReg = document.getElementById('nav-sub-registered');
+            const subAdd = document.getElementById('nav-sub-add');
+            if (subReg) subReg.classList.toggle('active', target === 'registered');
+            if (subAdd) subAdd.classList.toggle('active', target === 'add');
+
+            // 4. Toggle view hubs
+            const addHub = document.getElementById('applianceMode-add-hub');
+            const regMode = document.getElementById('applianceMode-registered');
+
+            if (target === 'registered') {
+                activeApplianceSection = 'registered';
+                if (addHub) {
+                    addHub.classList.add('hidden');
+                    addHub.classList.remove('flex');
+                }
+                if (regMode) {
+                    regMode.classList.remove('hidden');
+                    regMode.classList.add('flex');
+                }
+                renderRegisteredAppliancesTab();
+            } else {
+                activeApplianceSection = 'add';
+                if (regMode) {
+                    regMode.classList.add('hidden');
+                    regMode.classList.remove('flex');
+                }
+                if (addHub) {
+                    addHub.classList.remove('hidden');
+                    addHub.classList.add('flex');
+                }
+                switchCreationStudioTab(activeCreationTab || 'vision');
+            }
+        }
+
+        function switchCreationStudioTab(tab) {
+            activeCreationTab = tab;
+
             const btnVision = document.getElementById('applianceModeBtn-vision');
             const btnPelp = document.getElementById('applianceModeBtn-pelp');
             const btnManual = document.getElementById('applianceModeBtn-manual');
-            const btnRegistered = document.getElementById('applianceModeBtn-registered');
 
             const modeVision = document.getElementById('applianceMode-vision');
             const modePelp = document.getElementById('applianceMode-pelp');
             const modeManual = document.getElementById('applianceMode-manual');
-            const modeRegistered = document.getElementById('applianceMode-registered');
 
-            if (btnVision) btnVision.classList.toggle('active', mode === 'vision');
-            if (btnPelp) btnPelp.classList.toggle('active', mode === 'pelp');
-            if (btnManual) btnManual.classList.toggle('active', mode === 'manual');
-            if (btnRegistered) btnRegistered.classList.toggle('active', mode === 'registered');
+            if (btnVision) btnVision.classList.toggle('active', tab === 'vision');
+            if (btnPelp) btnPelp.classList.toggle('active', tab === 'pelp');
+            if (btnManual) btnManual.classList.toggle('active', tab === 'manual');
 
-            if (modeVision) modeVision.classList.toggle('hidden', mode !== 'vision');
-            if (modePelp) modePelp.classList.toggle('hidden', mode !== 'pelp');
-            if (modeManual) modeManual.classList.toggle('hidden', mode !== 'manual');
-            if (modeRegistered) modeRegistered.classList.toggle('hidden', mode !== 'registered');
+            if (modeVision) {
+                modeVision.classList.toggle('hidden', tab !== 'vision');
+                modeVision.classList.toggle('flex', tab === 'vision');
+            }
+            if (modePelp) {
+                modePelp.classList.toggle('hidden', tab !== 'pelp');
+                modePelp.classList.toggle('flex', tab === 'pelp');
+            }
+            if (modeManual) {
+                modeManual.classList.toggle('hidden', tab !== 'manual');
+                modeManual.classList.toggle('flex', tab === 'manual');
+            }
 
-            if (mode === 'pelp' && !pelpState.isLoaded) {
+            if (tab === 'pelp' && !pelpState.isLoaded) {
                 initPelpModule();
-            } else if (mode === 'manual') {
+            } else if (tab === 'manual') {
                 recalcManualConfig();
-            } else if (mode === 'registered') {
-                renderRegisteredAppliancesTab();
+            }
+        }
+
+        // Backwards-compatible shim
+        function switchApplianceMode(mode) {
+            if (mode === 'registered') {
+                switchApplianceSubmenu('registered');
+            } else {
+                activeCreationTab = mode;
+                switchApplianceSubmenu('add');
+                switchCreationStudioTab(mode);
             }
         }
 
@@ -6498,6 +6638,7 @@
             renderCalendarApplianceSwitches();
             updateLiveEnergyMonitor();
             dbInsertAppliance(item);
+            switchApplianceSubmenu('registered');
             showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Inventory!`, "success");
         }
 
@@ -6626,6 +6767,7 @@
             renderCalendarApplianceSwitches();
             updateLiveEnergyMonitor();
             dbInsertAppliance(item);
+            switchApplianceSubmenu('registered');
             showToast("Appliance Saved", `Added "${item.name}" (${item.watts}W × ${item.qty}) to your Household Inventory!`, "success");
         }
 
