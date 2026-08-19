@@ -3453,23 +3453,26 @@
         </main>
     </div>
 
-    <!-- Slide-over Constants Settings Modal -->
+    <!-- Slide-over / Bottom-Sheet Constants Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title"
         role="dialog" aria-modal="true">
         <div class="absolute inset-0 overflow-hidden">
             <div class="settings-overlay absolute inset-0 transition-opacity" onclick="toggleSettingsModal()"></div>
-            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-                <div class="pointer-events-auto w-screen max-w-md">
-                    <div class="settings-panel flex h-full flex-col overflow-y-scroll shadow-2xl">
-                        <div class="px-6 py-6 pf-divider border-b flex justify-between items-center"
+            <div class="pointer-events-none fixed inset-x-0 bottom-0 top-auto md:top-0 md:inset-y-0 md:right-0 md:left-auto flex max-w-full md:pl-10">
+                <div class="pointer-events-auto w-full md:w-screen md:max-w-md">
+                    <div class="settings-panel flex max-h-[92vh] md:max-h-none md:h-full flex-col overflow-y-auto shadow-2xl rounded-t-3xl md:rounded-none border-t md:border-t-0 md:border-l border-slate-800 custom-scrollbar">
+                        <!-- Mobile Bottom Sheet Pull Bar Handle -->
+                        <div class="md:hidden w-12 h-1.5 rounded-full bg-slate-600/70 mx-auto my-2.5 shrink-0"></div>
+
+                        <div class="px-5 sm:px-6 py-4 sm:py-5 pf-divider border-b flex justify-between items-center"
                             style="background: var(--accent-glow);">
                             <div>
-                                <h2 class="text-lg font-bold t-primary" id="slide-over-title">Configure Rates &
+                                <h2 class="text-base sm:text-lg font-bold t-primary" id="slide-over-title">Configure Rates &amp;
                                     Constants</h2>
-                                <p class="text-xs t-muted">Fine-tune the Meralco billing multipliers in real-time.</p>
+                                <p class="text-[11px] sm:text-xs t-muted">Fine-tune the Meralco billing multipliers in real-time.</p>
                             </div>
                             <button type="button" onclick="toggleSettingsModal()"
-                                class="rounded-lg p-1.5 btn-secondary">
+                                class="rounded-xl p-2 btn-secondary min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Close Settings">
                                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -3478,13 +3481,14 @@
                         </div>
 
                         <!-- Configuration Form -->
-                        <div class="flex-1 px-6 py-6 flex flex-col gap-5">
+                        <div class="flex-1 px-5 sm:px-6 py-5 sm:py-6 flex flex-col gap-5">
 
                             <!-- Manual Meralco Rate Fetcher Section -->
-                            <div class="bento-sub-card flex flex-col gap-3 p-4 rounded-2xl shadow-inner">
+                            <div class="bento-sub-card flex flex-col gap-3 p-4 rounded-2xl shadow-inner border border-slate-800/80">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold t-accent uppercase tracking-widest">⚡ Meralco Rate
-                                        Scraper</span>
+                                    <span class="text-xs font-bold t-accent uppercase tracking-widest flex items-center gap-1.5">
+                                        <span>⚡</span> Meralco Rate Scraper
+                                    </span>
                                     <span
                                         class="text-[10px] bento-badge-category px-2.5 py-0.5 rounded-full font-mono font-bold">Official
                                         Fetch</span>
@@ -3496,15 +3500,15 @@
                                         Advisory / PDF URL:</label>
                                     <input type="url" id="manualRateUrlInput"
                                         placeholder="https://company.meralco.com.ph/news-and-advisories/..."
-                                        class="pf-input rounded-xl px-3 py-2 text-xs font-medium"
+                                        class="pf-input rounded-xl px-3 py-2.5 text-sm md:text-xs font-medium min-h-[44px]"
                                         value="https://company.meralco.com.ph/news-and-advisories/higher-residential-rates-april-2026">
-                                    <div class="flex gap-2 pt-1">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                                         <button id="manualFetchBtn" onclick="manualFetchMeralcoRates()"
-                                            class="flex-1 py-2.5 btn-primary rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5">
+                                            class="py-3 btn-primary rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5 min-h-[44px]">
                                             <span>🔄</span> Fetch &amp; Apply Rate
                                         </button>
                                         <button onclick="fetchRates(true)"
-                                            class="px-3.5 py-2.5 btn-secondary rounded-xl text-xs font-semibold"
+                                            class="py-3 btn-secondary rounded-xl text-xs font-semibold flex items-center justify-center min-h-[44px]"
                                             title="Fetch latest month PDF from Meralco S3">
                                             Latest Month
                                         </button>
@@ -3517,24 +3521,24 @@
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Base
                                     Rates (PHP/kWh)</span>
                                 <div class="flex flex-col gap-1.5">
-                                    <label for="cfgTrans" class="text-xs t-muted">Transmission Rate</label>
+                                    <label for="cfgTrans" class="text-xs t-muted font-medium">Transmission Rate</label>
                                     <input type="number" id="cfgTrans" step="0.0001"
-                                        class="pf-input rounded-lg px-3 py-1.5 text-sm" oninput="saveConstants()">
+                                        class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label for="cfgSysLoss" class="text-xs t-muted">System Loss Rate</label>
+                                    <label for="cfgSysLoss" class="text-xs t-muted font-medium">System Loss Rate</label>
                                     <input type="number" id="cfgSysLoss" step="0.0001"
-                                        class="pf-input rounded-lg px-3 py-1.5 text-sm" oninput="saveConstants()">
+                                        class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label for="cfgAwat" class="text-xs t-muted">AWAT Refund/Collect</label>
+                                    <label for="cfgAwat" class="text-xs t-muted font-medium">AWAT Refund/Collect</label>
                                     <input type="number" id="cfgAwat" step="0.0001"
-                                        class="pf-input rounded-lg px-3 py-1.5 text-sm" oninput="saveConstants()">
+                                        class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label for="cfgRegReset" class="text-xs t-muted">Reg Reset Charge</label>
+                                    <label for="cfgRegReset" class="text-xs t-muted font-medium">Reg Reset Charge</label>
                                     <input type="number" id="cfgRegReset" step="0.0001"
-                                        class="pf-input rounded-lg px-3 py-1.5 text-sm" oninput="saveConstants()">
+                                        class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                 </div>
                             </div>
 
@@ -3542,26 +3546,26 @@
                                 <span
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Distribution
                                     Tiers (PHP/kWh)</span>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">0 - 200 kWh</span>
+                                        <span class="t-muted font-medium">0 - 200 kWh</span>
                                         <input type="number" id="cfgDistL1" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">201 - 300 kWh</span>
+                                        <span class="t-muted font-medium">201 - 300 kWh</span>
                                         <input type="number" id="cfgDistL2" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">301 - 400 kWh</span>
+                                        <span class="t-muted font-medium">301 - 400 kWh</span>
                                         <input type="number" id="cfgDistL3" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">401+ kWh</span>
+                                        <span class="t-muted font-medium">401+ kWh</span>
                                         <input type="number" id="cfgDistL4" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                 </div>
                             </div>
@@ -3569,27 +3573,27 @@
                             <div class="flex flex-col gap-3">
                                 <span
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Metering
-                                    & Supply</span>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    &amp; Supply</span>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Metering Fixed (PHP/mo)</span>
+                                        <span class="t-muted font-medium">Metering Fixed (PHP/mo)</span>
                                         <input type="number" id="cfgMeterFixed" step="0.01"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Metering rate/kWh</span>
+                                        <span class="t-muted font-medium">Metering rate/kWh</span>
                                         <input type="number" id="cfgMeterKwh" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Supply Fixed (PHP/mo)</span>
+                                        <span class="t-muted font-medium">Supply Fixed (PHP/mo)</span>
                                         <input type="number" id="cfgSupplyFixed" step="0.01"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Supply rate/kWh</span>
+                                        <span class="t-muted font-medium">Supply rate/kWh</span>
                                         <input type="number" id="cfgSupplyKwh" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                 </div>
                             </div>
@@ -3598,26 +3602,26 @@
                                 <span
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Component
                                     VAT Rates</span>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Gen VAT (e.g. 0.0941)</span>
+                                        <span class="t-muted font-medium">Gen VAT (e.g. 0.0941)</span>
                                         <input type="number" id="cfgVatGen" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Trans VAT (e.g. 0.1126)</span>
+                                        <span class="t-muted font-medium">Trans VAT (e.g. 0.1126)</span>
                                         <input type="number" id="cfgVatTrans" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Sys Loss VAT (0.0966)</span>
+                                        <span class="t-muted font-medium">Sys Loss VAT (0.0966)</span>
                                         <input type="number" id="cfgVatSysLoss" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Other VAT (0.1200)</span>
+                                        <span class="t-muted font-medium">Other VAT (0.1200)</span>
                                         <input type="number" id="cfgVatOthers" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                 </div>
                             </div>
@@ -3626,16 +3630,16 @@
                                 <span
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Government
                                     Taxes</span>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">RPT Charge (PHP/kWh)</span>
+                                        <span class="t-muted font-medium">RPT Charge (PHP/kWh)</span>
                                         <input type="number" id="cfgRpt" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Franchise LFT Rate</span>
+                                        <span class="t-muted font-medium">Franchise LFT Rate</span>
                                         <input type="number" id="cfgLft" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                 </div>
                             </div>
@@ -3643,38 +3647,41 @@
                             <div class="flex flex-col gap-3">
                                 <span
                                     class="text-xs font-bold t-muted uppercase tracking-widest pf-divider border-b pb-1">Subsidies
-                                    & Non-VAT</span>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    &amp; Non-VAT</span>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Universal rate/kWh</span>
+                                        <span class="t-muted font-medium">Universal rate/kWh</span>
                                         <input type="number" id="cfgUniversal" step="0.00001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">FIT-All rate/kWh</span>
+                                        <span class="t-muted font-medium">FIT-All rate/kWh</span>
                                         <input type="number" id="cfgFitAll" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Lifeline rate/kWh</span>
+                                        <span class="t-muted font-medium">Lifeline rate/kWh</span>
                                         <input type="number" id="cfgLifeline" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                     <div class="flex flex-col gap-1">
-                                        <span class="t-muted">Senior rate/kWh</span>
+                                        <span class="t-muted font-medium">Senior rate/kWh</span>
                                         <input type="number" id="cfgSenior" step="0.0001"
-                                            class="pf-input rounded-lg px-2 py-1.5" oninput="saveConstants()">
+                                            class="pf-input rounded-xl px-3 py-2 text-sm min-h-[44px]" oninput="saveConstants()">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-6 pf-divider border-t flex gap-4" style="background: var(--accent-glow);">
+                        <div class="p-5 sm:p-6 pf-divider border-t flex gap-3 sm:gap-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]" style="background: var(--accent-glow);">
                             <button onclick="resetConstants()"
-                                class="flex-1 py-2.5 btn-secondary rounded-xl text-sm font-semibold">Reset
-                                Defaults</button>
+                                class="flex-1 py-3 btn-secondary rounded-xl text-sm font-bold min-h-[48px] flex items-center justify-center transition-all cursor-pointer">
+                                Reset Defaults
+                            </button>
                             <button onclick="toggleSettingsModal()"
-                                class="flex-1 py-2.5 btn-primary rounded-xl text-sm font-semibold shadow-lg">Done</button>
+                                class="flex-1 py-3 btn-primary rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/30 min-h-[48px] flex items-center justify-center transition-all cursor-pointer">
+                                Done
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3943,11 +3950,13 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.6v - Display minute-level subdivisions and exact time span badges upon zoom</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.7v - Implement responsive bottom-sheet drawer pattern for tariff configuration on mobile</span>
     </div>
 
     <!-- Application Logic Script -->
     <script>
+        var timelineZoomLevel = 1.0;
+
         // ===== Global Modern Toast Notification System =====
         function showToast(titleOrMsg, maybeMsg = null, type = 'info') {
             let title = '';
@@ -7829,7 +7838,7 @@
         // =================================================================
         // DYNAMIC TIMELINE GESTURE ZOOM & PAN ENGINE (ENLARGED MASTER VIEW)
         // =================================================================
-        let timelineZoomLevel = 1.0; // 1.0x (24H overview) to 4.0x (detailed minute breakdown)
+        var timelineZoomLevel = 1.0; // 1.0x (24H overview) to 4.0x (detailed minute breakdown)
 
         function setDynamicTimelineZoom(newZoom, focalClientX = null, containerId = 'enlargedTimelineContainer') {
             const clampedZoom = Math.min(4.0, Math.max(1.0, Math.round(newZoom * 100) / 100));
@@ -8182,6 +8191,15 @@
             return `${hNum - 12}${minStr} pm`;
         }
 
+        function formatTimeSpanDisplay(startHour, durationHours) {
+            const endHour = (startHour + durationHours) % 24;
+            const durSecs = Math.max(1, Math.round(durationHours * 3600));
+            const durLabel = durationHours >= 1 
+                ? `${durationHours.toFixed(1)}h` 
+                : (durationHours >= (1/60.0) ? `${Math.round(durationHours * 60)}m` : `${durSecs}s`);
+            return `${formatHour(startHour)} – ${formatHour(endHour)} (${durLabel})`;
+        }
+
         // Check if an hour falls within a scheduled window (supports midnight crossing)
         function isTimeInScheduleWindow(currentHour, startHour, durationHours) {
             const endHour = startHour + durationHours;
@@ -8488,7 +8506,7 @@
                     const startH = session.start;
                     const durationH = session.durationHours;
                     const timeSpanLabel = formatTimeSpanDisplay(startH, durationH);
-                    const isPeak = isBlockInPeakHour(startH, durationH);
+                    const isPeak = checkSchedulePeakOverlap(startH, durationH).isPeak;
 
                     // Calculations for energy & cost
                     const sessionWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
