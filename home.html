@@ -7043,10 +7043,10 @@
                 return;
             }
 
-            // 2. Guard against rapid switch spam (2-second UI debounce)
+            // 2. Guard against rapid switch spam (30-second cooldown)
             if (!isAutomationCall && applianceSwitchCooldowns[id] && applianceSwitchCooldowns[id] > now) {
                 const remaining = Math.ceil((applianceSwitchCooldowns[id] - now) / 1000);
-                showToast("Switch Cooldown", `Surge protection: please wait ${remaining}s before toggling again.`, "warning");
+                showToast("Switch Cooldown", `Surge protection: please wait ${remaining}s before toggling.`, "warning");
                 renderCalendarApplianceSwitches();
                 renderCalendarBlocks();
                 return;
@@ -7054,11 +7054,25 @@
 
             const isCurrentlyOn = Boolean(item.is_currently_on);
             const willTurnOn = !isCurrentlyOn;
+
+            // 3. Strict 30-Second Minimum Run-Time Lock before turning OFF
+            if (!willTurnOn && !isAutomationCall && item.last_turned_on_at) {
+                const startedAtMs = new Date(item.last_turned_on_at).getTime();
+                const elapsedMs = Math.max(0, now - startedAtMs);
+                const elapsedSeconds = elapsedMs / 1000.0;
+                if (elapsedSeconds < ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS) {
+                    const remainingSecs = Math.ceil(ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS - elapsedSeconds);
+                    showToast("Minimum Run-Time Active", `Appliance must run for at least 30 seconds. You can turn it OFF in ${remainingSecs}s.`, "warning");
+                    renderCalendarApplianceSwitches();
+                    return;
+                }
+            }
+
             const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
             const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
             const userId = session?.user?.id;
 
-            // Set In-Flight Network Lock and 2-second UI debounce
+            // Set In-Flight Network Lock and 30-second UI debounce
             applianceNetworkLocks[id] = true;
             if (!isAutomationCall) {
                 applianceSwitchCooldowns[id] = now + UI_SWITCH_COOLDOWN_MS;
