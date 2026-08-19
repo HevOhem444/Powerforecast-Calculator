@@ -3678,7 +3678,15 @@
 
     <!-- Global Toast Notification Container -->
     <div id="appToastContainer"
-        class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+        class="fixed bottom-7 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+
+    <!-- ZZZ-Style Live Engine Build Watermark -->
+    <div id="pfBuildWatermark"
+        class="fixed bottom-1.5 right-3 z-50 pointer-events-auto select-none flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-950/40 backdrop-blur-sm border border-slate-800/40 text-[9.5px] font-mono tracking-wider text-slate-500/80 hover:text-slate-200 hover:border-slate-700/80 hover:bg-slate-900/80 transition-all cursor-default shadow-sm group"
+        title="PowerForecast Engine Build • UI-Branch Live Sync">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
+        <span id="pfBuildVersionLabel">OSPROD_PF_v2.4.2_R20260819_B7A29_LIVE</span>
+    </div>
 
     <!-- Application Logic Script -->
     <script>
