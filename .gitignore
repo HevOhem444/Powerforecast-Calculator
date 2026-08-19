@@ -12,3 +12,6 @@ package-lock.json
 .vercel
 .env*
 pelp_data/raw_pdfs/
+ignore this!/
+ignore this/
+*.mp4

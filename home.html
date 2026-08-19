@@ -6547,19 +6547,24 @@
                             }
                         }
                     } else if (data.length > 0) {
-                        calendarScheduledBlocks = data.map(row => {
-                            const dayKey = (row.day || 'mon').toLowerCase();
-                            return {
-                                id: row.id,
-                                applianceId: row.appliance_id,
-                                dayKey: dayKey,
-                                dayNum: calendarState.selectedDay,
-                                startHour: parseFloat(row.hour) || 0,
-                                durationHours: parseFloat(row.duration_hours) || 1.0,
-                                autoPower: true,
-                                repeat: row.is_recurring ? 'daily' : 'once'
-                            };
-                        });
+                        calendarScheduledBlocks = data
+                            .filter(row => {
+                                const dur = parseFloat(row.duration_hours) || 0;
+                                return row.is_recurring || dur >= 0.02;
+                            })
+                            .map(row => {
+                                const dayKey = (row.day || 'mon').toLowerCase();
+                                return {
+                                    id: row.id,
+                                    applianceId: row.appliance_id,
+                                    dayKey: dayKey,
+                                    dayNum: calendarState.selectedDay,
+                                    startHour: parseFloat(row.hour) || 0,
+                                    durationHours: parseFloat(row.duration_hours) || 1.0,
+                                    autoPower: true,
+                                    repeat: row.is_recurring ? 'daily' : 'once'
+                                };
+                            });
                         saveCalendarBlocks();
                         renderCalendarBlocks();
                         renderCalendarApplianceSwitches();
@@ -7031,21 +7036,37 @@
                 item.last_turned_on_at = endedAt;
                 localStorage.removeItem('pf_shutoff_' + id);
 
-                // Spawn a new independent active session line starting at exact current time
-                const newBlock = {
-                    id: 'blk_session_' + Date.now(),
-                    applianceId: item.id,
-                    dayKey: curDayKey,
-                    dayNum: curDayNum,
-                    startHour: Math.round(curHour * 10000) / 10000,
-                    durationHours: 1.0, // default 1 hr window unless shut off early
-                    autoPower: Boolean(isAutomationCall),
-                    repeat: 'once',
-                    is_active_live: true
-                };
-                calendarScheduledBlocks.push(newBlock);
+                // Re-use or update existing active live block instead of spamming duplicates
+                let activeBlock = calendarScheduledBlocks.find(b => 
+                    String(b.applianceId) === String(id) && 
+                    b.dayKey === curDayKey && 
+                    b.is_active_live
+                );
+
+                if (activeBlock) {
+                    activeBlock.startHour = Math.round(curHour * 10000) / 10000;
+                    activeBlock.durationHours = 1.0;
+                    if (activeBlock.id.startsWith('blk_')) {
+                        dbInsertCalendarEvent(activeBlock);
+                    } else {
+                        dbUpdateCalendarEvent(activeBlock);
+                    }
+                } else {
+                    const newBlock = {
+                        id: 'blk_session_' + Date.now(),
+                        applianceId: item.id,
+                        dayKey: curDayKey,
+                        dayNum: curDayNum,
+                        startHour: Math.round(curHour * 10000) / 10000,
+                        durationHours: 1.0, // default 1 hr window unless shut off early
+                        autoPower: Boolean(isAutomationCall),
+                        repeat: 'once',
+                        is_active_live: true
+                    };
+                    calendarScheduledBlocks.push(newBlock);
+                    dbInsertCalendarEvent(newBlock);
+                }
                 saveCalendarBlocks();
-                dbInsertCalendarEvent(newBlock);
 
             } else if (startedAt) {
                 // Precision Truncation: find the active block for this appliance today and cut its bar off at exact shutoff time!
@@ -7060,7 +7081,7 @@
 
                 if (activeBlock) {
                     // Cut off duration to exact elapsed time from its startHour
-                    const exactElapsed = Math.max(0.0167, curHour - activeBlock.startHour); // minimum 1 min
+                    const exactElapsed = Math.max(0.0028, curHour - activeBlock.startHour); // min ~10s
                     activeBlock.durationHours = Math.round(exactElapsed * 10000) / 10000;
                     activeBlock.is_active_live = false;
                     activeBlock.is_closed_session = true;
@@ -7074,12 +7095,18 @@
                     
                     dbLogApplianceUsageSession(item.id, startedAt, endedAt, durMinutes, kwh, isPeak, estCost);
 
-                    saveCalendarBlocks();
-                    if (activeBlock.id.startsWith('blk_')) {
-                        dbInsertCalendarEvent(activeBlock);
+                    // If fleeting test toggle (< 30 seconds) and not a recurring routine, clean up calendar event
+                    if (exactElapsed < 0.0083 && (!activeBlock.repeat || activeBlock.repeat === 'once') && !activeBlock.seriesId) {
+                        calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== activeBlock.id);
+                        dbDeleteCalendarEvent(activeBlock.id);
                     } else {
-                        dbUpdateCalendarEvent(activeBlock);
+                        if (activeBlock.id.startsWith('blk_')) {
+                            dbInsertCalendarEvent(activeBlock);
+                        } else {
+                            dbUpdateCalendarEvent(activeBlock);
+                        }
                     }
+                    saveCalendarBlocks();
                 }
             }
 
@@ -7313,10 +7340,11 @@
             const currentHour = now.getHours() + (now.getMinutes() / 60.0);
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
             const isRunning = Boolean(item && item.is_currently_on);
-            const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
 
-            if (isRunning && inWindow) {
-                return 'running';
+            if (isRunning) {
+                if (block.is_active_live) return 'running';
+                const inWindow = isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours);
+                if (inWindow) return 'running';
             }
 
             const endHour = block.startHour + block.durationHours;
@@ -7325,7 +7353,7 @@
             } else if (currentHour >= block.startHour && endHour <= 24) {
                 return isRunning ? 'running' : 'past';
             } else {
-                return inWindow && isRunning ? 'running' : 'future';
+                return 'future';
             }
         }
 
@@ -7415,7 +7443,14 @@
             const isPastDay = selectedDateStr < todayStr;
             const { prevDayKey, nextDayKey } = getAdjacentDays(selectedKey);
 
-            const dayStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+            // Filter out closed transient micro-sessions (< 1.2 min duration and not recurring) to keep timeline clean
+            const rawStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+            const dayStartingBlocks = rawStartingBlocks.filter(b => {
+                if (b.is_active_live) return true;
+                if (b.repeat && b.repeat !== 'once') return true;
+                if (b.seriesId) return true;
+                return (parseFloat(b.durationHours) || 0) >= 0.02;
+            });
             const incomingRolloverBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey && (b.startHour + b.durationHours) > 24.0);
 
             updateDailyCalendarSummary();
@@ -7483,11 +7518,11 @@
                 const hasActiveRunning = appStartingBlocks.some(b => getScheduleTemporalStatus(b, selectedDateStr) === 'running');
 
                 const row = document.createElement('div');
-                row.className = `flex items-center gap-3 p-2 rounded-2xl border transition-all ${hasActiveRunning ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'}`;
+                row.className = `flex items-start gap-3 p-2 rounded-2xl border transition-all ${hasActiveRunning ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'}`;
 
-                // Build Left Appliance Info Card (Sticky for Smooth Horizontal Scrolling)
+                // Build Left Appliance Info Card (Sticky for Smooth Horizontal Scrolling, top-aligned)
                 const leftCardHtml = `
-                    <div class="w-44 shrink-0 sticky left-0 z-30 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/95 backdrop-blur border border-slate-800 shadow-md cursor-pointer hover:border-slate-600 transition-all" onclick="openNewScheduleForAppliance('${appId}')" title="Click to add another schedule for this appliance">
+                    <div class="w-44 shrink-0 sticky left-0 z-30 flex items-center justify-between p-2.5 rounded-xl bg-slate-950/95 backdrop-blur border border-slate-800 shadow-md cursor-pointer hover:border-slate-600 transition-all self-start" onclick="openNewScheduleForAppliance('${appId}')" title="Click to add another schedule for this appliance">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="text-base shrink-0">${categoryIcon}</span>
                             <div class="flex flex-col min-w-0">
@@ -7614,17 +7649,18 @@
                     // Adaptive Content Density based on visual width
                     const isUltraCompact = widthPercent < 5.0;
                     const isCompact = widthPercent < 10.0;
+                    const costStr = sessionCost < 0.01 ? (sessionCost > 0 ? '<₱0.01' : '₱0.00') : `₱${sessionCost.toFixed(2)}`;
 
                     barsHtml += `
                         <div class="absolute rounded-lg flex items-center justify-between px-2 cursor-pointer transition-all ${zIndex} ${barClass}"
-                             style="left: ${leftPercent}%; width: ${widthPercent}%; top: ${topOffset}px; height: ${laneHeight}px;"
+                             style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 44px; top: ${topOffset}px; height: ${laneHeight}px;"
                              onclick="openBentoSettingsModal('${block.id}')"
                              title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
-                            <div class="flex items-center gap-1 min-w-0 overflow-hidden">
-                                <span class="font-extrabold text-[10px] truncate">${isRollover ? '🌅 ' : ''}~₱${sessionCost.toFixed(2)}</span>
+                            <div class="flex items-center gap-1 min-w-0 overflow-hidden whitespace-nowrap">
+                                <span class="font-extrabold text-[10px] shrink-0">${isRollover ? '🌅 ' : ''}~${costStr}</span>
                                 ${!isUltraCompact && isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
                                 ${!isCompact && isRollover ? `<span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>` : ''}
-                                ${!isCompact && isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">🌙 Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
+                                ${!isCompact && isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
                                 ${!isCompact && isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
                                 ${!isCompact && isRunning ? `<span class="text-[8px] font-bold bg-emerald-400/40 text-emerald-100 px-1 py-0.5 rounded shrink-0">🟢 Active</span>` : ''}
                                 ${!isCompact && isReadOnly ? `<span class="text-[8px] font-bold bg-slate-700 text-slate-300 px-1 py-0.5 rounded shrink-0">📜 Past</span>` : ''}
@@ -8536,11 +8572,6 @@
             } else if (calendarState.month > 11) {
                 calendarState.month = 0;
                 calendarState.year++;
-            }
-
-            if (calendarState.year < 2026) {
-                calendarState.year = 2026;
-                calendarState.month = 0;
             }
 
             const daysInMonth = new Date(calendarState.year, calendarState.month + 1, 0).getDate();
