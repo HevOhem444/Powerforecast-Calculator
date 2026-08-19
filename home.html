@@ -7217,6 +7217,8 @@
                         const estCost = kwh * totalRate;
                         const isPeak = checkSchedulePeakOverlap(curHour - elapsedHours, elapsedHours).isPeak;
 
+                        let finalLogId = item.active_session_log_id;
+
                         if (client && userId && typeof item.id === 'string' && !item.id.startsWith('app_')) {
                             if (item.active_session_log_id) {
                                 await client
@@ -7230,7 +7232,7 @@
                                     })
                                     .eq('id', item.active_session_log_id);
                             } else {
-                                await client
+                                const { data: insertedLog } = await client
                                     .from('appliance_usage_logs')
                                     .insert({
                                         user_id: userId,
@@ -7243,7 +7245,10 @@
                                         estimated_cost: Math.round(estCost * 100) / 100,
                                         source: isAutomationCall ? 'schedule_auto' : 'calendar_toggle',
                                         notes: 'Manual shutoff recorded'
-                                    });
+                                    })
+                                    .select('id')
+                                    .single();
+                                if (insertedLog) finalLogId = insertedLog.id;
                             }
 
                             await client
@@ -7256,18 +7261,53 @@
                         }
 
                         // Precision Truncation: Cut off the timeline block to exact elapsed duration
-                        const activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
+                        let activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
                             String(b.applianceId) === String(id) && 
                             b.dayKey === curDayKey &&
-                            (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
+                            b.is_active_live
+                        ) || calendarScheduledBlocks.slice().reverse().find(b => 
+                            String(b.applianceId) === String(id) && 
+                            b.dayKey === curDayKey &&
+                            isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)
                         );
 
                         if (activeBlock) {
-                            activeBlock.durationHours = Math.max(0.0028, Math.round(elapsedHours * 10000) / 10000);
+                            activeBlock.durationHours = Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000);
                             activeBlock.is_active_live = false;
                             activeBlock.is_closed_session = true;
+                            activeBlock.logId = finalLogId;
+                            saveCalendarBlocks();
+                        } else {
+                            const closedBlock = {
+                                id: 'blk_closed_' + Date.now(),
+                                applianceId: item.id,
+                                dayKey: curDayKey,
+                                dayNum: curDayNum,
+                                startHour: Math.max(0, Math.round((curHour - elapsedHours) * 10000) / 10000),
+                                durationHours: Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000),
+                                autoPower: Boolean(isAutomationCall),
+                                repeat: 'once',
+                                is_active_live: false,
+                                is_closed_session: true,
+                                logId: finalLogId
+                            };
+                            calendarScheduledBlocks.push(closedBlock);
                             saveCalendarBlocks();
                         }
+
+                        // Update local dbHistoricalLogsCache immediately
+                        dbHistoricalLogsCache.push({
+                            id: finalLogId || ('temp_' + Date.now()),
+                            user_id: userId,
+                            appliance_id: item.id,
+                            started_at: startedAtStr,
+                            ended_at: nowIso,
+                            duration_minutes: Math.round(durMinutes * 100) / 100,
+                            kwh_consumed: Math.round(kwh * 10000) / 10000,
+                            is_peak_window: isPeak,
+                            estimated_cost: Math.round(estCost * 100) / 100,
+                            source: isAutomationCall ? 'schedule_auto' : 'calendar_toggle'
+                        });
 
                         item.active_session_log_id = null;
                         showToast("Session Recorded", `Shutoff saved (${durMinutes.toFixed(1)} mins, ₱${estCost.toFixed(2)}).`, "success");
@@ -7622,16 +7662,31 @@
             } else {
                 // Today or Future: merge schedule routines + active live bars + historical logs from today
                 const rawStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+                const nowHour = new Date().getHours() + (new Date().getMinutes() / 60.0);
+                const isViewingToday = (selectedDateStr === todayStr);
+
                 const activeScheduledAndLive = rawStartingBlocks.filter(b => {
-                    if (b.is_active_live) return true;
+                    if (b.is_active_live) {
+                        // If there is already a scheduled routine for this appliance active now on today, suppress duplicate live pill
+                        if (isViewingToday) {
+                            const hasRoutineCoveringNow = rawStartingBlocks.some(r => 
+                                !r.is_active_live && !r.is_closed_session &&
+                                String(r.applianceId) === String(b.applianceId) &&
+                                isTimeInScheduleWindow(nowHour, r.startHour, r.durationHours)
+                            );
+                            if (hasRoutineCoveringNow) return false;
+                        }
+                        return true;
+                    }
+                    if (b.is_closed_session) return true;
                     if (b.repeat && b.repeat !== 'once') return true;
                     if (b.seriesId) return true;
-                    return (parseFloat(b.durationHours) || 0) >= 0.02;
+                    return (parseFloat(b.durationHours) || 0) >= 0.0013;
                 });
 
                 // Deduplicate historical logs against active blocks
                 const unmergedHistorical = historicalBlocks.filter(h => 
-                    !activeScheduledAndLive.some(b => String(b.logId) === String(h.dbLogId))
+                    !activeScheduledAndLive.some(b => String(b.logId) === String(h.dbLogId) || String(b.id) === String(h.id))
                 );
 
                 dayStartingBlocks = [...activeScheduledAndLive, ...unmergedHistorical];
@@ -8539,13 +8594,24 @@
 
             // Apply across target days
             targetDays.forEach(day => {
-                const existing = calendarScheduledBlocks.find(b => String(b.applianceId) === String(appId) && b.dayKey === day);
+                let existing = calendarScheduledBlocks.find(b => 
+                    String(b.applianceId) === String(appId) && 
+                    b.dayKey === day && 
+                    !b.is_closed_session
+                );
+
+                // Clean up any detached ephemeral live session block for this appliance on this day
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => 
+                    !(String(b.applianceId) === String(appId) && b.dayKey === day && b.is_active_live && b !== existing)
+                );
+
                 if (existing) {
                     existing.startHour = startVal;
                     existing.durationHours = duration;
                     existing.autoPower = autoPower;
                     existing.repeat = repeatMode;
                     existing.seriesId = seriesId;
+                    existing.is_active_live = false;
                     if (existing.id.startsWith('blk_')) {
                         dbInsertCalendarEvent(existing);
                     } else {
