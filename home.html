@@ -4201,32 +4201,96 @@
         </div>
     </div>
 
+        <!-- ===== SYSTEM RELEASE NOTES & CHANGELOG MODAL ===== -->
+    <div id="systemUpdateLogsModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 backdrop-blur-xl opacity-0 pointer-events-none transition-all duration-300 p-3 sm:p-6" role="dialog" aria-modal="true">
+        <div class="w-full max-w-2xl max-h-[88vh] rounded-3xl flex flex-col shadow-2xl border transition-all duration-300 transform scale-95 overflow-hidden"
+             style="background-color: var(--overlay-bg); border-color: var(--card-border);">
+            
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b flex flex-col gap-3 shrink-0" style="border-color: var(--divider); background-color: var(--card-bg);">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg shadow-inner">
+                            📜
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-base sm:text-lg font-extrabold t-primary">PowerForecast Release Logs</h3>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v1.8.4 Live</span>
+                            </div>
+                            <span class="text-xs t-muted">Historical database of all deployments, feature rollouts, and minor fixes</span>
+                        </div>
+                    </div>
+                    <button onclick="closeSystemUpdateLogsModal()" class="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors text-sm" title="Close (Esc)">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Search & Category Filters -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs t-muted">🔍</span>
+                        <input id="changelogSearchInput" type="text" placeholder="Search update notes, fixes, or versions..."
+                               class="pf-input w-full pl-8 pr-3 py-1.5 rounded-xl text-xs"
+                               oninput="filterChangelogEntries()">
+                    </div>
+                    <!-- Filter Pills -->
+                    <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+                        <button onclick="setChangelogFilter('all')" class="changelog-filter-btn active px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white transition-all" data-filter="all">All</button>
+                        <button onclick="setChangelogFilter('v1.8')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.8">v1.8</button>
+                        <button onclick="setChangelogFilter('v1.7')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.7">v1.7</button>
+                        <button onclick="setChangelogFilter('v1.6')" class="changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all" data-filter="v1.6">v1.6</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable Timeline) -->
+            <div id="changelogTimelineContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-3 custom-scrollbar">
+                <!-- Dynamically populated via renderChangelogTimeline() -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3 border-t flex items-center justify-between text-xs t-muted shrink-0" style="border-color: var(--divider); background-color: var(--card-bg);">
+                <span>Total <span id="changelogTotalCount" class="font-bold t-primary">0</span> releases recorded in history</span>
+                <button onclick="closeSystemUpdateLogsModal()" class="px-4 py-1.5 rounded-xl btn-secondary text-xs font-bold">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Toast Notification Container -->
     <div id="appToastContainer"
         class="fixed bottom-9 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
 
-    <!-- ZZZ-Style Live Engine Build Watermark with Expandable Hover Details -->
+        <!-- ZZZ-Style Live Engine Build Watermark (Clickable for Full Update Logs) -->
     <div id="pfBuildWatermark"
-        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-[11px] sm:text-xs font-mono font-semibold shadow-2xl transition-all duration-300 ease-out cursor-default group max-w-[320px] sm:max-w-[480px] hover:max-w-[92vw] hover:sm:max-w-[720px] hover:shadow-indigo-500/20"
+        onclick="openSystemUpdateLogsModal()"
+        class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border text-[11px] sm:text-xs font-mono font-semibold shadow-2xl transition-all duration-300 ease-out cursor-pointer group max-w-[320px] sm:max-w-[480px] hover:max-w-[92vw] hover:sm:max-w-[740px] hover:scale-[1.02] hover:border-indigo-400 hover:shadow-indigo-500/25"
         style="background-color: var(--card-bg); border-color: var(--card-border); color: var(--text-secondary);"
-        title="1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day">
+        title="Click to view full Release History & Update Logs 📜">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
         <span id="pfBuildVersionLabel" class="tracking-tight truncate group-hover:whitespace-normal group-hover:overflow-visible transition-all duration-300">
-            1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day
+            1.8.4v - Implement interactive Release Changelog Modal and database compilation on watermark banner click
         </span>
         <!-- Floating Tooltip Card on Hover -->
-        <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[520px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50"
+        <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[540px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50"
              style="background-color: var(--overlay-bg); border-color: var(--card-border);">
             <div class="flex items-center justify-between gap-3 pb-2 border-b border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                 <span class="flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Live Build Release</span>
+                    <span>Live Build Release • Click for Changelog</span>
                 </span>
                 <span class="t-muted font-normal font-sans">PowerForecast Engine</span>
             </div>
             <p class="mt-2 text-xs font-mono font-medium t-primary leading-relaxed break-words">
-                1.8.3v - Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day
+                1.8.4v - Implement interactive Release Changelog Modal and database compilation on watermark banner click
             </p>
+            <div class="mt-2.5 pt-2 border-t border-indigo-500/10 flex items-center justify-between text-[10px] t-muted">
+                <span>💡 Click this banner to open full Changelog history</span>
+                <span class="text-indigo-400 font-bold">Open History →</span>
+            </div>
         </div>
     </div>
 
@@ -10352,6 +10416,890 @@
             }
         }
         initAuthUser();
+
+        // ===== PowerForecast Complete Release History & Changelog Database =====
+        const POWERFORECAST_CHANGELOG = [
+        {
+                "hash": "HEAD",
+                "date": "2026-08-20",
+                "version": "1.8.4v",
+                "title": "Implement interactive Release Changelog Modal and database compilation on watermark banner click",
+                "type": "Feature"
+        },
+        {
+                "hash": "94bedaa",
+                "date": "2026-08-20",
+                "version": "1.8.3v",
+                "title": "Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day and add expandable version badge on hover",
+                "type": "Feature"
+        },
+        {
+                "hash": "b430e16",
+                "date": "2026-08-20",
+                "version": "1.8.2v",
+                "title": "Fix routine modal quick start day selection defaulting to tomorrow instead of currently viewed calendar day",
+                "type": "Fix"
+        },
+        {
+                "hash": "9d92a6c",
+                "date": "2026-08-19",
+                "version": "1.8.1v",
+                "title": "Full Anti-Gravity UI/UX overhaul, Light/Dark theme token parity, and interactive Dashboard/Analytics/Forecasting Bento systems",
+                "type": "Major"
+        },
+        {
+                "hash": "a2a0e6f",
+                "date": "2026-08-19",
+                "version": "1.7.7v",
+                "title": "Implement responsive bottom-sheet drawer pattern for tariff configuration on mobile",
+                "type": "Feature"
+        },
+        {
+                "hash": "ebe09f9",
+                "date": "2026-08-19",
+                "version": "1.7.6v",
+                "title": "Display minute-level subdivisions and exact time span badges upon zoom",
+                "type": "Patch"
+        },
+        {
+                "hash": "ba3b49a",
+                "date": "2026-08-19",
+                "version": "1.7.5v",
+                "title": "Constrain preview timeline height to 3 appliance rows and refine enlarged modal viewport sizing",
+                "type": "Patch"
+        },
+        {
+                "hash": "e9cda7c",
+                "date": "2026-08-19",
+                "version": "1.7.3v",
+                "title": "Dynamic gesture pinch and mouse wheel zoom engine with enlarged master timeline window",
+                "type": "Patch"
+        },
+        {
+                "hash": "97bf526",
+                "date": "2026-08-19",
+                "version": "1.7.2v",
+                "title": "Refactor appliance navigation into dual sidebar submenu for registered inventory and 3-way add studio",
+                "type": "Feature"
+        },
+        {
+                "hash": "0822070",
+                "date": "2026-08-19",
+                "version": "1.7.1v",
+                "title": "Fix modal visibility across tabs and elevate delete confirmation popup above session logs modal",
+                "type": "Fix"
+        },
+        {
+                "hash": "2eea0ad",
+                "date": "2026-08-19",
+                "version": "1.7.0v",
+                "title": "Safe appliance deletion with live running lock, double confirmation modal, and calendar session logs manager with visual timeline sync",
+                "type": "Patch"
+        },
+        {
+                "hash": "6b60e63",
+                "date": "2026-08-19",
+                "version": "1.6.49v",
+                "title": "Remove target shutoff time and save button from Live Control popup for open-ended manual run",
+                "type": "Patch"
+        },
+        {
+                "hash": "3af9a2b",
+                "date": "2026-08-19",
+                "version": "1.6.48v",
+                "title": "Separate Routine, Today live session, and Queue into distinct dedicated popups with Starting Day limited to Tomorrow and Pick Date",
+                "type": "Patch"
+        },
+        {
+                "hash": "5fa597e",
+                "date": "2026-08-19",
+                "version": "1.6.47v",
+                "title": "Decouple manual switch from modal, add card queue button, and absorb colliding schedules during continuous run",
+                "type": "Feature"
+        },
+        {
+                "hash": "cc1629e",
+                "date": "2026-08-19",
+                "version": "1.6.46v",
+                "title": "Filter live and closed runtime sessions from scheduled queue lists and inventory schedule badges",
+                "type": "Patch"
+        },
+        {
+                "hash": "b27340e",
+                "date": "2026-08-19",
+                "version": "1.6.45v",
+                "title": "Fix false past status collision in schedule windows on refresh and bind running appliances to existing routines without duplicate queue items",
+                "type": "Fix"
+        },
+        {
+                "hash": "10ba174",
+                "date": "2026-08-19",
+                "version": "1.6.44v",
+                "title": "Fix live running appliance timeline visibility, auto-generate active session bar, and persist 30s switch lock",
+                "type": "Fix"
+        },
+        {
+                "hash": "618a562",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(ui): add ZZZ-inspired live engine build version watermark in bottom right corner",
+                "type": "Feature"
+        },
+        {
+                "hash": "c5c3d00",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(cooldown): persist switch cooldowns across page refreshes and link with 30s minimum runtime lock",
+                "type": "Feature"
+        },
+        {
+                "hash": "7a292d3",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(cooldown): enforce strict 30s minimum runtime before allowing appliance to turn OFF",
+                "type": "Feature"
+        },
+        {
+                "hash": "0d891d8",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(cooldown): extend switch cooldown and registration threshold to 30s, fix temporal status collision, and add auto-popup end-time modal",
+                "type": "Feature"
+        },
+        {
+                "hash": "5c783b2",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): delete schedule event in DB on shutoff and replace with truncated deactivated historical session",
+                "type": "Fix"
+        },
+        {
+                "hash": "9f0b471",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): preserve sub-minute closed sessions on shutoff and prevent duplicate timeline blocks",
+                "type": "Fix"
+        },
+        {
+                "hash": "07e355c",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): implement database-driven timeline, anti-spam mutex, 5s accidental discard, and precision truncation",
+                "type": "Feature"
+        },
+        {
+                "hash": "d16ebc0",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): resolve multi-lane stacking explosion, micro-session spam, and timeline alignment",
+                "type": "Fix"
+        },
+        {
+                "hash": "ba6dfea",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): added starting day picker and queue manager tab with 1-by-1 and bulk delete",
+                "type": "Feature"
+        },
+        {
+                "hash": "37cb713",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): two-tier architecture separating live today sessions from recurring automation routines",
+                "type": "Feature"
+        },
+        {
+                "hash": "963ed35",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(timeline): visual footprint sub-lane collision engine, zoom-adaptive widths, and sticky cards",
+                "type": "Feature"
+        },
+        {
+                "hash": "4fff3a8",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(timeline): precision early shutoff truncation, resumed sub-lane session lines, and ruler 6:60 fix",
+                "type": "Fix"
+        },
+        {
+                "hash": "5eac101",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(timeline): implement sub-lane waterfall stacking and anti-collision engine",
+                "type": "Feature"
+        },
+        {
+                "hash": "b0d264e",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(sync): resolve cross-device sync for appliances and timeline schedules",
+                "type": "Fix"
+        },
+        {
+                "hash": "bd467d3",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): implement unified multi-session timeline track and ad-hoc power-on session spawner",
+                "type": "Feature"
+        },
+        {
+                "hash": "def4bb5",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): implement high-precision second-level session tracking, receipt formatting, and Supabase logging",
+                "type": "Feature"
+        },
+        {
+                "hash": "4621791",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): default start time to current time when scheduling for today and enforce current time constraints",
+                "type": "Fix"
+        },
+        {
+                "hash": "c2366dc",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): resolve date calculation bugs, month navigation sync, and automation safeguards",
+                "type": "Fix"
+        },
+        {
+                "hash": "e10fab7",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): persist manual shutoff suppression across page refreshes to prevent auto-power re-trigger loop",
+                "type": "Fix"
+        },
+        {
+                "hash": "2550a26",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): implement 3-layer architecture, digital energy receipt modal, and non-destructive manual overrides",
+                "type": "Feature"
+        },
+        {
+                "hash": "3a4fa81",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "fix(calendar): add 30s micro-toggle discard filter and fix cooldown timer auto-clear ticker",
+                "type": "Feature"
+        },
+        {
+                "hash": "8c37a90",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): add interactive timeline zoom (24H/12H/6H/1H) with minute rulers and second-level precision early shutoff",
+                "type": "Feature"
+        },
+        {
+                "hash": "9fc30bc",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): implement draft-first creation, past day/time read-only locks, running session start-time lock, and +5m end time constraint",
+                "type": "Feature"
+        },
+        {
+                "hash": "491d3bb",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): enforce single schedule per appliance, default to current time with date selector, and ensure conflict-free recurrence",
+                "type": "Feature"
+        },
+        {
+                "hash": "d17ace4",
+                "date": "2026-08-19",
+                "version": "",
+                "title": "feat(calendar): automatically power off appliance and log session when schedule block is removed",
+                "type": "Feature"
+        },
+        {
+                "hash": "5972402",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calendar): resolve first-time schedule add modal dismissal and async ID synchronization",
+                "type": "Feature"
+        },
+        {
+                "hash": "ea1e892",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calendar): support overnight schedule rollover across adjacent days and recurring series batch deletion",
+                "type": "Fix"
+        },
+        {
+                "hash": "eb6291d",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calendar): implement daily diagnostics banner, peak TOU window overlays, multi-interval scheduling, and Supabase cloud sync",
+                "type": "Feature"
+        },
+        {
+                "hash": "6a82c5b",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calculator): fix calculation logic, prevent destructive household inventory wipe on reset, add quantity support, and enable seamless non-blocking mode switching",
+                "type": "Feature"
+        },
+        {
+                "hash": "100623e",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(appliances): replace bottom-right load list with dedicated Registered Appliances subtab and management view",
+                "type": "Feature"
+        },
+        {
+                "hash": "293fb00",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calendar): implement all plan fixes for recurrence day calculation, midnight schedule window check, orphaned block cleanup, and automation debouncing",
+                "type": "Feature"
+        },
+        {
+                "hash": "8ef9c44",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calendar): remove redundant schedule row toggle, fit full 24h timeline, sync inventory toggle with modal, and dynamically bind current date and time",
+                "type": "Fix"
+        },
+        {
+                "hash": "a75c301",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calendar): implement horizontal roadmap timeline representation and modal scheduling from left inventory",
+                "type": "Feature"
+        },
+        {
+                "hash": "d0d99f4",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calculator): decouple Appliance Energy Estimator from database and add saved household appliances dropdown for pure frontend calculation",
+                "type": "Feature"
+        },
+        {
+                "hash": "100fb25",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Revert \"feat(calendar): implement horizontal roadmap timeline representation with modal scheduling and streamline calculator to pure bill frontend with load import\"",
+                "type": "Feature"
+        },
+        {
+                "hash": "358c255",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calendar): implement horizontal roadmap timeline representation with modal scheduling and streamline calculator to pure bill frontend with load import",
+                "type": "Feature"
+        },
+        {
+                "hash": "18766f6",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calendar): implement side-by-side bento block columns with horizontal sliding bar and comprehensive bento settings modal (Auto ON/OFF, Repeat recurrence, manual time range input)",
+                "type": "Feature"
+        },
+        {
+                "hash": "61b47d1",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(calendar): fix nested grid container tags and restore full width dashboard layout",
+                "type": "Fix"
+        },
+        {
+                "hash": "c678585",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(calendar): implement drag-and-drop timeline with resizable bento blocks, integrated ON/OFF switches, single-day selection, and real-time live burn rate",
+                "type": "Feature"
+        },
+        {
+                "hash": "da5d9e2",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat: simplify appliance registration to hardware specs and make calendar switches sole driver of runtime and burn rate",
+                "type": "Feature"
+        },
+        {
+                "hash": "7670748",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat: integrate Supabase user appliances database, real-time calendar switchboard, runtime tracking, cooldowns, and safety confirmations",
+                "type": "Feature"
+        },
+        {
+                "hash": "edeca2c",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Disable automatic redirect on password reset to allow manual proceed via modal button",
+                "type": "Patch"
+        },
+        {
+                "hash": "d3b71cc",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Add congratulations popup modal with proceed to login button on password reset",
+                "type": "Feature"
+        },
+        {
+                "hash": "4f13c3f",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Remove confirm password reset modal from forgot-password page",
+                "type": "Patch"
+        },
+        {
+                "hash": "d81b367",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Update password reset flow: add reveal buttons, confirmation modal before reset, and immediate redirect to login with success banner",
+                "type": "Feature"
+        },
+        {
+                "hash": "f755654",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Add password reveal eye buttons, password match indicator, confirmation modal, and login redirect in forgot-password.html",
+                "type": "Feature"
+        },
+        {
+                "hash": "cb20d37",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Support both 6-digit and 8-digit OTP recovery codes in forgot-password.html",
+                "type": "Patch"
+        },
+        {
+                "hash": "d55ed79",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Fix signup page UI: hide success state on initial load and keep single unified card layout",
+                "type": "Fix"
+        },
+        {
+                "hash": "4ffa260",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Implement complete Supabase Auth flow with supabaseClient.js, accounts table trigger, strong password validation and 60s OTP cooldown",
+                "type": "Feature"
+        },
+        {
+                "hash": "4485355",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Implement in-system 6-digit OTP reset wizard and registration confirmation email screen",
+                "type": "Feature"
+        },
+        {
+                "hash": "117e8a1",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Clean up database schema: remove duplicate profiles table, keep single accounts table and fix trigger search_path",
+                "type": "Fix"
+        },
+        {
+                "hash": "1f381fb",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Add Supabase accounts and profiles database migration schema",
+                "type": "Feature"
+        },
+        {
+                "hash": "4a7ba40",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Implement Supabase authentication, Google OAuth, signup, login, password recovery, and home.html auth guards",
+                "type": "Feature"
+        },
+        {
+                "hash": "e9801d5",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Add architecture and flowchart documentation assets",
+                "type": "Feature"
+        },
+        {
+                "hash": "e407473",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Consolidate non-PELP manual categories into a single Others option",
+                "type": "Patch"
+        },
+        {
+                "hash": "4cd7ec8",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "Align Custom/Manual Entry categories with DOE PELP and add extended household presets",
+                "type": "Feature"
+        },
+        {
+                "hash": "43f5971",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "fix(vercel): include PELP datasets in deployment bundle and configure serverless runtime path resolution",
+                "type": "Fix"
+        },
+        {
+                "hash": "1c54f76",
+                "date": "2026-08-18",
+                "version": "",
+                "title": "feat(ui): overhaul Light Mode bento color scheme, contrast ratios, and theme tokens",
+                "type": "Major"
+        },
+        {
+                "hash": "715fc26",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "feat: link website logo favicon across all pages",
+                "type": "Feature"
+        },
+        {
+                "hash": "dd491c4",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Optimize spacing, alignment, and visual rhythm of PELP catalog and control bar",
+                "type": "Patch"
+        },
+        {
+                "hash": "594f535",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Add multi-key fallback rotation for Vercel environment variables across analyze, health, server, and UI",
+                "type": "Feature"
+        },
+        {
+                "hash": "98c9de4",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Replace Vision AI Offline badge with API key indicator pill and remove redundant vision engine/history bar",
+                "type": "Patch"
+        },
+        {
+                "hash": "900fb6d",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Update Appliance Vision error modal, remove Vercel guide & free key button, and clean up server files",
+                "type": "Patch"
+        },
+        {
+                "hash": "4c8d14a",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Merge branch 'backup-pelp-integration' into UI-branch: integrate PELP datasets, pipeline, and 3-way appliance manager while preserving remote rate fetcher and responsive UI",
+                "type": "Patch"
+        },
+        {
+                "hash": "81fca60",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "feat(pelp): consolidate Appliances_PELP into Powerforecast-Calculator-UI-branch and integrate 3-way appliance manager",
+                "type": "Feature"
+        },
+        {
+                "hash": "992223d",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "Update Vercel deployment config, API endpoints, rates, and UI",
+                "type": "Patch"
+        },
+        {
+                "hash": "7cd8f04",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "feat(ui): add floating live log chat bubble when refreshing or fetching Meralco rates",
+                "type": "Feature"
+        },
+        {
+                "hash": "4da1ba2",
+                "date": "2026-08-17",
+                "version": "9.2800",
+                "title": "feat(api): connect upper-right refresh button to live Meralco PDF parser (August 2026 \u20b19.2800/kWh) and add manual rate advisory fetcher",
+                "type": "Feature"
+        },
+        {
+                "hash": "4c6db08",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "fix(ui): decouple top-right Meralco rate ticker from local calculator input changes",
+                "type": "Fix"
+        },
+        {
+                "hash": "5be4f3b",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "feat(ui): make topbar rate refresh button functional with spin animation and toast feedback",
+                "type": "Feature"
+        },
+        {
+                "hash": "6ebd8ca",
+                "date": "2026-08-17",
+                "version": "",
+                "title": "feat(ui): add modern calendar view, calculator mode switcher, right side calculation sync, and reset inputs button",
+                "type": "Feature"
+        },
+        {
+                "hash": "083504d",
+                "date": "2026-08-14",
+                "version": "",
+                "title": "style(docs): align UI with application design system and update header logo link to landing page",
+                "type": "Patch"
+        },
+        {
+                "hash": "188439d",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "Refactor layout responsiveness across all screen sizes and move mobile header controls into hamburger panel",
+                "type": "Patch"
+        },
+        {
+                "hash": "72e50a0",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "feat(ui): Revamp login, signup, forgot-password UI and apply backend security & MIME fixes",
+                "type": "Major"
+        },
+        {
+                "hash": "f495393",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "fix(ui): fix Gemini API key modal nesting and separate from sidebar settings modal",
+                "type": "Fix"
+        },
+        {
+                "hash": "316f8ee",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "ci(deploy): add GitHub Actions workflow and .nojekyll for automatic GitHub Pages deployment",
+                "type": "Feature"
+        },
+        {
+                "hash": "5aaa098",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "feat(ui): scale up light bulb on home.html and adjust login.html bulb position to eliminate logo overlap",
+                "type": "Feature"
+        },
+        {
+                "hash": "2c00cc6",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "feat(home): center hanging bulb, update brand logo to LOGO.png, fix header and sidebar positioning, clear inactive tabs, and sync header rate ticker",
+                "type": "Feature"
+        },
+        {
+                "hash": "9ad025d",
+                "date": "2026-08-13",
+                "version": "",
+                "title": "feat(home): implement app shell layout, left sidebar navigation, embedded calculator panel, dark/light mode toggle, and interactive background light bulb",
+                "type": "Feature"
+        },
+        {
+                "hash": "4f2b062",
+                "date": "2026-08-12",
+                "version": "",
+                "title": "feat(ui): update UI layouts, landing page, login, signup, home, forgot-password pages and asset resources",
+                "type": "Feature"
+        },
+        {
+                "hash": "16f210a",
+                "date": "2026-08-12",
+                "version": "",
+                "title": "Delete testing_test.txt",
+                "type": "Patch"
+        },
+        {
+                "hash": "d016b3b",
+                "date": "2026-08-12",
+                "version": "",
+                "title": "Merge pull request #1 from RandomUs3rInTh3Int3rn3t/main",
+                "type": "Patch"
+        },
+        {
+                "hash": "dfd15f1",
+                "date": "2026-08-12",
+                "version": "",
+                "title": "Add files via upload",
+                "type": "Feature"
+        },
+        {
+                "hash": "bb68817",
+                "date": "2026-08-08",
+                "version": "",
+                "title": "Integrate Meralco Appliance Database & Estimator with local rate engine",
+                "type": "Patch"
+        },
+        {
+                "hash": "3b0dc67",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Configure explicit @vercel/python and @vercel/static builds in vercel.json",
+                "type": "Patch"
+        },
+        {
+                "hash": "89f1571",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Remove api/main.py and remove rewrites in vercel.json so Vercel zero-config serves index.html at root, docs.html at /docs, and api/*.py at /api/*",
+                "type": "Patch"
+        },
+        {
+                "hash": "592e120",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Rename api/index.py to api/main.py so Vercel serves static HTML for root / and /docs instead of API index",
+                "type": "Patch"
+        },
+        {
+                "hash": "2f2bb90",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Update routing in vercel.json and api/index.py so root / serves index.html and /docs serves docs.html",
+                "type": "Patch"
+        },
+        {
+                "hash": "e4c576e",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Add unified api/index.py Vercel serverless entrypoint with top-level handler",
+                "type": "Feature"
+        },
+        {
+                "hash": "564d23e",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Add .vercelignore and export top-level handler in server.py to resolve Vercel build error",
+                "type": "Feature"
+        },
+        {
+                "hash": "5f0d4d2",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Strip unrelated Discord bot files and update README.md for PowerForecast API",
+                "type": "Patch"
+        },
+        {
+                "hash": "b6e3f79",
+                "date": "2026-08-01",
+                "version": "",
+                "title": "Initial commit: PowerForecast Meralco API & Web Calculator",
+                "type": "Patch"
+        }
+];
+
+        let activeChangelogFilter = 'all';
+
+        function openSystemUpdateLogsModal() {
+            const modal = document.getElementById('systemUpdateLogsModal');
+            if (!modal) return;
+            renderChangelogTimeline();
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100', 'pointer-events-auto');
+            const inner = modal.querySelector('div');
+            if (inner) inner.classList.remove('scale-95');
+        }
+
+        function closeSystemUpdateLogsModal() {
+            const modal = document.getElementById('systemUpdateLogsModal');
+            if (!modal) return;
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            const inner = modal.querySelector('div');
+            if (inner) inner.classList.add('scale-95');
+        }
+
+        function setChangelogFilter(filterKey) {
+            activeChangelogFilter = filterKey;
+            document.querySelectorAll('.changelog-filter-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-filter') === filterKey;
+                btn.className = isActive 
+                    ? 'changelog-filter-btn active px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white transition-all shadow'
+                    : 'changelog-filter-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
+            });
+            renderChangelogTimeline();
+        }
+
+        function filterChangelogEntries() {
+            renderChangelogTimeline();
+        }
+
+        function renderChangelogTimeline() {
+            const container = document.getElementById('changelogTimelineContainer');
+            const searchInput = document.getElementById('changelogSearchInput');
+            const totalEl = document.getElementById('changelogTotalCount');
+            if (!container) return;
+
+            const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+            const filtered = POWERFORECAST_CHANGELOG.filter(item => {
+                // Filter by major version
+                if (activeChangelogFilter !== 'all') {
+                    const v = (item.version || '').toLowerCase();
+                    if (!v.startsWith(activeChangelogFilter.toLowerCase()) && !item.title.toLowerCase().includes(activeChangelogFilter.toLowerCase())) {
+                        return false;
+                    }
+                }
+                // Filter by search query
+                if (query) {
+                    const matchV = (item.version || '').toLowerCase().includes(query);
+                    const matchTitle = (item.title || '').toLowerCase().includes(query);
+                    const matchHash = (item.hash || '').toLowerCase().includes(query);
+                    const matchDate = (item.date || '').toLowerCase().includes(query);
+                    return matchV || matchTitle || matchHash || matchDate;
+                }
+                return true;
+            });
+
+            if (totalEl) totalEl.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 rounded-2xl bento-note-box border text-center flex flex-col items-center justify-center gap-2 my-6">
+                        <span class="text-2xl">🔍</span>
+                        <span class="text-xs font-bold t-primary">No Release Logs Found</span>
+                        <span class="text-[11px] t-muted">Try adjusting your search keywords or active version filter.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map((item, idx) => {
+                let badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+                if (item.type === 'Major') badgeColor = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+                else if (item.type === 'Feature') badgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                else if (item.type === 'Fix') badgeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+
+                const isLatest = idx === 0 && activeChangelogFilter === 'all' && !query;
+
+                return `
+                    <div class="p-4 rounded-2xl bento-sub-card border flex flex-col gap-2 transition-all hover:border-indigo-400/50">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-xs font-extrabold ${isLatest ? 'text-amber-400' : 't-primary'}">
+                                    ${item.version ? item.version : 'Commit'}
+                                </span>
+                                ${isLatest ? '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">Latest</span>' : ''}
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}">
+                                    ${item.type}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 text-[11px] t-muted">
+                                <span>📅 ${item.date}</span>
+                                <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 border border-slate-700/60 t-secondary">${item.hash}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs t-secondary leading-relaxed font-sans mt-0.5">
+                            ${item.title}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSystemUpdateLogsModal();
+            }
+        });
+
 
         // ===== Anti-Gravity Dashboard, Analytics & Forecasting Renderers =====
         function renderDashboardView() {
