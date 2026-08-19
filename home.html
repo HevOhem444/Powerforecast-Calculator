@@ -3943,7 +3943,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.5v - Constrain preview timeline height to 3 appliance rows and refine enlarged modal viewport sizing</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.6v - Display minute-level subdivisions and exact time span badges upon zoom</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -7859,6 +7859,7 @@
             }
 
             renderTimelineHeaderRuler();
+            renderCalendarBlocks();
         }
 
         function stepTimelineZoom(delta, containerId = 'enlargedTimelineContainer') {
@@ -7883,7 +7884,7 @@
                 const effectiveZoom = isEnlarged ? timelineZoomLevel : 1.0;
 
                 if (effectiveZoom < 1.75) {
-                    // Standard 2-hour intervals
+                    // Standard 2-hour intervals (12 AM, 2 AM, 4 AM... 12 AM)
                     const hours = [
                         { h: 0, l: '12 AM' }, { h: 2, l: '2 AM' }, { h: 4, l: '4 AM' }, { h: 6, l: '6 AM' },
                         { h: 8, l: '8 AM' }, { h: 10, l: '10 AM' }, { h: 12, l: '12 PM 🔥', p: true },
@@ -7896,14 +7897,52 @@
                         span.className = item.p ? 'text-amber-400 font-extrabold text-[10px]' : 'text-slate-400 font-bold text-[10px]';
                         track.appendChild(span);
                     });
-                } else {
-                    // High-definition 1-hour intervals for Enlarged View
+                } else if (effectiveZoom < 2.5) {
+                    // 1-Hour divisions (12 AM, 1 AM, 2 AM... 11 PM, 12 AM)
                     for (let h = 0; h <= 24; h++) {
                         const span = document.createElement('span');
                         const ampm = (h === 0 || h === 24) ? '12 AM' : (h === 12 ? '12 PM 🔥' : (h < 12 ? `${h} AM` : `${h - 12} PM`));
                         const isPeak = (h >= 11 && h <= 14) || (h >= 18 && h <= 21);
                         span.textContent = isPeak && !ampm.includes('🔥') ? `${ampm} 🔥` : ampm;
                         span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px] shrink-0' : 'text-slate-400 text-[9px] shrink-0';
+                        track.appendChild(span);
+                    }
+                } else if (effectiveZoom < 3.5) {
+                    // 30-Minute divisions with minutes displayed (12:00 AM, :30, 1:00 AM, :30...)
+                    for (let totalMin = 0; totalMin <= 1440; totalMin += 30) {
+                        const span = document.createElement('span');
+                        const h = Math.floor(totalMin / 60);
+                        const m = totalMin % 60;
+                        const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
+                        const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
+                        const isPeak = (h >= 11 && h <= 14) || (h >= 18 && h <= 21);
+
+                        if (m === 0) {
+                            span.textContent = `${dispH}:00 ${ampm}${isPeak ? ' 🔥' : ''}`;
+                            span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px] shrink-0' : 'text-indigo-300 font-bold text-[9px] shrink-0';
+                        } else {
+                            span.textContent = `:${m}`;
+                            span.className = isPeak ? 'text-amber-400/80 font-medium text-[8px] shrink-0' : 'text-slate-400 text-[8px] shrink-0';
+                        }
+                        track.appendChild(span);
+                    }
+                } else {
+                    // 15-Minute ultra-detailed minute breakdown (12:00, :15, :30, :45, 1:00...)
+                    for (let totalMin = 0; totalMin <= 1440; totalMin += 15) {
+                        const span = document.createElement('span');
+                        const h = Math.floor(totalMin / 60);
+                        const m = totalMin % 60;
+                        const ampm = (h === 0 || h === 24) ? 'AM' : (h < 12 ? 'AM' : 'PM');
+                        const dispH = (h === 0 || h === 24) ? 12 : (h > 12 ? h - 12 : h);
+                        const isPeak = (h >= 11 && h <= 14) || (h >= 18 && h <= 21);
+
+                        if (m === 0) {
+                            span.textContent = `${dispH}:00 ${ampm}${isPeak ? ' 🔥' : ''}`;
+                            span.className = isPeak ? 'text-amber-400 font-extrabold text-[9px] shrink-0' : 'text-indigo-300 font-bold text-[9px] shrink-0';
+                        } else {
+                            span.textContent = `:${String(m).padStart(2, '0')}`;
+                            span.className = isPeak ? 'text-amber-400/70 text-[8px] shrink-0' : 'text-slate-400 text-[8px] shrink-0';
+                        }
                         track.appendChild(span);
                     }
                 }
@@ -8311,24 +8350,21 @@
             const totalRate = getEffectiveCalendarRate();
 
             // Zoom-Adaptive Footprint & Collision Calibration
-            const zoomMultipliers = { '24h': 1, '12h': 2, '6h': 4, '1h': 12 };
-            const currentZoomMode = calendarZoomState ? (calendarZoomState.mode || '24h') : '24h';
-            const zoomMult = zoomMultipliers[currentZoomMode] || 1;
+            const zoomMult = Math.max(1, timelineZoomLevel || 1);
 
-            // In 24h (1x), min visual width is 2.5% (~36 mins).
-            // In 12h (2x), min visual width is 1.25% (~18 mins).
-            // In 6h (4x), min visual width is 0.625% (~9 mins).
-            // In 1h (12x), min visual width is 0.21% (~3 mins).
             const minVisualWidthPercent = Math.max(0.18, 2.5 / zoomMult);
             const minVisualDurationHours = (minVisualWidthPercent / 100.0) * 24.0;
             const visualGapHours = 0.05 / zoomMult; // visual safety gap
 
-            // Dynamic background vertical guidelines matching zoom resolution
-            const gridDivisions = currentZoomMode === '1h' ? 96 : (currentZoomMode === '6h' ? 48 : (currentZoomMode === '12h' ? 24 : 12));
+            // Dynamic background vertical guidelines matching zoom resolution (15m, 30m, 1h, 2h)
+            const gridDivisions = (timelineZoomLevel >= 3.5) ? 96 : ((timelineZoomLevel >= 2.5) ? 48 : ((timelineZoomLevel >= 1.75) ? 24 : 12));
             let gridLinesHtml = '';
             for (let g = 1; g < gridDivisions; g++) {
                 const leftP = (g / gridDivisions) * 100;
-                gridLinesHtml += `<div class="absolute top-0 bottom-0 border-r border-slate-700/20 pointer-events-none" style="left: ${leftP}%;"></div>`;
+                const isMajorHour = (g % (gridDivisions / 12) === 0);
+                const isHalfHour = (gridDivisions >= 48 && g % (gridDivisions / 24) === 0);
+                const borderClass = isMajorHour ? 'border-slate-600/40' : (isHalfHour ? 'border-slate-700/30 border-dashed' : 'border-slate-800/20');
+                gridLinesHtml += `<div class="absolute top-0 bottom-0 border-r ${borderClass} pointer-events-none" style="left: ${leftP}%;"></div>`;
             }
 
             // Render one unified timeline track per appliance
@@ -8434,39 +8470,35 @@
                 });
 
                 const totalLanes = Math.max(1, laneEndTimes.length);
-                const laneHeight = 32; // px per bar
-                const laneGap = 6; // px between lanes
-                const trackPadding = 6; // top/bottom padding
-                const containerHeight = totalLanes === 1 ? 44 : (totalLanes * (laneHeight + laneGap) + (trackPadding * 2) - laneGap);
+                const laneHeight = 30; // Height of each bar in px
+                const laneGap = 4;     // Gap between vertically stacked bars
+                const trackPadding = 4;
+                const containerHeight = Math.max(42, (totalLanes * laneHeight) + ((totalLanes - 1) * laneGap) + (trackPadding * 2));
 
+                // Build HTML for each bar with precise positioning and adaptive visual width
                 allAppSessions.forEach(session => {
                     const block = session.block;
                     const isRollover = session.isRollover;
                     const isOvernight = session.isOvernight;
-                    const endHour = session.totalEnd % 24;
-                    const durSecs = Math.max(1, Math.round(session.durationHours * 3600));
-                    const durLabel = session.durationHours >= 1 
-                        ? `${session.durationHours.toFixed(1)} hrs` 
-                        : (session.durationHours >= (1/60.0) ? `${Math.round(session.durationHours * 60)} mins` : `${durSecs} secs`);
-                    
-                    const timeSpanLabel = isRollover
-                        ? `12:00 AM – ${formatHour(endHour)} (${session.durationHours.toFixed(1)} hrs rollover from ${prevDayKey.toUpperCase()})`
-                        : `${formatHour(block.startHour)} – ${formatHour(endHour)}${isOvernight ? ` (+1 day on ${nextDayKey.toUpperCase()})` : ''} (${durLabel})`;
-
-                    const sessionCost = (appWatts * session.durationHours / 1000.0) * totalRate;
+                    const isReadOnly = Boolean(block.is_closed_session);
                     const isAuto = Boolean(block.autoPower);
-                    const overlap = checkSchedulePeakOverlap(session.start, session.durationHours);
-                    const isPeak = overlap.isPeak;
+                    const status = getScheduleTemporalStatus(block, selectedDateStr);
+                    const isRunning = (status === 'running');
 
-                    const temporalStatus = getScheduleTemporalStatus(block, selectedDateStr);
-                    const isReadOnly = temporalStatus === 'past';
-                    const isRunning = temporalStatus === 'running';
+                    const startH = session.start;
+                    const durationH = session.durationHours;
+                    const timeSpanLabel = formatTimeSpanDisplay(startH, durationH);
+                    const isPeak = isBlockInPeakHour(startH, durationH);
 
-                    const leftPercent = Math.max(0, Math.min(100, (session.start / 24.0) * 100));
-                    const widthPercent = isOvernight
-                        ? Math.max(minVisualWidthPercent, 100 - leftPercent)
-                        : Math.max(minVisualWidthPercent, Math.min(100 - leftPercent, (session.durationHours / 24.0) * 100));
+                    // Calculations for energy & cost
+                    const sessionWatts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
+                    const sessionKwh = (sessionWatts * durationH) / 1000.0;
+                    const sessionCost = block.estCost ? parseFloat(block.estCost) : (sessionKwh * totalRate);
 
+                    // Visual positioning
+                    const leftPercent = (startH / 24.0) * 100.0;
+                    const actualWidthPercent = (durationH / 24.0) * 100.0;
+                    const widthPercent = Math.max(actualWidthPercent, minVisualWidthPercent);
                     const topOffset = (session.laneIndex * (laneHeight + laneGap)) + trackPadding;
 
                     let barClass = '';
@@ -8481,9 +8513,9 @@
                         barClass = 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110 shadow-md';
                     }
 
-                    // Adaptive Content Density based on visual width
-                    const isUltraCompact = widthPercent < 5.0;
-                    const isCompact = widthPercent < 10.0;
+                    // Adaptive Content Density based on visual width and zoom level
+                    const isUltraCompact = widthPercent < 4.0;
+                    const isCompact = widthPercent < 8.0;
                     const costStr = sessionCost < 0.01 ? (sessionCost > 0 ? '<₱0.01' : '₱0.00') : `₱${sessionCost.toFixed(2)}`;
 
                     barsHtml += `
@@ -8491,8 +8523,9 @@
                              style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 44px; top: ${topOffset}px; height: ${laneHeight}px;"
                              onclick="openBentoSettingsModal('${block.id}')"
                              title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
-                            <div class="flex items-center gap-1 min-w-0 overflow-hidden whitespace-nowrap">
+                            <div class="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
                                 <span class="font-extrabold text-[10px] shrink-0">${isRollover ? '🌅 ' : ''}~${costStr}</span>
+                                ${!isCompact ? `<span class="text-[8px] font-mono text-slate-100 bg-black/35 px-1 py-0.5 rounded shrink-0 font-medium">${timeSpanLabel}</span>` : ''}
                                 ${!isUltraCompact && isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
                                 ${!isCompact && isRollover ? `<span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>` : ''}
                                 ${!isCompact && isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
