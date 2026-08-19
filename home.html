@@ -3685,7 +3685,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.44v - Fix live running appliance timeline visibility, auto-generate active session bar, and persist 30s switch lock</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.45v - Fix false past status collision in schedule windows on refresh and bind running appliances to existing routines without duplicate queue items</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -7620,18 +7620,26 @@
             const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
             const isRunning = Boolean(item && item.is_currently_on);
 
-            if (isRunning && block.is_active_live && !block.is_closed_session) {
-                return 'running';
+            if (block.is_active_live && !block.is_closed_session) {
+                return isRunning ? 'running' : 'past';
             }
 
             const endHour = block.startHour + block.durationHours;
-            if (endHour <= 24 && endHour <= currentHour) {
+
+            // Only genuinely past if the schedule window has fully elapsed
+            if (endHour <= 24 && currentHour >= endHour) {
                 return 'past';
-            } else if (currentHour >= block.startHour && endHour <= 24) {
-                return (isRunning && block.is_active_live) ? 'running' : 'past';
-            } else {
+            }
+
+            // If we are currently inside this schedule window:
+            if (isTimeInScheduleWindow(currentHour, block.startHour, block.durationHours)) {
+                if (isRunning) {
+                    return 'running';
+                }
                 return 'future';
             }
+
+            return 'future';
         }
 
         // Draft-First Schedule Creator
@@ -7756,28 +7764,40 @@
 
                 // Auto-guarantee that any currently running appliance has an active live block on Today's view
                 if (isViewingToday) {
+                    const nowHour = new Date().getHours() + (new Date().getMinutes() / 60.0);
                     householdLoadList.forEach(item => {
                         if (item.is_currently_on && item.last_turned_on_at) {
-                            const exists = calendarScheduledBlocks.some(b => 
+                            const existingSched = calendarScheduledBlocks.find(b => 
                                 String(b.applianceId) === String(item.id) && 
                                 b.dayKey === selectedKey && 
-                                b.is_active_live
+                                !b.is_closed_session &&
+                                isTimeInScheduleWindow(nowHour, b.startHour, b.durationHours)
                             );
-                            if (!exists) {
-                                const startDt = new Date(item.last_turned_on_at);
-                                const startH = startDt.getHours() + (startDt.getMinutes() / 60.0) + (startDt.getSeconds() / 3600.0);
-                                const elHours = Math.max(0.0014, (Date.now() - startDt.getTime()) / 3600000.0);
-                                calendarScheduledBlocks.push({
-                                    id: 'blk_live_' + item.id + '_' + startDt.getTime(),
-                                    applianceId: item.id,
-                                    dayKey: selectedKey,
-                                    dayNum: calendarState.selectedDay,
-                                    startHour: Math.round(startH * 10000) / 10000,
-                                    durationHours: Math.round(elHours * 10000) / 10000,
-                                    autoPower: false,
-                                    repeat: 'once',
-                                    is_active_live: true
-                                });
+
+                            if (existingSched) {
+                                existingSched.is_active_live = true;
+                            } else {
+                                const exists = calendarScheduledBlocks.some(b => 
+                                    String(b.applianceId) === String(item.id) && 
+                                    b.dayKey === selectedKey && 
+                                    b.is_active_live
+                                );
+                                if (!exists) {
+                                    const startDt = new Date(item.last_turned_on_at);
+                                    const startH = startDt.getHours() + (startDt.getMinutes() / 60.0) + (startDt.getSeconds() / 3600.0);
+                                    const elHours = Math.max(0.0014, (Date.now() - startDt.getTime()) / 3600000.0);
+                                    calendarScheduledBlocks.push({
+                                        id: 'blk_live_' + item.id + '_' + startDt.getTime(),
+                                        applianceId: item.id,
+                                        dayKey: selectedKey,
+                                        dayNum: calendarState.selectedDay,
+                                        startHour: Math.round(startH * 10000) / 10000,
+                                        durationHours: Math.round(elHours * 10000) / 10000,
+                                        autoPower: false,
+                                        repeat: 'once',
+                                        is_active_live: true
+                                    });
+                                }
                             }
                         }
                     });
