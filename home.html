@@ -2563,7 +2563,7 @@
                             <button onclick="exportLoadListJson()" class="px-3.5 py-2 btn-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow hover:brightness-110 cursor-pointer" title="Export Inventory to JSON">
                                 <span>⬇️</span> Export
                             </button>
-                            <button onclick="clearHouseholdLoads()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 transition-all flex items-center gap-1.5 shadow cursor-pointer" title="Clear All Registered Appliances">
+                            <button onclick="handleClearAllAppliancesClick()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 border border-rose-500/20 transition-all flex items-center gap-1.5 shadow cursor-pointer" title="Clear All Registered Appliances">
                                 <span>🗑️</span> Clear All
                             </button>
                         </div>
@@ -2608,8 +2608,12 @@
                         <p class="text-sm t-muted">Monitor active appliance loads in real time, drag appliances to schedule timeline, and view live hourly burn rate.</p>
                     </div>
                     <div class="flex items-center gap-3">
+                        <button onclick="openCalendarLogsModal()"
+                            class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer" title="View historical appliance operating logs">
+                            <span>📜</span> Session Logs (<span id="calLogsCountBadge">0</span>)
+                        </button>
                         <button onclick="switchView('appliances')"
-                            class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/60 text-xs font-bold flex items-center gap-1.5 transition-all">
+                            class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/60 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
                             <span>⚡</span> Manage Appliances
                         </button>
                     </div>
@@ -3156,6 +3160,126 @@
                         <!-- Footer Actions -->
                         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                             <button onclick="closeApplianceQueueModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. UNIVERSAL DANGER TYPE-TO-CONFIRM MODAL -->
+                <div id="universalDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-rose-500/40 shadow-2xl shadow-rose-950/50 flex flex-col gap-4 scale-95 transition-transform duration-200">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 text-lg">
+                                    🗑️
+                                </div>
+                                <div class="flex flex-col">
+                                    <h3 id="deleteConfirmTitle" class="text-sm font-extrabold text-white">Confirm Deletion</h3>
+                                    <span id="deleteConfirmSubtitle" class="text-xs text-rose-300 font-semibold truncate max-w-[240px]">Permanent Action</span>
+                                </div>
+                            </div>
+                            <button onclick="closeUniversalDeleteConfirmModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 text-sm cursor-pointer">
+                                ✕
+                            </button>
+                        </div>
+
+                        <!-- Warning Summary Banner -->
+                        <div class="p-3.5 rounded-2xl bg-rose-950/30 border border-rose-500/30 flex flex-col gap-2">
+                            <div class="flex items-center gap-2 text-rose-400 font-bold text-xs">
+                                <span>⚠️</span>
+                                <span>Warning: This action cannot be undone</span>
+                            </div>
+                            <p id="deleteConfirmWarningText" class="text-[11px] text-slate-300 leading-relaxed">
+                                Are you sure you want to permanently delete this item?
+                            </p>
+                            <div id="deleteConfirmItemSummary" class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] text-slate-200 flex flex-col gap-1">
+                                <!-- Dynamic item summary specs -->
+                            </div>
+                        </div>
+
+                        <!-- Type-to-Confirm Input -->
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                                <span>Type <strong class="text-rose-400 uppercase font-mono px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20">confirm</strong> to proceed:</span>
+                                <span id="deleteConfirmStatus" class="text-[10px] text-slate-500 font-normal">Required</span>
+                            </label>
+                            <input id="deleteConfirmInput" type="text" autocomplete="off" spellcheck="false"
+                                class="pf-input rounded-xl px-3 py-2 text-xs font-mono text-white w-full border border-slate-700 focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+                                placeholder="Type 'confirm' here"
+                                oninput="onUniversalDeleteInputChange()">
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                            <button type="button" onclick="closeUniversalDeleteConfirmModal()" class="px-4 py-2 rounded-xl btn-secondary text-xs font-bold cursor-pointer">
+                                Cancel
+                            </button>
+                            <button id="deleteConfirmSubmitBtn" type="button" onclick="executeUniversalConfirmedDeletion()" disabled
+                                class="px-5 py-2 rounded-xl bg-slate-800 text-slate-500 font-extrabold text-xs transition-all cursor-not-allowed opacity-50 flex items-center gap-1.5">
+                                <span>🗑️</span>
+                                <span id="deleteConfirmSubmitText">Delete Permanently</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. HISTORICAL CALENDAR SESSION LOGS MODAL -->
+                <div id="calendarLogsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-200">
+                    <div class="w-full max-w-2xl p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl flex flex-col gap-4 scale-95 transition-transform duration-200 max-h-[90vh]">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg">
+                                    📜
+                                </div>
+                                <div class="flex flex-col">
+                                    <h3 class="text-sm font-extrabold text-white">Historical Energy & Session Logs</h3>
+                                    <span class="text-xs text-slate-400">Audited appliance operating history & energy consumption</span>
+                                </div>
+                            </div>
+                            <button onclick="closeCalendarLogsModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 text-sm cursor-pointer">
+                                ✕
+                            </button>
+                        </div>
+
+                        <!-- Top Summary Statistics Bar -->
+                        <div class="grid grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-950/70 border border-indigo-500/20 text-xs">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400">Logged Sessions</span>
+                                <strong id="calLogsTotalCount" class="text-indigo-300 font-extrabold text-sm">0 Sessions</strong>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400">Total Metered Energy</span>
+                                <strong id="calLogsTotalKwh" class="text-amber-400 font-extrabold text-sm">0.00 kWh</strong>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400">Cumulative Cost</span>
+                                <strong id="calLogsTotalCost" class="text-emerald-400 font-extrabold text-sm">₱0.00</strong>
+                            </div>
+                        </div>
+
+                        <!-- Search and Bulk Action Toolbar -->
+                        <div class="flex items-center justify-between gap-3 text-xs">
+                            <div class="relative flex-1">
+                                <input id="calendarLogsSearchInput" type="text"
+                                    placeholder="Filter logs by appliance name, date, or status..."
+                                    oninput="renderCalendarLogsFeed(this.value)"
+                                    class="w-full px-3 py-1.5 pl-8 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-0">
+                                <span class="absolute left-2.5 top-2 text-slate-500 text-[11px]">🔍</span>
+                            </div>
+                            <button type="button" onclick="handleClearAllSessionLogsClick()" class="px-3 py-1.5 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1">
+                                <span>🗑️</span> Clear All Logs
+                            </button>
+                        </div>
+
+                        <!-- Scrollable Log Feed Container -->
+                        <div id="calendarLogsListContainer" class="flex flex-col gap-2 overflow-y-auto max-h-[340px] pr-1">
+                            <!-- Populated dynamically by renderCalendarLogsFeed() -->
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                            <button onclick="closeCalendarLogsModal()" class="px-5 py-2 rounded-xl btn-secondary text-xs font-bold cursor-pointer">
                                 Close
                             </button>
                         </div>
@@ -3711,7 +3835,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.49v - Remove target shutoff time and save button from Live Control popup for open-ended manual run</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.7.0v - Safe appliance deletion with live running lock, double confirmation modal, and calendar session logs manager with visual timeline sync</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -4911,30 +5035,70 @@
             if (totalLbl) totalLbl.textContent = `${totalKwh.toFixed(2)} kWh`;
         }
 
+        function handleDeleteApplianceClick(applianceId) {
+            const item = householdLoadList.find(a => String(a.id) === String(applianceId));
+            if (!item) return;
+
+            // 1. Strict Live Running Lock
+            if (item.is_currently_on) {
+                showToast("Action Blocked", `Cannot delete "${item.name}" while running live. Please power it OFF first.`, "warning");
+                return;
+            }
+
+            // 2. Count attached future schedules
+            const futureSchedules = calendarScheduledBlocks.filter(b => !b.is_closed_session && String(b.applianceId) === String(item.id));
+
+            openUniversalDeleteConfirmModal({
+                type: 'appliance',
+                id: item.id,
+                title: 'Delete Appliance',
+                subtitle: item.name,
+                warningText: 'This will permanently remove the appliance from your registered inventory and cancel all future scheduled automation routines. Past energy consumption logs will remain archived in Session Logs.',
+                itemSummaryHtml: `
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Appliance Name:</span> <strong class="text-white">${item.name}</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Power Rating:</span> <strong class="text-amber-400">${item.watts}W (${item.qty || 1} unit)</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Pending Routines:</span> <strong class="text-indigo-300">${futureSchedules.length} scheduled block(s)</strong></div>
+                `,
+                submitText: 'Delete Appliance'
+            });
+        }
+
+        function handleClearAllAppliancesClick() {
+            if (householdLoadList.length === 0) {
+                showToast("Inventory Empty", "No registered appliances to clear.", "info");
+                return;
+            }
+
+            // 1. Strict Live Running Check for any active appliance
+            const activeRunning = householdLoadList.filter(a => a.is_currently_on);
+            if (activeRunning.length > 0) {
+                showToast("Action Blocked", `Cannot clear inventory while ${activeRunning.length} appliance(s) are running live. Please power them OFF first.`, "warning");
+                return;
+            }
+
+            const totalUpcoming = calendarScheduledBlocks.filter(b => !b.is_closed_session).length;
+
+            openUniversalDeleteConfirmModal({
+                type: 'clear_appliances',
+                id: null,
+                title: 'Clear All Registered Appliances',
+                subtitle: `All ${householdLoadList.length} Appliances`,
+                warningText: 'This will remove all appliances from your inventory and clear all pending calendar schedules. Past session logs will remain archived for billing accuracy.',
+                itemSummaryHtml: `
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Total Appliances:</span> <strong class="text-white">${householdLoadList.length} devices</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Connected Power:</span> <strong class="text-amber-400">${householdLoadList.reduce((acc, i) => acc + (i.watts * (i.qty || 1)), 0).toLocaleString()} Watts</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Cancelled Schedules:</span> <strong class="text-indigo-300">${totalUpcoming} upcoming block(s)</strong></div>
+                `,
+                submitText: 'Clear All Appliances'
+            });
+        }
+
         function removeHouseholdLoadItem(id) {
-            householdLoadList = householdLoadList.filter(item => item.id !== id);
-            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.applianceId !== id);
-            saveCalendarBlocks();
-            renderHouseholdLoadList();
-            renderCalendarApplianceSwitches();
-            renderCalendarBlocks();
-            updateLiveEnergyMonitor();
-            dbDeleteAppliance(id);
-            showToast("Item Removed", "Removed appliance from your Household Inventory.", "info");
+            handleDeleteApplianceClick(id);
         }
 
         function clearHouseholdLoads() {
-            if (householdLoadList.length === 0) return;
-            if (!confirm("Are you sure you want to clear all appliances from your Household Load List?")) return;
-            householdLoadList = [];
-            calendarScheduledBlocks = [];
-            saveCalendarBlocks();
-            renderHouseholdLoadList();
-            renderCalendarApplianceSwitches();
-            renderCalendarBlocks();
-            updateLiveEnergyMonitor();
-            dbClearAllAppliances();
-            showToast("Inventory Cleared", "All household appliance loads have been cleared.", "info");
+            handleClearAllAppliancesClick();
         }
 
         function exportLoadListJson() {
@@ -5171,9 +5335,15 @@
                             <button onclick="scheduleApplianceInCalendar('${item.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border border-indigo-500/30 transition-all flex items-center gap-1 cursor-pointer" title="Manage operating schedule in Calendar">
                                 <span>📅</span> Schedule
                             </button>
-                            <button onclick="removeHouseholdLoadItem('${item.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer" title="Remove Appliance">
-                                🗑️
-                            </button>
+                            ${isOn ? `
+                                <button onclick="handleDeleteApplianceClick('${item.id}')" class="p-1.5 rounded-lg text-slate-600 bg-slate-800/40 border border-slate-700/40 cursor-not-allowed opacity-50 transition-all" title="🔒 Locked: Cannot delete while appliance is running live. Turn it OFF first.">
+                                    🗑️
+                                </button>
+                            ` : `
+                                <button onclick="handleDeleteApplianceClick('${item.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer" title="Remove Appliance">
+                                    🗑️
+                                </button>
+                            `}
                         </div>
                     </div>
                 `;
@@ -7734,14 +7904,16 @@
                 renderTimelineHeaderRuler();
             }
 
-            // Auto-clean orphaned schedule blocks only if inventory is loaded and not during initial cloud sync
+            // Auto-clean orphaned future schedule blocks only if inventory is loaded and not during initial cloud sync
             if (!window._isInitialDbSyncing && householdLoadList.length > 0) {
                 const prevCount = calendarScheduledBlocks.length;
-                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => householdLoadList.some(item => String(item.id) === String(b.applianceId)));
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.is_closed_session || householdLoadList.some(item => String(item.id) === String(b.applianceId)));
                 if (calendarScheduledBlocks.length !== prevCount) {
                     saveCalendarBlocks();
                 }
             }
+
+            updateCalendarLogsCountBadge();
 
             layer.innerHTML = '';
             const selectedKey = calendarState.selectedDayKey;
@@ -8808,6 +8980,495 @@
             closeRoutineModal();
             closeTodayModal();
             closeApplianceQueueModal();
+            closeUniversalDeleteConfirmModal();
+            closeCalendarLogsModal();
+        }
+
+        // ==========================================
+        // 5. UNIVERSAL DOUBLE CONFIRMATION CONTROLLER
+        // ==========================================
+        let activeDeleteConfirmConfig = null;
+
+        function openUniversalDeleteConfirmModal(config) {
+            activeDeleteConfirmConfig = config;
+            const modal = document.getElementById('universalDeleteConfirmModal');
+            const titleEl = document.getElementById('deleteConfirmTitle');
+            const subEl = document.getElementById('deleteConfirmSubtitle');
+            const warnEl = document.getElementById('deleteConfirmWarningText');
+            const sumEl = document.getElementById('deleteConfirmItemSummary');
+            const inputEl = document.getElementById('deleteConfirmInput');
+            const btnEl = document.getElementById('deleteConfirmSubmitBtn');
+            const btnTextEl = document.getElementById('deleteConfirmSubmitText');
+            const statusEl = document.getElementById('deleteConfirmStatus');
+
+            if (titleEl) titleEl.textContent = config.title || 'Confirm Deletion';
+            if (subEl) subEl.textContent = config.subtitle || 'Permanent Action';
+            if (warnEl) warnEl.textContent = config.warningText || 'Are you sure you want to permanently delete this item?';
+            if (sumEl) sumEl.innerHTML = config.itemSummaryHtml || '';
+            if (btnTextEl) btnTextEl.textContent = config.submitText || 'Delete Permanently';
+
+            if (inputEl) {
+                inputEl.value = '';
+                inputEl.classList.remove('border-rose-500', 'bg-rose-950/30');
+            }
+            if (statusEl) {
+                statusEl.textContent = 'Required';
+                statusEl.className = 'text-[10px] text-slate-500 font-normal';
+            }
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.className = 'px-5 py-2 rounded-xl bg-slate-800 text-slate-500 font-extrabold text-xs transition-all cursor-not-allowed opacity-50 flex items-center gap-1.5';
+            }
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.remove('scale-95');
+                setTimeout(() => { if (inputEl) inputEl.focus(); }, 150);
+            }
+        }
+
+        function closeUniversalDeleteConfirmModal() {
+            const modal = document.getElementById('universalDeleteConfirmModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.classList.remove('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.add('scale-95');
+            }
+            activeDeleteConfirmConfig = null;
+        }
+
+        function onUniversalDeleteInputChange() {
+            const inputEl = document.getElementById('deleteConfirmInput');
+            const btnEl = document.getElementById('deleteConfirmSubmitBtn');
+            const statusEl = document.getElementById('deleteConfirmStatus');
+            if (!inputEl || !btnEl) return;
+
+            const val = inputEl.value.trim().toLowerCase();
+            const isMatch = (val === 'confirm');
+
+            btnEl.disabled = !isMatch;
+            if (isMatch) {
+                btnEl.className = 'px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition-all cursor-pointer opacity-100 shadow-lg shadow-rose-600/30 flex items-center gap-1.5 animate-pulse';
+                if (statusEl) {
+                    statusEl.textContent = '✓ Unlocked';
+                    statusEl.className = 'text-[10px] text-emerald-400 font-bold';
+                }
+            } else {
+                btnEl.className = 'px-5 py-2 rounded-xl bg-slate-800 text-slate-500 font-extrabold text-xs transition-all cursor-not-allowed opacity-50 flex items-center gap-1.5';
+                if (statusEl) {
+                    statusEl.textContent = val.length > 0 ? 'Mismatch' : 'Required';
+                    statusEl.className = val.length > 0 ? 'text-[10px] text-rose-400 font-normal' : 'text-[10px] text-slate-500 font-normal';
+                }
+            }
+        }
+
+        async function executeUniversalConfirmedDeletion() {
+            if (!activeDeleteConfirmConfig) return;
+            const cfg = activeDeleteConfirmConfig;
+
+            if (cfg.type === 'appliance') {
+                const appId = cfg.id;
+                const item = householdLoadList.find(a => String(a.id) === String(appId));
+                const appName = item ? item.name : 'Appliance';
+
+                // 1. Delete from Supabase
+                await dbDeleteAppliance(appId);
+
+                // 2. Remove from local householdLoadList
+                householdLoadList = householdLoadList.filter(a => String(a.id) !== String(appId));
+
+                // 3. Purge future schedules, but PRESERVE historical closed session logs
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.is_closed_session || String(b.applianceId) !== String(appId));
+
+                saveCalendarBlocks();
+                try {
+                    localStorage.setItem('powerforecast_household_loads_v1', JSON.stringify(householdLoadList));
+                } catch (e) { }
+
+                renderHouseholdLoadList();
+                renderCalendarApplianceSwitches();
+                renderCalendarBlocks();
+                updateLiveEnergyMonitor();
+                updateCalendarLogsCountBadge();
+
+                closeUniversalDeleteConfirmModal();
+                showToast("Appliance Deleted", `"${appName}" removed. Future schedules purged, historical logs preserved.`, "success");
+
+            } else if (cfg.type === 'clear_appliances') {
+                const count = householdLoadList.length;
+
+                // 1. Clear in Supabase
+                await dbClearAllAppliances();
+
+                // 2. Clear local list
+                householdLoadList = [];
+
+                // 3. Purge future schedules, keep historical closed session logs
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.is_closed_session);
+
+                saveCalendarBlocks();
+                try {
+                    localStorage.removeItem('powerforecast_household_loads_v1');
+                } catch (e) { }
+
+                renderHouseholdLoadList();
+                renderCalendarApplianceSwitches();
+                renderCalendarBlocks();
+                updateLiveEnergyMonitor();
+                updateCalendarLogsCountBadge();
+
+                closeUniversalDeleteConfirmModal();
+                showToast("Inventory Cleared", `Cleared all ${count} appliance(s). Historical logs preserved.`, "info");
+
+            } else if (cfg.type === 'log') {
+                const logId = cfg.id;
+
+                // 1. Delete log in Supabase
+                await dbDeleteUsageLog(logId);
+
+                // 2. Remove from local cache
+                dbHistoricalLogsCache = dbHistoricalLogsCache.filter(l => String(l.id) !== String(logId) && String(l.logId) !== String(logId));
+
+                // 3. SYNCHRONIZED TIMELINE CLEANUP: Remove corresponding closed bar on calendar
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => String(b.logId) !== String(logId) && String(b.id) !== String(logId));
+
+                saveCalendarBlocks();
+                renderCalendarBlocks();
+                renderCalendarApplianceSwitches();
+                renderCalendarLogsFeed();
+                updateCalendarLogsCountBadge();
+
+                closeUniversalDeleteConfirmModal();
+                showToast("Log Deleted", "Historical consumption record and timeline bar removed.", "info");
+
+            } else if (cfg.type === 'clear_logs') {
+                // 1. Clear all logs in Supabase
+                await dbClearAllUsageLogs();
+
+                // 2. Clear local cache
+                dbHistoricalLogsCache = [];
+
+                // 3. SYNCHRONIZED TIMELINE CLEANUP: Remove all closed/historical bars on calendar
+                calendarScheduledBlocks = calendarScheduledBlocks.filter(b => !b.is_closed_session && !b.is_from_db_log);
+
+                saveCalendarBlocks();
+                renderCalendarBlocks();
+                renderCalendarApplianceSwitches();
+                renderCalendarLogsFeed();
+                updateCalendarLogsCountBadge();
+
+                closeUniversalDeleteConfirmModal();
+                showToast("Logs Cleared", "All historical energy records and timeline receipt bars cleared.", "info");
+            }
+        }
+
+        // Database Sync Service for Logs
+        async function dbDeleteUsageLog(logId) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client || typeof logId !== 'string' || logId.startsWith('temp_') || logId.startsWith('blk_closed_')) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                await client
+                    .from('appliance_usage_logs')
+                    .delete()
+                    .eq('id', logId)
+                    .eq('user_id', session.user.id);
+            } catch (e) {
+                console.warn('dbDeleteUsageLog error:', e);
+            }
+        }
+
+        async function dbClearAllUsageLogs() {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                await client
+                    .from('appliance_usage_logs')
+                    .delete()
+                    .eq('user_id', session.user.id);
+            } catch (e) {
+                console.warn('dbClearAllUsageLogs error:', e);
+            }
+        }
+
+        // ==========================================
+        // 6. HISTORICAL CALENDAR SESSION LOGS CONTROLLER
+        // ==========================================
+        async function openCalendarLogsModal() {
+            const modal = document.getElementById('calendarLogsModal');
+            // Fetch fresh logs from Supabase
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (client && session && session.user) {
+                    const { data } = await client
+                        .from('appliance_usage_logs')
+                        .select('*')
+                        .eq('user_id', session.user.id)
+                        .order('started_at', { ascending: false });
+                    if (data && data.length > 0) dbHistoricalLogsCache = data;
+                }
+            } catch (e) { }
+
+            renderCalendarLogsFeed();
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.add('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.remove('scale-95');
+            }
+        }
+
+        function closeCalendarLogsModal() {
+            const modal = document.getElementById('calendarLogsModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.classList.remove('opacity-100', 'pointer-events-auto');
+                const inner = modal.querySelector('div');
+                if (inner) inner.classList.add('scale-95');
+            }
+        }
+
+        function getMergedHistoricalLogs() {
+            const map = new Map();
+
+            // 1. From database cache
+            (dbHistoricalLogsCache || []).forEach(log => {
+                const id = log.id || log.logId;
+                if (id) {
+                    map.set(String(id), {
+                        id: String(id),
+                        applianceId: log.appliance_id || log.applianceId,
+                        applianceName: log.appliance_name || null,
+                        startedAt: log.started_at,
+                        endedAt: log.ended_at,
+                        durationMinutes: parseFloat(log.duration_minutes) || 0,
+                        kwh: parseFloat(log.kwh_consumed) || 0,
+                        cost: parseFloat(log.estimated_cost) || 0,
+                        isPeak: Boolean(log.is_peak_window)
+                    });
+                }
+            });
+
+            // 2. From closed blocks on calendar
+            calendarScheduledBlocks.filter(b => b.is_closed_session).forEach(b => {
+                const id = b.logId || b.id;
+                if (id && !map.has(String(id))) {
+                    const item = householdLoadList.find(a => String(a.id) === String(b.applianceId));
+                    const durMins = (b.durationHours || 1.0) * 60;
+                    const watts = item ? (item.watts * (item.qty || 1)) : 1000;
+                    const kwh = (watts * (b.durationHours || 1.0)) / 1000.0;
+                    const cost = kwh * getEffectiveCalendarRate();
+                    map.set(String(id), {
+                        id: String(id),
+                        applianceId: b.applianceId,
+                        applianceName: item ? item.name : null,
+                        startedAt: new Date().toISOString(),
+                        endedAt: new Date().toISOString(),
+                        durationMinutes: durMins,
+                        kwh: kwh,
+                        cost: cost,
+                        isPeak: Boolean(b.is_peak_window)
+                    });
+                }
+            });
+
+            return Array.from(map.values());
+        }
+
+        function updateCalendarLogsCountBadge() {
+            const badge = document.getElementById('calLogsCountBadge');
+            if (badge) {
+                const logs = getMergedHistoricalLogs();
+                badge.textContent = String(logs.length);
+            }
+        }
+
+        function renderCalendarLogsFeed(filterText = '') {
+            const container = document.getElementById('calendarLogsListContainer');
+            const totalCountEl = document.getElementById('calLogsTotalCount');
+            const totalKwhEl = document.getElementById('calLogsTotalKwh');
+            const totalCostEl = document.getElementById('calLogsTotalCost');
+            if (!container) return;
+
+            const allLogs = getMergedHistoricalLogs();
+            updateCalendarLogsCountBadge();
+
+            // Calculate aggregate metrics
+            let totalKwh = 0;
+            let totalCost = 0;
+            allLogs.forEach(l => {
+                totalKwh += (l.kwh || 0);
+                totalCost += (l.cost || 0);
+            });
+
+            if (totalCountEl) totalCountEl.textContent = `${allLogs.length} Session${allLogs.length === 1 ? '' : 's'}`;
+            if (totalKwhEl) totalKwhEl.textContent = `${totalKwh.toFixed(2)} kWh`;
+            if (totalCostEl) totalCostEl.textContent = `₱${totalCost.toFixed(2)}`;
+
+            let filtered = allLogs;
+            if (filterText && filterText.trim()) {
+                const query = filterText.trim().toLowerCase();
+                filtered = allLogs.filter(l => {
+                    const item = householdLoadList.find(a => String(a.id) === String(l.applianceId));
+                    const name = (l.applianceName || (item ? item.name : 'Unknown Appliance')).toLowerCase();
+                    return name.includes(query) || (l.startedAt && l.startedAt.toLowerCase().includes(query));
+                });
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 rounded-2xl bg-slate-950/60 border border-slate-800 text-center flex flex-col items-center gap-2">
+                        <span class="text-3xl">📜</span>
+                        <h4 class="text-xs font-bold text-white">${filterText ? 'No matching logs found' : 'No Historical Session Logs Recorded'}</h4>
+                        <p class="text-[11px] text-slate-400 max-w-sm">${filterText ? 'Try adjusting your search filter keyword.' : 'When appliances finish running or are powered OFF, audited energy consumption receipts are logged here.'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(log => {
+                const item = householdLoadList.find(a => String(a.id) === String(log.applianceId));
+                const appName = item ? item.name : (log.applianceName || 'Archived Appliance');
+                const isArchived = !item;
+
+                const startDt = log.startedAt ? new Date(log.startedAt) : new Date();
+                const dateStr = startDt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = startDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+                let durText = '';
+                if (log.durationMinutes >= 60) {
+                    const hrs = Math.floor(log.durationMinutes / 60);
+                    const mins = Math.round(log.durationMinutes % 60);
+                    durText = mins > 0 ? `${hrs} hr ${mins} mins` : `${hrs} hr`;
+                } else if (log.durationMinutes >= 1) {
+                    durText = `${Math.round(log.durationMinutes)} mins`;
+                } else {
+                    const secs = Math.round(log.durationMinutes * 60);
+                    durText = `${Math.max(1, secs)} secs`;
+                }
+
+                html += `
+                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 flex items-center justify-center text-base shrink-0">
+                                🧾
+                            </div>
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <strong class="text-white font-bold truncate max-w-[200px]" title="${appName}">${appName}</strong>
+                                    ${isArchived ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Archived</span>' : ''}
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${log.isPeak ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+                                        ${log.isPeak ? '🔥 Peak' : '🟢 Off-Peak'}
+                                    </span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">${dateStr} • ${timeStr} • <strong class="text-slate-300">${durText}</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+                            <div class="flex flex-col sm:items-end">
+                                <span class="text-xs font-black text-emerald-400">₱${log.cost.toFixed(2)}</span>
+                                <span class="text-[10px] text-amber-400 font-medium">${log.kwh < 0.01 ? log.kwh.toFixed(4) : log.kwh.toFixed(2)} kWh</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="viewReceiptFromLogsFeed('${log.id}', '${log.applianceId || ''}')" class="px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold text-[11px] transition-all cursor-pointer flex items-center gap-1 shadow">
+                                    <span>🧾</span> Receipt
+                                </button>
+                                <button type="button" onclick="handleDeleteSessionLogClick('${log.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all text-xs cursor-pointer" title="Delete this session log">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function viewReceiptFromLogsFeed(logId, applianceId) {
+            const logs = getMergedHistoricalLogs();
+            const log = logs.find(l => String(l.id) === String(logId));
+            if (!log) return;
+
+            const item = householdLoadList.find(a => String(a.id) === String(applianceId));
+            const receiptData = {
+                applianceId: applianceId,
+                applianceName: item ? item.name : (log.applianceName || 'Archived Appliance'),
+                watts: item ? (item.watts * (item.qty || 1)) : 1000,
+                durationHours: (log.durationMinutes || 60) / 60.0,
+                kwh: log.kwh,
+                cost: log.cost,
+                isPeak: log.isPeak,
+                startHour: new Date(log.startedAt).getHours() + (new Date(log.startedAt).getMinutes() / 60.0),
+                endHour: new Date(log.endedAt).getHours() + (new Date(log.endedAt).getMinutes() / 60.0)
+            };
+
+            closeCalendarLogsModal();
+            openTodayModal(applianceId, null, receiptData);
+        }
+
+        function handleDeleteSessionLogClick(logId) {
+            const logs = getMergedHistoricalLogs();
+            const log = logs.find(l => String(l.id) === String(logId));
+            if (!log) return;
+
+            const item = householdLoadList.find(a => String(a.id) === String(log.applianceId));
+            const appName = item ? item.name : (log.applianceName || 'Archived Appliance');
+
+            openUniversalDeleteConfirmModal({
+                type: 'log',
+                id: log.id,
+                title: 'Delete Session Log',
+                subtitle: appName,
+                warningText: 'This will permanently remove this energy consumption record from database and erase its closed block visualization from the Calendar timeline.',
+                itemSummaryHtml: `
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Appliance:</span> <strong class="text-white">${appName}</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Metered Energy:</span> <strong class="text-amber-400">${log.kwh.toFixed(3)} kWh</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Incurred Cost:</span> <strong class="text-emerald-400">₱${log.cost.toFixed(2)}</strong></div>
+                `,
+                submitText: 'Delete Log'
+            });
+        }
+
+        function handleClearAllSessionLogsClick() {
+            const logs = getMergedHistoricalLogs();
+            if (logs.length === 0) {
+                showToast("No Logs", "Session logs feed is already empty.", "info");
+                return;
+            }
+
+            let totalKwh = 0;
+            let totalCost = 0;
+            logs.forEach(l => {
+                totalKwh += (l.kwh || 0);
+                totalCost += (l.cost || 0);
+            });
+
+            openUniversalDeleteConfirmModal({
+                type: 'clear_logs',
+                id: null,
+                title: 'Clear All Session Logs',
+                subtitle: `All ${logs.length} Logged Sessions`,
+                warningText: 'This will permanently purge all audited consumption history and clear all closed session bars from the Calendar timeline roadmap.',
+                itemSummaryHtml: `
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Total Records:</span> <strong class="text-white">${logs.length} session logs</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Total Energy Purged:</span> <strong class="text-amber-400">${totalKwh.toFixed(2)} kWh</strong></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400">Total Billed Cost:</span> <strong class="text-emerald-400">₱${totalCost.toFixed(2)}</strong></div>
+                `,
+                submitText: 'Clear All Logs'
+            });
         }
 
         // Automated Power Scheduler Engine
