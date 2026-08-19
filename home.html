@@ -4592,7 +4592,6 @@
 
         // ===== Appliance Catalog & Load Estimator & Supabase DB Sync =====
         let householdLoadList = [];
-        let applianceSwitchCooldowns = {};
         let activeUndoSession = null;
         let activeUndoTimer = null;
         let pendingConfirmAction = null;
@@ -4631,11 +4630,15 @@
                 }
 
                 if (data && Array.isArray(data)) {
-                    if (data.length === 0 && householdLoadList.length > 0) {
-                        // Uplink existing local appliances to Supabase
-                        for (const item of [...householdLoadList]) {
-                            await dbInsertAppliance(item);
-                        }
+                    if (data.length === 0) {
+                        householdLoadList = [];
+                        calendarScheduledBlocks = [];
+                        saveCalendarBlocks();
+                        try { localStorage.removeItem('powerforecast_household_loads_v1'); } catch (e) { }
+                        renderHouseholdLoadList();
+                        renderCalendarApplianceSwitches();
+                        renderCalendarBlocks();
+                        updateLiveEnergyMonitor();
                     } else {
                         const oldIdMap = {};
                         householdLoadList.forEach(oldItem => {
@@ -4681,6 +4684,7 @@
 
                         renderHouseholdLoadList();
                         renderCalendarApplianceSwitches();
+                        renderCalendarBlocks();
                         updateLiveEnergyMonitor();
                     }
                 }
@@ -6470,41 +6474,19 @@
             selectedDayKey: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()]
         };
 
+        // Anti-Spam & Concurrency Lock Engine
+        const applianceNetworkLocks = {};
+        const applianceSwitchCooldowns = {};
+        const ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS = 5.0;
+        const UI_SWITCH_COOLDOWN_MS = 2000;
+        let dbHistoricalLogsCache = [];
+
         // Scheduled Bento Blocks Array (persisted locally & synced to Supabase)
         let calendarScheduledBlocks = [];
         try {
             calendarScheduledBlocks = JSON.parse(localStorage.getItem('powerforecast_calendar_blocks_v2') || '[]');
         } catch (e) {
             calendarScheduledBlocks = [];
-        }
-
-        // Initialize default sample blocks if empty so the timeline immediately has rich interactive data
-        if (calendarScheduledBlocks.length === 0) {
-            const now = new Date();
-            const curDayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
-            const curDayNum = now.getDate();
-            calendarScheduledBlocks = [
-                {
-                    id: 'block_sample_1',
-                    applianceId: 'mock_panasonic_ac',
-                    dayKey: curDayKey,
-                    dayNum: curDayNum,
-                    startHour: 13.0, // 1:00 PM
-                    durationHours: 3.0, // 1:00 PM to 4:00 PM (3 hrs)
-                    autoPower: true,
-                    repeat: 'once'
-                },
-                {
-                    id: 'block_sample_2',
-                    applianceId: 'mock_tefal_cooktop',
-                    dayKey: curDayKey,
-                    dayNum: curDayNum,
-                    startHour: 18.0, // 6:00 PM
-                    durationHours: 1.5, // 6:00 PM to 7:30 PM (1.5 hrs)
-                    autoPower: false,
-                    repeat: 'once'
-                }
-            ];
         }
 
         function saveCalendarBlocks() {
@@ -6519,7 +6501,37 @@
             return genRate + 3.50;
         }
 
-        // Supabase Cloud Sync for Calendar Events
+        // Supabase Cloud Sync for Historical Usage Logs (Date-Scoped Query)
+        async function syncApplianceUsageLogsFromDb(dateStr = getSelectedCalendarDateString()) {
+            try {
+                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+                if (!client) return;
+                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+                if (!session || !session.user) return;
+
+                const startOfDay = new Date(`${dateStr}T00:00:00`).toISOString();
+                const endOfDay = new Date(`${dateStr}T23:59:59.999`).toISOString();
+
+                const { data, error } = await client
+                    .from('appliance_usage_logs')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .gte('started_at', startOfDay)
+                    .lte('started_at', endOfDay)
+                    .order('started_at', { ascending: true });
+
+                if (error) {
+                    console.warn('syncApplianceUsageLogsFromDb error:', error);
+                    return;
+                }
+
+                dbHistoricalLogsCache = data || [];
+            } catch (e) {
+                console.warn('syncApplianceUsageLogsFromDb exception:', e);
+            }
+        }
+
+        // Supabase Cloud Sync for Calendar Routine Events
         async function syncUserCalendarEventsFromDb() {
             try {
                 const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
@@ -6538,16 +6550,13 @@
                 }
 
                 if (data && Array.isArray(data)) {
-                    if (data.length === 0 && calendarScheduledBlocks.length > 0) {
-                        // Uplink local blocks that belong to actual household appliances
-                        for (const block of [...calendarScheduledBlocks]) {
-                            const validApp = householdLoadList.find(a => String(a.id) === String(block.applianceId));
-                            if (validApp) {
-                                await dbInsertCalendarEvent(block);
-                            }
-                        }
+                    if (data.length === 0) {
+                        calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.is_active_live);
+                        saveCalendarBlocks();
+                        renderCalendarBlocks();
+                        renderCalendarApplianceSwitches();
                     } else if (data.length > 0) {
-                        calendarScheduledBlocks = data
+                        const cloudRoutines = data
                             .filter(row => {
                                 const dur = parseFloat(row.duration_hours) || 0;
                                 return row.is_recurring || dur >= 0.02;
@@ -6565,6 +6574,9 @@
                                     repeat: row.is_recurring ? 'daily' : 'once'
                                 };
                             });
+
+                        const liveSessions = calendarScheduledBlocks.filter(b => b.is_active_live);
+                        calendarScheduledBlocks = [...cloudRoutines, ...liveSessions];
                         saveCalendarBlocks();
                         renderCalendarBlocks();
                         renderCalendarApplianceSwitches();
@@ -6587,7 +6599,6 @@
                     item = householdLoadList.find(a => a.name && a.name.toLowerCase() === block.title.toLowerCase());
                 }
 
-                // If appliance has not yet been saved to DB (has temporary id), ensure it is inserted first
                 if (item && (typeof item.id !== 'string' || item.id.startsWith('app_') || item.id.startsWith('mock_'))) {
                     await dbInsertAppliance(item);
                 }
@@ -6705,7 +6716,6 @@
                 return (hr >= 11 && hr < 16) || (hr >= 18 && hr < 21);
             };
 
-            // Sample every 30 minutes in the schedule
             let peakSteps = 0;
             let totalSteps = 0;
             for (let t = startHour; t < endHour; t += 0.5) {
@@ -6744,7 +6754,6 @@
             let totalDayCost = 0;
             let peakKwh = 0;
 
-            // 24-hour hourly concurrency simulation array (0..23)
             const hourlySimWatts = new Array(24).fill(0);
 
             // 1. Blocks starting on selected day
@@ -6753,7 +6762,6 @@
                 const item = householdLoadList.find(a => String(a.id) === String(block.applianceId));
                 const watts = (item ? item.watts : 1000) * (item && item.qty ? item.qty : 1);
                 
-                // Portion of hours that fall on this day
                 const dayHours = Math.min(block.durationHours, Math.max(0, 24.0 - block.startHour));
                 const blockKwh = (watts * dayHours) / 1000.0;
                 const blockCost = blockKwh * totalRate;
@@ -6858,6 +6866,7 @@
             householdLoadList.forEach(item => {
                 const isOn = Boolean(item.is_currently_on);
                 const isCooldown = Boolean(applianceSwitchCooldowns[item.id] && applianceSwitchCooldowns[item.id] > now);
+                const isLocked = Boolean(applianceNetworkLocks[item.id]);
                 const cooldownSecs = isCooldown ? Math.ceil((applianceSwitchCooldowns[item.id] - now) / 1000) : 0;
                 const scheduledBlocks = calendarScheduledBlocks.filter(b => String(b.applianceId) === String(item.id));
                 const hasSchedule = scheduledBlocks.length > 0;
@@ -6874,7 +6883,6 @@
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer hover:border-indigo-400/80 ${isOn ? 'bg-indigo-950/60 border-emerald-500/50 shadow-lg shadow-emerald-500/10' : 'bg-slate-900/60 border-slate-800 hover:bg-slate-850'}`;
                 
-                // Clicking card opens schedule settings
                 div.onclick = () => {
                     if (!hasSchedule) {
                         openNewScheduleForAppliance(item.id);
@@ -6912,14 +6920,18 @@
                             </div>
                         </div>
 
-                        <!-- Switch Toggle -->
+                        <!-- Switch Toggle with Anti-Spam Mutex Shield -->
                         <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                            ${isCooldown ? `
+                            ${isLocked ? `
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold animate-pulse">
+                                    <i class="fa-solid fa-spinner fa-spin text-[8px] mr-1"></i> Syncing
+                                </span>
+                            ` : (isCooldown ? `
                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold animate-pulse">
                                     ⏳ ${cooldownSecs}s
                                 </span>
-                            ` : ''}
-                            <label class="relative inline-flex items-center cursor-pointer ${isCooldown ? 'opacity-50 pointer-events-none' : ''}">
+                            ` : '')}
+                            <label class="relative inline-flex items-center cursor-pointer ${(isCooldown || isLocked) ? 'opacity-60 pointer-events-none' : ''}">
                                 <input type="checkbox" ${isOn ? 'checked' : ''} onchange="handleInventoryToggleClick(event, '${item.id}')" class="sr-only peer">
                                 <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
                             </label>
@@ -6967,6 +6979,22 @@
                 if (item.is_currently_on) {
                     totalActiveWatts += (item.watts || 0) * (item.qty || 1);
                     activeCount++;
+
+                    // Dynamically stretch active running blocks on the timeline in real-time
+                    if (item.last_turned_on_at) {
+                        const startMs = new Date(item.last_turned_on_at).getTime();
+                        const elapsedHours = Math.max(0.01, (now - startMs) / 3600000);
+                        const curDayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date().getDay()];
+                        
+                        const liveBlock = calendarScheduledBlocks.find(b => 
+                            String(b.applianceId) === String(item.id) && 
+                            b.dayKey === curDayKey && 
+                            b.is_active_live
+                        );
+                        if (liveBlock) {
+                            liveBlock.durationHours = Math.round(elapsedHours * 10000) / 10000;
+                        }
+                    }
                 }
             });
 
@@ -6995,19 +7023,28 @@
             if (calView && !calView.classList.contains('hidden')) {
                 if (activeCount > 0 || hasActiveCooldowns) {
                     renderCalendarApplianceSwitches();
+                    renderCalendarBlocks();
                 }
             }
         }
 
         setInterval(updateLiveEnergyMonitor, 1000);
 
-        // Appliance State Toggle Controller (with Surge Cooldown, Safety Modals & Supabase Logging)
+        // Appliance State Toggle Controller (with Anti-Spam Mutex, 5-second Discard & Precision Cut-off)
         async function toggleApplianceState(id, bypassConfirm = false, isAutomationCall = false) {
             const item = householdLoadList.find(a => String(a.id) === String(id));
             if (!item) return;
 
             const now = Date.now();
-            if (applianceSwitchCooldowns[id] && applianceSwitchCooldowns[id] > now) {
+
+            // 1. Guard against In-Flight Network Lock
+            if (applianceNetworkLocks[id]) {
+                showToast("Syncing...", "Saving state to database. Please wait.", "info");
+                return;
+            }
+
+            // 2. Guard against rapid switch spam (2-second UI debounce)
+            if (!isAutomationCall && applianceSwitchCooldowns[id] && applianceSwitchCooldowns[id] > now) {
                 const remaining = Math.ceil((applianceSwitchCooldowns[id] - now) / 1000);
                 showToast("Switch Cooldown", `Surge protection: please wait ${remaining}s before toggling again.`, "warning");
                 renderCalendarApplianceSwitches();
@@ -7017,124 +7054,233 @@
 
             const isCurrentlyOn = Boolean(item.is_currently_on);
             const willTurnOn = !isCurrentlyOn;
+            const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
+            const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
+            const userId = session?.user?.id;
 
-            const startedAt = item.last_turned_on_at || new Date().toISOString();
-            const endedAt = new Date().toISOString();
+            // Set In-Flight Network Lock and 2-second UI debounce
+            applianceNetworkLocks[id] = true;
+            if (!isAutomationCall) {
+                applianceSwitchCooldowns[id] = now + UI_SWITCH_COOLDOWN_MS;
+            }
 
-            // Apply Toggle State
-            item.is_currently_on = willTurnOn;
-            item.manual_override_until = now + 60000; // 1-minute automation debounce
-            item.auto_powered = Boolean(isAutomationCall && willTurnOn);
-            
             const nowDt = new Date();
             const curHour = (nowDt.getHours() * 60 + nowDt.getMinutes() + nowDt.getSeconds() / 60.0) / 60.0;
             const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             const curDayKey = dayMap[nowDt.getDay()];
             const curDayNum = nowDt.getDate();
+            const nowIso = nowDt.toISOString();
 
-            if (willTurnOn) {
-                item.last_turned_on_at = endedAt;
-                localStorage.removeItem('pf_shutoff_' + id);
+            try {
+                if (willTurnOn) {
+                    // ===== TURNING ON =====
+                    item.is_currently_on = true;
+                    item.last_turned_on_at = nowIso;
+                    item.manual_override_until = now + 60000;
+                    item.auto_powered = Boolean(isAutomationCall);
+                    localStorage.removeItem('pf_shutoff_' + id);
 
-                // Re-use or update existing active live block instead of spamming duplicates
-                let activeBlock = calendarScheduledBlocks.find(b => 
-                    String(b.applianceId) === String(id) && 
-                    b.dayKey === curDayKey && 
-                    b.is_active_live
-                );
+                    let logId = null;
+                    if (client && userId && typeof item.id === 'string' && !item.id.startsWith('app_') && !item.id.startsWith('mock_')) {
+                        // Auto-close any orphaned open logs first for safety
+                        await client
+                            .from('appliance_usage_logs')
+                            .update({ ended_at: nowIso })
+                            .eq('appliance_id', item.id)
+                            .eq('user_id', userId)
+                            .is('ended_at', null);
 
-                if (activeBlock) {
-                    activeBlock.startHour = Math.round(curHour * 10000) / 10000;
-                    activeBlock.durationHours = 1.0;
-                    if (activeBlock.id.startsWith('blk_')) {
-                        dbInsertCalendarEvent(activeBlock);
-                    } else {
-                        dbUpdateCalendarEvent(activeBlock);
-                    }
-                } else {
-                    const newBlock = {
-                        id: 'blk_session_' + Date.now(),
-                        applianceId: item.id,
-                        dayKey: curDayKey,
-                        dayNum: curDayNum,
-                        startHour: Math.round(curHour * 10000) / 10000,
-                        durationHours: 1.0, // default 1 hr window unless shut off early
-                        autoPower: Boolean(isAutomationCall),
-                        repeat: 'once',
-                        is_active_live: true
-                    };
-                    calendarScheduledBlocks.push(newBlock);
-                    dbInsertCalendarEvent(newBlock);
-                }
-                saveCalendarBlocks();
+                        // Insert new open session log (ended_at is NULL while running)
+                        const isPeak = checkSchedulePeakOverlap(curHour, 0.1).isPeak;
+                        const { data: newLog } = await client
+                            .from('appliance_usage_logs')
+                            .insert({
+                                user_id: userId,
+                                appliance_id: item.id,
+                                started_at: nowIso,
+                                ended_at: null,
+                                duration_minutes: 0,
+                                kwh_consumed: 0,
+                                is_peak_window: isPeak,
+                                estimated_cost: 0,
+                                source: isAutomationCall ? 'schedule_auto' : 'calendar_toggle',
+                                notes: 'Active runtime session'
+                            })
+                            .select('id')
+                            .single();
 
-            } else if (startedAt) {
-                // Precision Truncation: find the active block for this appliance today and cut its bar off at exact shutoff time!
-                const activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
-                    String(b.applianceId) === String(id) && 
-                    b.dayKey === curDayKey &&
-                    (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
-                ) || calendarScheduledBlocks.slice().reverse().find(b => 
-                    String(b.applianceId) === String(id) && 
-                    b.dayKey === curDayKey
-                );
-
-                if (activeBlock) {
-                    // Cut off duration to exact elapsed time from its startHour
-                    const exactElapsed = Math.max(0.0028, curHour - activeBlock.startHour); // min ~10s
-                    activeBlock.durationHours = Math.round(exactElapsed * 10000) / 10000;
-                    activeBlock.is_active_live = false;
-                    activeBlock.is_closed_session = true;
-
-                    // Log exact session to appliance_usage_logs in Supabase
-                    const durMinutes = Math.max(1, Math.round(exactElapsed * 60));
-                    const kwh = (item.watts * (item.qty || 1) * exactElapsed) / 1000.0;
-                    const totalRate = getEffectiveCalendarRate();
-                    const estCost = kwh * totalRate;
-                    const isPeak = checkSchedulePeakOverlap(activeBlock.startHour, exactElapsed).isPeak;
-                    
-                    dbLogApplianceUsageSession(item.id, startedAt, endedAt, durMinutes, kwh, isPeak, estCost);
-
-                    // If fleeting test toggle (< 30 seconds) and not a recurring routine, clean up calendar event
-                    if (exactElapsed < 0.0083 && (!activeBlock.repeat || activeBlock.repeat === 'once') && !activeBlock.seriesId) {
-                        calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== activeBlock.id);
-                        dbDeleteCalendarEvent(activeBlock.id);
-                    } else {
-                        if (activeBlock.id.startsWith('blk_')) {
-                            dbInsertCalendarEvent(activeBlock);
-                        } else {
-                            dbUpdateCalendarEvent(activeBlock);
+                        if (newLog) {
+                            logId = newLog.id;
+                            item.active_session_log_id = newLog.id;
                         }
+
+                        // Update user_appliances state in Supabase
+                        await client
+                            .from('user_appliances')
+                            .update({
+                                is_currently_on: true,
+                                last_turned_on_at: nowIso
+                            })
+                            .eq('id', item.id)
+                            .eq('user_id', userId);
+                    }
+
+                    // Create or update live running block on timeline
+                    let activeBlock = calendarScheduledBlocks.find(b => 
+                        String(b.applianceId) === String(id) && 
+                        b.dayKey === curDayKey && 
+                        b.is_active_live
+                    );
+
+                    if (activeBlock) {
+                        activeBlock.startHour = Math.round(curHour * 10000) / 10000;
+                        activeBlock.durationHours = 0.05;
+                        activeBlock.logId = logId;
+                    } else {
+                        activeBlock = {
+                            id: 'blk_live_' + Date.now(),
+                            applianceId: item.id,
+                            dayKey: curDayKey,
+                            dayNum: curDayNum,
+                            startHour: Math.round(curHour * 10000) / 10000,
+                            durationHours: 0.05,
+                            autoPower: Boolean(isAutomationCall),
+                            repeat: 'once',
+                            is_active_live: true,
+                            logId: logId
+                        };
+                        calendarScheduledBlocks.push(activeBlock);
                     }
                     saveCalendarBlocks();
+
+                } else {
+                    // ===== TURNING OFF =====
+                    const startedAtStr = item.last_turned_on_at || nowIso;
+                    const startedAtMs = new Date(startedAtStr).getTime();
+                    const elapsedMs = Math.max(0, now - startedAtMs);
+                    const elapsedSeconds = elapsedMs / 1000.0;
+                    const elapsedHours = elapsedSeconds / 3600.0;
+
+                    item.is_currently_on = false;
+                    item.manual_override_until = now + 60000;
+
+                    // Check if turned off during an active scheduled routine window (Conflict Mitigation)
+                    const activeSchedule = calendarScheduledBlocks.find(b => 
+                        b.autoPower &&
+                        String(b.applianceId) === String(id) && 
+                        b.dayKey === curDayKey && 
+                        isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)
+                    );
+                    if (activeSchedule) {
+                        // Suppress auto-restart until the end of this schedule window
+                        const endH = activeSchedule.startHour + activeSchedule.durationHours;
+                        const hoursRemaining = Math.max(0, endH - curHour);
+                        const suppressUntil = now + Math.round(hoursRemaining * 3600 * 1000);
+                        localStorage.setItem('pf_shutoff_' + id, String(suppressUntil));
+                    }
+
+                    // A. ACCIDENTAL MISCLICK DISCARD (< 5 Seconds)
+                    if (elapsedSeconds < ACCIDENTAL_MISCLICK_THRESHOLD_SECONDS) {
+                        // Delete transient log from Supabase
+                        if (client && userId && item.active_session_log_id) {
+                            await client
+                                .from('appliance_usage_logs')
+                                .delete()
+                                .eq('id', item.active_session_log_id);
+                        }
+
+                        // Remove live block from timeline
+                        calendarScheduledBlocks = calendarScheduledBlocks.filter(b => 
+                            !(String(b.applianceId) === String(id) && b.is_active_live)
+                        );
+                        saveCalendarBlocks();
+
+                        if (client && userId && typeof item.id === 'string' && !item.id.startsWith('app_')) {
+                            await client
+                                .from('user_appliances')
+                                .update({
+                                    is_currently_on: false,
+                                    last_turned_on_at: item.last_turned_on_at
+                                })
+                                .eq('id', item.id)
+                                .eq('user_id', userId);
+                        }
+
+                        item.active_session_log_id = null;
+                        showToast("Quick Toggle (< 5s)", "Session cancelled & discarded from database logs.", "info");
+
+                    } else {
+                        // B. LEGITIMATE SESSION (>= 5 Seconds)
+                        const durMinutes = Math.max(0.1, elapsedSeconds / 60.0);
+                        const kwh = (item.watts * (item.qty || 1) * elapsedHours) / 1000.0;
+                        const totalRate = getEffectiveCalendarRate();
+                        const estCost = kwh * totalRate;
+                        const isPeak = checkSchedulePeakOverlap(curHour - elapsedHours, elapsedHours).isPeak;
+
+                        if (client && userId && typeof item.id === 'string' && !item.id.startsWith('app_')) {
+                            if (item.active_session_log_id) {
+                                await client
+                                    .from('appliance_usage_logs')
+                                    .update({
+                                        ended_at: nowIso,
+                                        duration_minutes: Math.round(durMinutes * 100) / 100,
+                                        kwh_consumed: Math.round(kwh * 10000) / 10000,
+                                        is_peak_window: isPeak,
+                                        estimated_cost: Math.round(estCost * 100) / 100
+                                    })
+                                    .eq('id', item.active_session_log_id);
+                            } else {
+                                await client
+                                    .from('appliance_usage_logs')
+                                    .insert({
+                                        user_id: userId,
+                                        appliance_id: item.id,
+                                        started_at: startedAtStr,
+                                        ended_at: nowIso,
+                                        duration_minutes: Math.round(durMinutes * 100) / 100,
+                                        kwh_consumed: Math.round(kwh * 10000) / 10000,
+                                        is_peak_window: isPeak,
+                                        estimated_cost: Math.round(estCost * 100) / 100,
+                                        source: isAutomationCall ? 'schedule_auto' : 'calendar_toggle',
+                                        notes: 'Manual shutoff recorded'
+                                    });
+                            }
+
+                            await client
+                                .from('user_appliances')
+                                .update({
+                                    is_currently_on: false
+                                })
+                                .eq('id', item.id)
+                                .eq('user_id', userId);
+                        }
+
+                        // Precision Truncation: Cut off the timeline block to exact elapsed duration
+                        const activeBlock = calendarScheduledBlocks.slice().reverse().find(b => 
+                            String(b.applianceId) === String(id) && 
+                            b.dayKey === curDayKey &&
+                            (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
+                        );
+
+                        if (activeBlock) {
+                            activeBlock.durationHours = Math.max(0.0028, Math.round(elapsedHours * 10000) / 10000);
+                            activeBlock.is_active_live = false;
+                            activeBlock.is_closed_session = true;
+                            saveCalendarBlocks();
+                        }
+
+                        item.active_session_log_id = null;
+                        showToast("Session Recorded", `Shutoff saved (${durMinutes.toFixed(1)} mins, ₱${estCost.toFixed(2)}).`, "success");
+                    }
                 }
-            }
-
-            // Set 5-second surge cooldown
-            applianceSwitchCooldowns[id] = now + 5000;
-
-            renderCalendarApplianceSwitches();
-            if (typeof renderHouseholdLoadList === 'function') renderHouseholdLoadList();
-            renderCalendarBlocks();
-            updateLiveEnergyMonitor();
-
-            // Record Runtime Session in Supabase
-            try {
-                const client = window.PowerForecastAuth ? window.PowerForecastAuth.getClient() : (window.supabaseClient || null);
-                const session = await (window.PowerForecastAuth ? window.PowerForecastAuth.getSession() : null);
-
-                if (client && session && session.user && typeof item.id === 'string' && !item.id.startsWith('app_')) {
-                    await client
-                        .from('user_appliances')
-                        .update({
-                            is_currently_on: willTurnOn,
-                            last_turned_on_at: willTurnOn ? endedAt : item.last_turned_on_at
-                        })
-                        .eq('id', item.id)
-                        .eq('user_id', session.user.id);
-                }
-            } catch (e) {
-                console.warn('toggleApplianceState DB error:', e);
+            } catch (err) {
+                console.warn('toggleApplianceState error:', err);
+            } finally {
+                delete applianceNetworkLocks[id];
+                renderCalendarApplianceSwitches();
+                if (typeof renderHouseholdLoadList === 'function') renderHouseholdLoadList();
+                renderCalendarBlocks();
+                updateLiveEnergyMonitor();
             }
         }
 
@@ -7443,15 +7589,54 @@
             const isPastDay = selectedDateStr < todayStr;
             const { prevDayKey, nextDayKey } = getAdjacentDays(selectedKey);
 
-            // Filter out closed transient micro-sessions (< 1.2 min duration and not recurring) to keep timeline clean
-            const rawStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
-            const dayStartingBlocks = rawStartingBlocks.filter(b => {
-                if (b.is_active_live) return true;
-                if (b.repeat && b.repeat !== 'once') return true;
-                if (b.seriesId) return true;
-                return (parseFloat(b.durationHours) || 0) >= 0.02;
+            // 1. Convert DB Historical Logs for the selected date into renderable blocks
+            const historicalBlocks = (dbHistoricalLogsCache || []).filter(log => log.ended_at !== null).map(log => {
+                const startDt = new Date(log.started_at);
+                const startH = startDt.getHours() + (startDt.getMinutes() / 60.0) + (startDt.getSeconds() / 3600.0);
+                const durH = (parseFloat(log.duration_minutes) || 0) / 60.0;
+                return {
+                    id: 'log_' + log.id,
+                    applianceId: log.appliance_id,
+                    dayKey: selectedKey,
+                    dayNum: calendarState.selectedDay,
+                    startHour: Math.round(startH * 10000) / 10000,
+                    durationHours: Math.max(0.0028, Math.round(durH * 10000) / 10000),
+                    autoPower: log.source === 'schedule_auto',
+                    repeat: 'once',
+                    is_from_db_log: true,
+                    is_closed_session: true,
+                    dbLogId: log.id,
+                    estCost: parseFloat(log.estimated_cost) || 0,
+                    kwh: parseFloat(log.kwh_consumed) || 0
+                };
             });
-            const incomingRolloverBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey && (b.startHour + b.durationHours) > 24.0);
+
+            // 2. Filter local / routine blocks for active day
+            let dayStartingBlocks = [];
+            let incomingRolloverBlocks = [];
+
+            if (isPastDay) {
+                // Past days display strictly completed usage logs from the database
+                dayStartingBlocks = historicalBlocks;
+                incomingRolloverBlocks = [];
+            } else {
+                // Today or Future: merge schedule routines + active live bars + historical logs from today
+                const rawStartingBlocks = calendarScheduledBlocks.filter(b => b.dayKey === selectedKey);
+                const activeScheduledAndLive = rawStartingBlocks.filter(b => {
+                    if (b.is_active_live) return true;
+                    if (b.repeat && b.repeat !== 'once') return true;
+                    if (b.seriesId) return true;
+                    return (parseFloat(b.durationHours) || 0) >= 0.02;
+                });
+
+                // Deduplicate historical logs against active blocks
+                const unmergedHistorical = historicalBlocks.filter(h => 
+                    !activeScheduledAndLive.some(b => String(b.logId) === String(h.dbLogId))
+                );
+
+                dayStartingBlocks = [...activeScheduledAndLive, ...unmergedHistorical];
+                incomingRolloverBlocks = calendarScheduledBlocks.filter(b => b.dayKey === prevDayKey && (b.startHour + b.durationHours) > 24.0);
+            }
 
             updateDailyCalendarSummary();
 
@@ -8478,7 +8663,7 @@
         }
 
         // Single Day Selector Strip Handler
-        function selectCalendarDay(dayKey, dayNum) {
+        async function selectCalendarDay(dayKey, dayNum) {
             calendarState.selectedDayKey = dayKey;
             calendarState.selectedDay = dayNum;
 
@@ -8491,6 +8676,8 @@
                 activeStrip.className = 'day-strip-btn flex flex-col py-1.5 rounded-xl bg-indigo-600 text-white font-extrabold shadow-lg ring-2 ring-indigo-400/50 scale-105 transition-all cursor-pointer';
             }
 
+            const selectedDateStr = getSelectedCalendarDateString();
+            await syncApplianceUsageLogsFromDb(selectedDateStr);
             renderCalendarBlocks();
         }
 
@@ -8643,6 +8830,7 @@
                     // Pull cloud data for authenticated user
                     await syncUserAppliancesFromDb();
                     await syncUserCalendarEventsFromDb();
+                    await syncApplianceUsageLogsFromDb();
                 }
             } catch (e) {
                 console.warn('Auth init error:', e);
