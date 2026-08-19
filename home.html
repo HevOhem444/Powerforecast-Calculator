@@ -3685,7 +3685,7 @@
         class="fixed bottom-2 right-3 z-50 pointer-events-auto select-none flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950/75 backdrop-blur-md border border-slate-700/70 text-[11px] sm:text-xs font-mono font-semibold text-slate-300 shadow-2xl shadow-black/50 hover:border-indigo-400 hover:text-white hover:bg-slate-900 transition-all cursor-default group"
         title="PowerForecast Live Build Version">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
-        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.46v - Filter live and closed runtime sessions from scheduled queue lists and inventory schedule badges</span>
+        <span id="pfBuildVersionLabel" class="tracking-tight truncate max-w-[340px] sm:max-w-[560px]">1.6.47v - Decouple manual switch from modal, add card queue button, and absorb colliding schedules during continuous run</span>
     </div>
 
     <!-- Application Logic Script -->
@@ -6991,24 +6991,14 @@
                             ${isOn ? (runningLabel || '🟢 Active') : '⚪ Standby'}
                         </span>
                         <div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
-                            ${(() => {
-                                const schedBlock = scheduledBlocks.find(b => b.dayKey === calendarState.selectedDayKey) || scheduledBlocks[0];
-                                if (schedBlock) {
-                                    const startLabel = formatHour(schedBlock.startHour);
-                                    const endLabel = formatHour((schedBlock.startHour + schedBlock.durationHours) % 24);
-                                    return `
-                                        <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all cursor-pointer" title="Scheduled: ${startLabel} – ${endLabel} (Click to configure)">
-                                            <span>📅</span> ${startLabel} – ${endLabel}
-                                        </span>
-                                    `;
-                                } else {
-                                    return `
-                                        <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 hover:text-white transition-all cursor-pointer">
-                                            <span>📅</span> + Set Schedule
-                                        </span>
-                                    `;
-                                }
-                            })()}
+                            <span onclick="openNewScheduleForAppliance('${item.id}')" class="text-[9px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-slate-700 hover:text-white transition-all cursor-pointer" title="Create automation schedule">
+                                <span>📅</span> + Set Schedule
+                            </span>
+                            ${scheduledBlocks.length > 0 ? `
+                                <span onclick="openBentoSettingsModal(null, '${item.id}', null, 'queue')" class="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1 hover:bg-indigo-500/30 transition-all cursor-pointer" title="View ${scheduledBlocks.length} queued routine(s)">
+                                    <span>📋</span> Queue (${scheduledBlocks.length})
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -7238,11 +7228,9 @@
                     }
                     saveCalendarBlocks();
 
-                    // Automatically pop up the Schedule / Live End-Time modal on Turn ON
-                    if (!isAutomationCall && activeBlock) {
-                        setTimeout(() => {
-                            openBentoSettingsModal(activeBlock.id);
-                        }, 250);
+                    // Direct Manual Turn ON Confirmation
+                    if (!isAutomationCall) {
+                        showToast("Appliance Powered ON", `"${item.name}" is now running live.`, "success");
                     }
 
                 } else {
@@ -8460,12 +8448,25 @@
             }
         }
 
-        function openBentoSettingsModal(blockId, receiptData = null) {
+        function openBentoSettingsModal(blockId = null, defaultApplianceId = null, receiptData = null, initialTab = null) {
+            if (!blockId && defaultApplianceId && !activeEditingDraft) {
+                const now = new Date();
+                activeEditingDraft = {
+                    applianceId: defaultApplianceId,
+                    dayKey: calendarState.selectedDayKey,
+                    dayNum: calendarState.selectedDay,
+                    startHour: now.getHours() + (now.getMinutes() / 60.0),
+                    durationHours: 1.0,
+                    autoPower: true,
+                    repeat: 'once'
+                };
+            }
+
             let block = blockId ? calendarScheduledBlocks.find(b => b.id === blockId) : activeEditingDraft;
-            if (!block && !receiptData) return;
+            if (!block && !receiptData && !defaultApplianceId) return;
 
             activeEditingBlockId = blockId;
-            activeEditingApplianceId = block ? block.applianceId : (receiptData ? receiptData.applianceId : null);
+            activeEditingApplianceId = block ? block.applianceId : (receiptData ? receiptData.applianceId : defaultApplianceId);
             const item = householdLoadList.find(a => String(a.id) === String(activeEditingApplianceId));
 
             const dateStr = getSelectedCalendarDateString();
@@ -8560,7 +8561,7 @@
                 }
                 if (timeSpanEl) timeSpanEl.textContent = `Started: ${formatHour(startH)} • Ended: ${formatHour(endH)}`;
 
-                switchBentoModalTab('live');
+                switchBentoModalTab(initialTab || 'live');
 
             } else if (temporalStatus === 'running') {
                 // 2. LIVE RUNNING SESSION (Editable Target End Time Today)
@@ -8580,7 +8581,7 @@
                 if (liveEndInput) liveEndInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
 
                 recalcLiveSessionDuration();
-                switchBentoModalTab('live');
+                switchBentoModalTab(initialTab || 'live');
 
                 // Pre-fill Routine Tab with defaults
                 if (startInput) {
@@ -8621,7 +8622,7 @@
 
                 onRecurrenceModeChange();
                 recalcModalDuration();
-                switchBentoModalTab('routine');
+                switchBentoModalTab(initialTab || 'routine');
             }
 
             if (modal) {
@@ -8835,6 +8836,16 @@
                     if (inWindow && !item.is_currently_on) {
                         toggleApplianceState(item.id, true, true);
                         showToast("Smart Automation", `Auto-turned ON "${item.name}" per schedule!`, "info");
+                    } else if (inWindow && item.is_currently_on && !item.auto_powered) {
+                        // User has been running the appliance continuously into this scheduled window!
+                        // Absorb the schedule: delete single one-time schedule event from Supabase & calendarScheduledBlocks
+                        if (block.repeat === 'once' && !block.seriesId) {
+                            calendarScheduledBlocks = calendarScheduledBlocks.filter(b => b.id !== block.id);
+                            dbDeleteCalendarEvent(block.id);
+                            saveCalendarBlocks();
+                            renderCalendarBlocks();
+                            renderCalendarApplianceSwitches();
+                        }
                     } else if (!inWindow && item.is_currently_on && item.auto_powered) {
                         // Only auto-turn OFF if it was auto-powered ON and no other active autoPower block is running
                         const otherActive = calendarScheduledBlocks.some(b => 
