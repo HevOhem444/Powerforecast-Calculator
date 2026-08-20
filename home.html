@@ -3128,7 +3128,7 @@
                                     </span>
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 pt-0.5">
-                                    <button type="button" onclick="setRoutineQuickStart('selected')" id="btnQuickStart_selected" class="py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow">Selected Day</button>
+                                    <button type="button" onclick="setRoutineQuickStart('selected')" id="btnQuickStart_selected" class="py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white border border-indigo-400 shadow">Day</button>
                                     <button type="button" onclick="setRoutineQuickStart('tomorrow')" id="btnQuickStart_tomorrow" class="py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Tomorrow</button>
                                     <button type="button" onclick="setRoutineQuickStart('custom')" id="btnQuickStart_custom" class="py-2 rounded-xl text-xs font-bold border border-slate-700 text-slate-300 hover:border-indigo-400">Pick Date</button>
                                 </div>
@@ -4216,7 +4216,7 @@
                         <div class="flex flex-col">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-base sm:text-lg font-extrabold t-primary">PowerForecast Release Logs</h3>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v1.8.4ev Live</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v1.8.5v Live</span>
                             </div>
                             <span class="text-xs t-muted">Historical database of all deployments, feature rollouts, and minor fixes</span>
                         </div>
@@ -4262,7 +4262,7 @@
         title="Click to view full Release History & Update Logs 📜">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse group-hover:bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.9)] shrink-0"></span>
         <span id="pfBuildVersionLabel" class="tracking-tight font-extrabold text-indigo-300 group-hover:text-amber-400 transition-colors pointer-events-none">
-            1.8.4ev
+            1.8.5v
         </span>
         <!-- Floating Fix Log Tooltip Card on Hover (Passive preview - click triggers modal) -->
         <div class="absolute bottom-full right-0 mb-2 w-max max-w-[90vw] sm:max-w-[480px] p-3.5 rounded-2xl backdrop-blur-2xl border shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 text-left z-50 pointer-events-none"
@@ -4270,12 +4270,12 @@
             <div class="flex items-center justify-between gap-3 pb-2 border-b border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
                 <span class="flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>v1.8.4ev Active Fix Log</span>
+                    <span>v1.8.5v Active Fix Log</span>
                 </span>
                 <span class="t-muted font-normal font-sans">PowerForecast Engine</span>
             </div>
             <p class="mt-2 text-xs font-mono font-medium t-primary leading-relaxed break-words">
-                1.8.4ev - Guaranteed click handler and modal display lifecycle for release history logs
+                1.8.5v - Merged active & scheduled timeline progress bar with consumed vs remaining split, enforce +5m start time ahead of current time, and Day button polish
             </p>
             <div class="mt-2.5 pt-2 border-t border-indigo-500/10 flex items-center justify-between text-[10px] t-muted">
                 <span>💡 Click this banner to open full Changelog history</span>
@@ -8097,19 +8097,7 @@
                                 .eq('user_id', userId);
                         }
 
-                        // Database Deletion: Remove scheduled event from user_calendar_events in Supabase
-                        const activeSchedBlocks = calendarScheduledBlocks.filter(b => 
-                            String(b.applianceId) === String(id) && 
-                            b.dayKey === curDayKey && 
-                            (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours))
-                        );
-                        for (const schedBlock of activeSchedBlocks) {
-                            if (schedBlock.id && !schedBlock.id.startsWith('blk_') && !schedBlock.id.startsWith('block_sample')) {
-                                await dbDeleteCalendarEvent(schedBlock.id);
-                            }
-                        }
-
-                        // Precision Truncation: Replace the scheduled block with the deactivated/closed historical session
+                        // Precision Deactivation: Record the closed historical session (preserving recurring routine definitions)
                         const startH = Math.max(0, Math.round((curHour - elapsedHours) * 10000) / 10000);
                         const durH = Math.max(0.0014, Math.round(elapsedHours * 10000) / 10000);
 
@@ -8127,9 +8115,9 @@
                             logId: finalLogId
                         };
 
-                        // Remove all old un-truncated/live blocks for this appliance today and insert the closedBlock
+                        // Remove only ephemeral live running blocks for this appliance today, preserving scheduled routines intact
                         calendarScheduledBlocks = calendarScheduledBlocks.filter(b => 
-                            !(String(b.applianceId) === String(id) && b.dayKey === curDayKey && (b.is_active_live || isTimeInScheduleWindow(curHour, b.startHour, b.durationHours)))
+                            !(String(b.applianceId) === String(id) && b.dayKey === curDayKey && b.is_active_live)
                         );
                         calendarScheduledBlocks.push(closedBlock);
                         saveCalendarBlocks();
@@ -8783,12 +8771,86 @@
                         visualEnd: visualEnd,
                         durationHours: rolloverHours,
                         isOvernight: false,
-                        totalEnd: totalEnd
+                        totalEnd: totalEnd,
+                        isMergedActive: false
                     });
                 });
 
-                // 2. Starting blocks
-                appStartingBlocks.forEach(block => {
+                // 2. Starting blocks (with smart merging for active running routines)
+                const liveBlockToday = appStartingBlocks.find(b => b.is_active_live);
+                const routineBlocksToday = appStartingBlocks.filter(b => !b.is_active_live && !b.is_closed_session);
+                const closedBlocksToday = appStartingBlocks.filter(b => b.is_closed_session);
+
+                let mergedRoutineIds = new Set();
+
+                if (isViewingToday && isOn && (liveBlockToday || item.last_turned_on_at)) {
+                    const startedAtDt = item.last_turned_on_at ? new Date(item.last_turned_on_at) : new Date();
+                    const liveStartH = startedAtDt.getHours() + (startedAtDt.getMinutes() / 60.0) + (startedAtDt.getSeconds() / 3600.0);
+                    const liveElapsedH = Math.max(0.0014, (new Date().getTime() - startedAtDt.getTime()) / 3600000);
+
+                    // Find any scheduled routine active now or directly connected to this live run
+                    const matchingRoutine = routineBlocksToday.find(r => 
+                        isTimeInScheduleWindow(nowHour, r.startHour, r.durationHours) ||
+                        (liveStartH <= (r.startHour + r.durationHours) && (liveStartH + liveElapsedH) >= r.startHour)
+                    );
+
+                    if (matchingRoutine) {
+                        mergedRoutineIds.add(matchingRoutine.id);
+                        const unifiedStart = Math.min(liveStartH, matchingRoutine.startHour);
+                        const unifiedEnd = Math.max(matchingRoutine.startHour + matchingRoutine.durationHours, liveStartH + liveElapsedH);
+                        const totalDur = Math.max(0.1, unifiedEnd - unifiedStart);
+                        const consumedH = Math.max(0.0014, Math.min(totalDur, nowHour - unifiedStart));
+                        const remainingH = Math.max(0, unifiedEnd - (unifiedStart + consumedH));
+                        const consumedPct = Math.min(99.5, Math.max(0.5, (consumedH / totalDur) * 100.0));
+
+                        const visualEnd = unifiedStart + Math.max(totalDur, minVisualDurationHours) + visualGapHours;
+                        allAppSessions.push({
+                            block: matchingRoutine,
+                            isRollover: false,
+                            start: unifiedStart,
+                            end: unifiedEnd,
+                            visualEnd: visualEnd,
+                            durationHours: totalDur,
+                            isOvernight: unifiedEnd > 24.0,
+                            totalEnd: unifiedEnd,
+                            isMergedActive: true,
+                            consumedHours: consumedH,
+                            remainingHours: remainingH,
+                            consumedPct: consumedPct
+                        });
+                    } else if (liveBlockToday) {
+                        // Live run without a matching schedule
+                        const visualEnd = liveBlockToday.startHour + Math.max(liveBlockToday.durationHours, minVisualDurationHours) + visualGapHours;
+                        allAppSessions.push({
+                            block: liveBlockToday,
+                            isRollover: false,
+                            start: liveBlockToday.startHour,
+                            end: liveBlockToday.startHour + liveBlockToday.durationHours,
+                            visualEnd: visualEnd,
+                            durationHours: liveBlockToday.durationHours,
+                            isOvernight: (liveBlockToday.startHour + liveBlockToday.durationHours) > 24.0,
+                            totalEnd: liveBlockToday.startHour + liveBlockToday.durationHours,
+                            isMergedActive: false
+                        });
+                    }
+                } else if (liveBlockToday) {
+                    const visualEnd = liveBlockToday.startHour + Math.max(liveBlockToday.durationHours, minVisualDurationHours) + visualGapHours;
+                    allAppSessions.push({
+                        block: liveBlockToday,
+                        isRollover: false,
+                        start: liveBlockToday.startHour,
+                        end: liveBlockToday.startHour + liveBlockToday.durationHours,
+                        visualEnd: visualEnd,
+                        durationHours: liveBlockToday.durationHours,
+                        isOvernight: (liveBlockToday.startHour + liveBlockToday.durationHours) > 24.0,
+                        totalEnd: liveBlockToday.startHour + liveBlockToday.durationHours,
+                        isMergedActive: false
+                    });
+                }
+
+                // Add remaining non-merged routine blocks
+                routineBlocksToday.forEach(block => {
+                    if (mergedRoutineIds.has(block.id)) return;
                     const visualEnd = block.startHour + Math.max(block.durationHours, minVisualDurationHours) + visualGapHours;
                     allAppSessions.push({
                         block: block,
@@ -8798,7 +8860,24 @@
                         visualEnd: visualEnd,
                         durationHours: block.durationHours,
                         isOvernight: (block.startHour + block.durationHours) > 24.0,
-                        totalEnd: block.startHour + block.durationHours
+                        totalEnd: block.startHour + block.durationHours,
+                        isMergedActive: false
+                    });
+                });
+
+                // Add closed historical blocks
+                closedBlocksToday.forEach(block => {
+                    const visualEnd = block.startHour + Math.max(block.durationHours, minVisualDurationHours) + visualGapHours;
+                    allAppSessions.push({
+                        block: block,
+                        isRollover: false,
+                        start: block.startHour,
+                        end: block.startHour + block.durationHours,
+                        visualEnd: visualEnd,
+                        durationHours: block.durationHours,
+                        isOvernight: (block.startHour + block.durationHours) > 24.0,
+                        totalEnd: block.startHour + block.durationHours,
+                        isMergedActive: false
                     });
                 });
 
@@ -8838,7 +8917,8 @@
                     const isReadOnly = Boolean(block.is_closed_session);
                     const isAuto = Boolean(block.autoPower);
                     const status = getScheduleTemporalStatus(block, selectedDateStr);
-                    const isRunning = (status === 'running');
+                    const isRunning = (status === 'running') || session.isMergedActive;
+                    const isMerged = Boolean(session.isMergedActive);
 
                     const startH = session.start;
                     const durationH = session.durationHours;
@@ -8856,46 +8936,102 @@
                     const widthPercent = Math.max(actualWidthPercent, minVisualWidthPercent);
                     const topOffset = (session.laneIndex * (laneHeight + laneGap)) + trackPadding;
 
-                    let barClass = '';
-                    let zIndex = isRunning ? 'z-20' : (isReadOnly ? 'z-10' : 'z-10');
-                    if (isRunning) {
-                        barClass = 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 border border-emerald-300 text-white shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-400/50 animate-pulse';
-                    } else if (isReadOnly) {
-                        barClass = 'bg-slate-850/95 border border-slate-700/90 text-slate-300 shadow-sm hover:border-slate-500';
-                    } else if (isRollover) {
-                        barClass = 'bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 border border-purple-400/80 text-white hover:brightness-110 shadow-md';
-                    } else {
-                        barClass = 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110 shadow-md';
-                    }
-
                     // Adaptive Content Density based on visual width and zoom level
                     const isUltraCompact = widthPercent < 4.0;
                     const isCompact = widthPercent < 8.0;
                     const costStr = sessionCost < 0.01 ? (sessionCost > 0 ? '<₱0.01' : '₱0.00') : `₱${sessionCost.toFixed(2)}`;
 
-                    barsHtml += `
-                        <div class="absolute rounded-lg flex items-center justify-between px-2 cursor-pointer transition-all ${zIndex} ${barClass}"
-                             style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 44px; top: ${topOffset}px; height: ${laneHeight}px;"
-                             onclick="openBentoSettingsModal('${block.id}')"
-                             title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
-                            <div class="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
-                                <span class="font-extrabold text-[10px] shrink-0">${isRollover ? '🌅 ' : ''}~${costStr}</span>
-                                ${!isCompact ? `<span class="text-[8px] font-mono text-slate-100 bg-black/35 px-1 py-0.5 rounded shrink-0 font-medium">${timeSpanLabel}</span>` : ''}
-                                ${!isUltraCompact && isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
-                                ${!isCompact && isRollover ? `<span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>` : ''}
-                                ${!isCompact && isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
-                                ${!isCompact && isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
-                                ${!isCompact && isRunning ? `<span class="text-[8px] font-bold bg-emerald-400/40 text-emerald-100 px-1 py-0.5 rounded shrink-0">🟢 Active</span>` : ''}
-                                ${!isCompact && isReadOnly ? `<span class="text-[8px] font-bold bg-slate-700 text-slate-300 px-1 py-0.5 rounded shrink-0">📜 Past</span>` : ''}
-                            </div>
-                            ${!isReadOnly && !isUltraCompact ? `
-                                <div class="flex items-center gap-0.5 shrink-0 ml-1" onclick="event.stopPropagation()">
-                                    <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-[10px] transition-all" title="Configure Schedule">⚙️</button>
-                                    <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-[10px] transition-all" title="Remove Block">✕</button>
+                    if (isMerged) {
+                        // ===== MERGED SPLIT ACTIVE & SCHEDULED PROGRESS BAR =====
+                        const consumedKwh = (sessionWatts * session.consumedHours) / 1000.0;
+                        const consumedCost = consumedKwh * totalRate;
+                        const consumedCostStr = consumedCost < 0.01 ? (consumedCost > 0 ? '<₱0.01' : '₱0.00') : `₱${consumedCost.toFixed(2)}`;
+
+                        const formatDurShort = (h) => {
+                            if (h >= 1) {
+                                const hrs = Math.floor(h);
+                                const mins = Math.round((h % 1) * 60);
+                                return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+                            }
+                            const mins = Math.round(h * 60);
+                            return mins > 0 ? `${mins}m` : `${Math.round(h * 3600)}s`;
+                        };
+
+                        barsHtml += `
+                            <div class="absolute rounded-lg overflow-hidden flex items-center justify-between px-2 cursor-pointer transition-all z-20 border border-emerald-400/80 shadow-lg shadow-emerald-500/25 ring-1 ring-emerald-400/40"
+                                 style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 54px; top: ${topOffset}px; height: ${laneHeight}px;"
+                                 onclick="openBentoSettingsModal('${block.id}')"
+                                 title="Active Merged Schedule: ${formatDurShort(session.consumedHours)} elapsed | ${formatDurShort(session.remainingHours)} remaining (${timeSpanLabel})">
+                                
+                                <!-- 1. Consumed/Elapsed Progress Layer (Left side) -->
+                                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 z-0 animate-pulse border-r-2 border-white/90 shadow-[0_0_10px_rgba(52,211,153,0.9)]"
+                                     style="width: ${session.consumedPct}%;"></div>
+
+                                <!-- 2. Remaining Routine Scheduled Layer (Right side) -->
+                                <div class="absolute inset-y-0 right-0 bg-gradient-to-r from-indigo-700/80 via-purple-700/75 to-purple-800/85 z-0"
+                                     style="left: ${session.consumedPct}%;"></div>
+
+                                <!-- 3. Content overlay across the full merged block -->
+                                <div class="relative z-10 flex items-center justify-between w-full min-w-0 overflow-hidden text-white">
+                                    <!-- Left: Consumed Time & Cost -->
+                                    <div class="flex items-center gap-1 min-w-0 overflow-hidden whitespace-nowrap">
+                                        <span class="font-extrabold text-[10px] shrink-0 text-white drop-shadow">🟢 ~${consumedCostStr}</span>
+                                        ${!isUltraCompact ? `<span class="text-[8px] font-mono bg-black/45 text-emerald-100 px-1 py-0.5 rounded shrink-0 font-bold">${formatDurShort(session.consumedHours)} run</span>` : ''}
+                                    </div>
+
+                                    <!-- Center/Right: Remaining Time & Badges -->
+                                    <div class="flex items-center gap-1 shrink-0 px-1 whitespace-nowrap">
+                                        ${!isCompact ? `<span class="text-[8px] font-mono text-purple-100 bg-black/45 px-1 py-0.5 rounded shrink-0 border border-purple-400/30">⏳ ${formatDurShort(session.remainingHours)} rem</span>` : ''}
+                                        ${!isCompact && isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
+                                        ${!isCompact && isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center gap-0.5 shrink-0 ml-1" onclick="event.stopPropagation()">
+                                        <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-[10px] transition-all" title="Configure Schedule">⚙️</button>
+                                        <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-[10px] transition-all" title="Remove Block">✕</button>
+                                    </div>
                                 </div>
-                            ` : ''}
-                        </div>
-                    `;
+                            </div>
+                        `;
+                    } else {
+                        // ===== STANDARD TIMELINE PILL (STANDALONE LIVE, ROUTINE, ROLLOVER, OR CLOSED) =====
+                        let barClass = '';
+                        let zIndex = isRunning ? 'z-20' : (isReadOnly ? 'z-10' : 'z-10');
+                        if (isRunning) {
+                            barClass = 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 border border-emerald-300 text-white shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-400/50 animate-pulse';
+                        } else if (isReadOnly) {
+                            barClass = 'bg-slate-850/95 border border-slate-700/90 text-slate-300 shadow-sm hover:border-slate-500';
+                        } else if (isRollover) {
+                            barClass = 'bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-500 border border-purple-400/80 text-white hover:brightness-110 shadow-md';
+                        } else {
+                            barClass = 'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 border border-indigo-400/60 text-white hover:brightness-110 shadow-md';
+                        }
+
+                        barsHtml += `
+                            <div class="absolute rounded-lg flex items-center justify-between px-2 cursor-pointer transition-all ${zIndex} ${barClass}"
+                                 style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 44px; top: ${topOffset}px; height: ${laneHeight}px;"
+                                 onclick="openBentoSettingsModal('${block.id}')"
+                                 title="${isReadOnly ? 'Completed Record (Read-Only)' : 'Click to edit schedule'} (${timeSpanLabel})">
+                                <div class="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
+                                    <span class="font-extrabold text-[10px] shrink-0">${isRollover ? '🌅 ' : ''}~${costStr}</span>
+                                    ${!isCompact ? `<span class="text-[8px] font-mono text-slate-100 bg-black/35 px-1 py-0.5 rounded shrink-0 font-medium">${timeSpanLabel}</span>` : ''}
+                                    ${!isUltraCompact && isAuto ? `<span class="text-[8px] font-bold bg-emerald-400/30 text-emerald-100 px-1 py-0.5 rounded shrink-0">⚡</span>` : ''}
+                                    ${!isCompact && isRollover ? `<span class="text-[8px] font-bold bg-purple-400/30 text-purple-100 px-1 py-0.5 rounded shrink-0">from ${prevDayKey.toUpperCase()}</span>` : ''}
+                                    ${!isCompact && isOvernight ? `<span class="text-[8px] font-bold bg-indigo-400/40 text-indigo-100 px-1 py-0.5 rounded shrink-0">Spans to ${nextDayKey.toUpperCase()}</span>` : ''}
+                                    ${!isCompact && isPeak ? `<span class="text-[8px] font-bold bg-amber-500/40 text-amber-200 px-1 py-0.5 rounded shrink-0">🔥 Peak</span>` : ''}
+                                    ${!isCompact && isRunning ? `<span class="text-[8px] font-bold bg-emerald-400/40 text-emerald-100 px-1 py-0.5 rounded shrink-0">🟢 Active</span>` : ''}
+                                    ${!isCompact && isReadOnly ? `<span class="text-[8px] font-bold bg-slate-700 text-slate-300 px-1 py-0.5 rounded shrink-0">📜 Past</span>` : ''}
+                                </div>
+                                ${!isReadOnly && !isUltraCompact ? `
+                                    <div class="flex items-center gap-0.5 shrink-0 ml-1" onclick="event.stopPropagation()">
+                                        <button onclick="openBentoSettingsModal('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-white hover:bg-white/20 text-[10px] transition-all" title="Configure Schedule">⚙️</button>
+                                        <button onclick="deleteCalendarBlock('${block.id}')" class="p-0.5 rounded text-white/80 hover:text-rose-300 hover:bg-rose-500/20 text-[10px] transition-all" title="Remove Block">✕</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    }
                 });
 
                 row.innerHTML = `
@@ -9001,15 +9137,22 @@
 
             if (mode === 'selected') {
                 routineStartingDateStr = selectedCalStr;
-                if (btnSelected) btnSelected.className = activeClass;
+                if (btnSelected) {
+                    btnSelected.className = activeClass;
+                    const isViewingToday = (selectedCalStr === todayStr);
+                    const dayName = calendarState.selectedDayKey ? calendarState.selectedDayKey.toUpperCase() : 'TODAY';
+                    btnSelected.textContent = isViewingToday ? 'Day (Today)' : `Day (${dayName})`;
+                }
                 const isViewingToday = (selectedCalStr === todayStr);
                 if (badge) badge.textContent = isViewingToday ? 'Today' : `${calendarState.selectedDayKey.toUpperCase()} (${selectedCalStr})`;
             } else if (mode === 'tomorrow') {
                 routineStartingDateStr = tomorrowStr;
                 if (btnTomorrow) btnTomorrow.className = activeClass;
+                if (btnSelected) btnSelected.textContent = 'Day';
                 if (badge) badge.textContent = 'Tomorrow';
             } else {
                 if (btnCustom) btnCustom.className = activeClass;
+                if (btnSelected) btnSelected.textContent = 'Day';
                 if (dateInput) {
                     dateInput.min = todayStr;
                     if (!dateInput.value) dateInput.value = selectedCalStr;
@@ -9104,11 +9247,20 @@
             }
             if (delSeriesBtn) delSeriesBtn.classList.toggle('hidden', !isRecurring || !blockId);
 
-            const startH = block ? Math.floor(block.startHour) : 8;
-            const startM = block ? Math.round((block.startHour - startH) * 60) : 0;
-            const endHour = block ? (block.startHour + block.durationHours) : 9;
-            const endH = Math.floor(endHour % 24);
-            const endM = Math.round((endHour - Math.floor(endHour)) * 60);
+            // Default Start Time to at least 5 minutes ahead of current time for new schedules
+            const now = new Date();
+            const ahead5m = new Date(now.getTime() + (5 * 60 * 1000));
+            const defStartH = ahead5m.getHours();
+            const defStartM = ahead5m.getMinutes();
+            const defEndHour = (defStartH + (defStartM / 60.0)) + 1.0;
+            const defEndH = Math.floor(defEndHour % 24);
+            const defEndM = Math.round((defEndHour - Math.floor(defEndHour)) * 60);
+
+            const startH = block ? Math.floor(block.startHour) : defStartH;
+            const startM = block ? Math.round((block.startHour - startH) * 60) : defStartM;
+            const endHour = block ? (block.startHour + block.durationHours) : defEndHour;
+            const endH = block ? Math.floor(endHour % 24) : defEndH;
+            const endM = block ? Math.round((endHour - Math.floor(endHour)) * 60) : defEndM;
 
             if (startInput) startInput.value = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
             if (endInput) endInput.value = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
@@ -9199,6 +9351,22 @@
             const [sy, smon, sd] = startingDateStr.split('-').map(Number);
             const startingDate = new Date(sy, smon - 1, sd);
             const startingDayKey = startDayMap[startingDate.getDay()];
+
+            // Validate +5m start time ahead of current time when starting day is today
+            const now = new Date();
+            const todayStr = getTodayDateString();
+            if (startingDateStr === todayStr && !block) {
+                const curMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const minStartHour = (now.getTime() + (5 * 60 * 1000) - curMidnight) / 3600000;
+                if (startVal < minStartHour - 0.001) {
+                    showToast("Start Time Notice", "Schedules starting today must begin at least 5 minutes ahead of current time. Adjusted automatically.", "warning");
+                    startVal = minStartHour;
+                    const shAdj = Math.floor(startVal);
+                    const smAdj = Math.round((startVal - shAdj) * 60);
+                    if (startInput) startInput.value = `${String(shAdj).padStart(2, '0')}:${String(smAdj).padStart(2, '0')}`;
+                    if (endVal <= startVal) endVal = startVal + duration;
+                }
+            }
 
             const weekDayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             let targetDays = [];
@@ -10411,6 +10579,13 @@
         const POWERFORECAST_CHANGELOG = [
         {
                 "hash": "HEAD",
+                "date": "2026-08-20",
+                "version": "1.8.5v",
+                "title": "Merged active & scheduled timeline progress bar with consumed vs remaining split, enforce +5m start time ahead of current time, and Day button polish",
+                "type": "Feature"
+        },
+        {
+                "hash": "84e51ab",
                 "date": "2026-08-20",
                 "version": "1.8.4ev",
                 "title": "Fix reference error in changelog renderer and restore full release timeline logs view",
