@@ -817,17 +817,17 @@
                         </div>
                     </div>
 
-                    <h1 class="card-title">Account Created! 🎉</h1>
+                    <h1 class="card-title">Account Created! <svg class="w-4 h-4 inline-block text-amber-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></h1>
                     <p class="card-subtitle">Welcome to PowerForecast, <strong id="registered-name" style="color:var(--card-title-color);"></strong>!<br>A confirmation email has been dispatched to <strong id="registered-email" style="color:#f7b02c;"></strong>.</p>
 
                     <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; margin: 16px 0; text-align: left; font-size: 0.85rem; color: var(--card-text-secondary); line-height: 1.5;">
                         <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 6px; font-weight:700; color:var(--card-title-color);">
-                            <span>📩</span> Email Confirmation
+                            <span><svg class="w-4 h-4 inline-block text-indigo-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span> Email Confirmation
                         </div>
                         Please check your inbox to confirm your account, or proceed to log in directly.
                     </div>
 
-                    <a href="login.html" class="submit-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Proceed to Login 🚀</a>
+                    <a href="login.html" class="submit-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Proceed to Login <svg class="w-4 h-4 inline-block text-indigo-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></a>
 
                     <p style="font-size: 0.85rem; color: var(--card-text-secondary); margin-top: 14px;">
                         Didn't get the email? <button id="resend-signup-email-btn" type="button" style="color:#f7b02c; font-weight:700; background:none; border:none; cursor:pointer; text-decoration:underline;">Resend Email</button>
@@ -883,11 +883,11 @@
 
             hint.classList.remove('hidden');
             if (pw === cpw) {
-                hint.textContent = '✓ Passwords match';
+                hint.textContent = '<svg class="w-4 h-4 inline-block text-emerald-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Passwords match';
                 hint.classList.add('match');
                 hint.classList.remove('no-match');
             } else {
-                hint.textContent = '✗ Passwords do not match';
+                hint.textContent = '<svg class="w-4 h-4 inline-block text-rose-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg> Passwords do not match';
                 hint.classList.add('no-match');
                 hint.classList.remove('match');
             }
@@ -1021,7 +1021,7 @@
 
             try {
                 await PowerForecastAuth.resendConfirmationEmail(registeredEmailForResend);
-                btn.textContent = 'Email Resent ✓';
+                btn.textContent = 'Email Resent <svg class="w-4 h-4 inline-block text-emerald-400 align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
                 btn.style.color = '#51cf66';
                 setTimeout(() => {
                     btn.textContent = 'Resend Email';
